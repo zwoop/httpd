@@ -6,8 +6,10 @@
 *.tar.gz
 *.lo
 *.la
+*.slo
 
 .deps
+.libs/
 .dirstamp
 
 autom4te.cache/
