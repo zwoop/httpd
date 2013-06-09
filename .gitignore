@@ -1,0 +1,15 @@
+*.o
+*.a
+*.so
+*.in
+*~
+*.tar.gz
+*.lo
+*.la
+
+.deps
+.dirstamp
+
+autom4te.cache/
+configure
+config.log
