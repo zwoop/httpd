@@ -233,7 +233,7 @@ Header merge Cache-Control no-store env=NO_STORE
 <div class="directive-section"><h2><a name="Header" id="Header">Header</a> <a name="header" id="header">Directive</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Configure les en-têtes d'une réponse HTTP</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>Header [<var>condition</var>] add|append|echo|edit|edit*|merge|set|unset
+<tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>Header [<var>condition</var>] add|append|echo|edit|edit*|merge|set|unset|note
 <var>en-tête</var> [<var>valeur</var>] [<var>remplacement</var>]
 [early|env=[!]<var>variable</var>]|expr=<var>expression</var>]
 </code></td></tr>
@@ -316,7 +316,8 @@ Header merge Cache-Control no-store env=NO_STORE
     <a class="glossarylink" href="../glossary.html#regex" title="voir glossaire">expression rationnelle</a>, et
     l'argument <var>remplacement</var> une chaîne de caractères de
     remplacement qui peut contenir des références
-    arrières. La forme <code>edit</code> n'effectuera une
+    arrières ou des spécificateurs de format. La forme
+    <code>edit</code> n'effectuera une
     recherche/remplacement qu'une seule fois dans la valeur de
     l'en-tête, alors que la forme <code>edit*</code> en effectuera autant
     que le nombre d'apparition de la chaîne à remplacer.</dd>
@@ -338,10 +339,22 @@ Header merge Cache-Control no-store env=NO_STORE
     le même nom. L'argument <var>valeur</var> peut être une chaîne de
     formatage.</dd>
 
+    <dt><code>setifempty</code></dt>
+    <dd>L'en-tête est défini, mais seulement s'il n'existe
+    aucun en-tête avec le même nom.</dd>
+
     <dt><code>unset</code></dt>
     <dd>L'en-tête est supprimé s'il existe. Si plusieurs en-têtes
     possèdent le même nom, ils seront tous supprimés. L'argument
     <var>value</var> ne doit pas apparaître.</dd>
+
+    <dt><code>note</code></dt>
+    <dd>La valeur de l'<var>en-tête</var> considéré est copiée dans une
+    note interne dont le nom est spécifié via l'argument
+    <var>valeur</var>. Ceci permet d'enregistrer la valeur d'un en-tête
+    envoyé par un programme CGI ou une ressource mandatée, même s'il
+    est prévu de l'effacer.</dd>
+
     </dl>
 
     <p>Cet argument est suivi d'un nom d'<var>en-tête</var> qui peut se
@@ -412,7 +425,8 @@ Header merge Cache-Control no-store env=NO_STORE
     <p><code>edit</code>nécessite les deux arguments
     <var>valeur</var>, qui est une <a class="glossarylink" href="../glossary.html#regex" title="voir glossaire">expression
     rationnelle</a>, et une chaîne additionnelle
-    <var>remplacement</var>.</p>
+    <var>remplacement</var>. Depuis la version 2.4.7, la chaîne de
+    remplacement peut aussi contenir des spécificateurs de format.</p>
 
     <p>La directive <code class="directive">Header</code> peut être suivie d'un
     argument additionnel qui peut prendre les valeurs suivantes :</p>
@@ -481,7 +495,8 @@ Header merge Cache-Control no-store env=NO_STORE
     recherche/remplacement. L'argument <var>valeur</var> est une
     <a class="glossarylink" href="../glossary.html#regex" title="voir glossaire">expression rationnelle</a>, et
     l'argument <var>remplacement</var> une chaîne de caractères de
-    remplacement qui peut contenir des références arrières. Avec
+    remplacement qui peut contenir des références
+    arrières ou des spécificateurs de format. Avec
     <code>edit</code>, la chaîne de l'en-tête correspondant au modèle ne
     sera recherchée et remplacée qu'une seule fois, alors qu'avec
     <code>edit*</code>, elle le sera pour chacune de ses instances si
@@ -502,6 +517,10 @@ Header merge Cache-Control no-store env=NO_STORE
     <dt><code>set</code></dt>
     <dd>L'en-tête est défini, remplaçant tout en-tête préexistant avec
     le même nom.</dd>
+
+    <dt><code>setifempty</code></dt>
+    <dd>L'en-tête est défini, mais seulement s'il n'existe
+    aucun en-tête avec le même nom.</dd>
 
     <dt><code>unset</code></dt>
     <dd>L'en-tête est supprimé s'il existe. Si plusieurs en-têtes

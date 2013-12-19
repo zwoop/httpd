@@ -85,9 +85,10 @@
 <tr><td><code>%%</code></td>
         <td>The percent sign.</td></tr>
 <tr class="odd"><td><code>%a</code></td>
-        <td>Client IP address and port of the request.</td></tr>
+        <td>Client IP address of the request (see the
+        <code class="module"><a href="../mod/mod_remoteip.html">mod_remoteip</a></code> module).</td></tr>
 <tr><td><code>%{c}a</code></td>
-        <td>Underlying peer IP address and port of the connection (see the
+        <td>Underlying peer IP address of the connection (see the
         <code class="module"><a href="../mod/mod_remoteip.html">mod_remoteip</a></code> module).</td></tr>
 <tr class="odd"><td><code>%A</code></td>
         <td>Local IP-address.</td></tr>
@@ -228,6 +229,10 @@
         You need to enable <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> to use this.</td></tr>
 <tr><td><code>%O</code></td>
         <td>Bytes sent, including headers. Cannot be zero. You need to
+        enable <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> to use this.</td></tr>
+<tr class="odd"><td><code>%S</code></td>
+        <td>Bytes transferred (received and sent), including request and headers,
+        cannot be zero. This is the combination of %I and %O. You need to
         enable <code class="module"><a href="../mod/mod_logio.html">mod_logio</a></code> to use this.</td></tr>
 </table>
 

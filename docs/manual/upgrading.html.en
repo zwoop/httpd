@@ -204,15 +204,14 @@ Allow from example.org
         settings to replace it in 2.4.
         </li>
 
+        <li><code class="directive"><a href="./mod/core.html#allowoverride">AllowOverride</a></code> now
+        defaults to <code>None</code>.</li>
+
         <li><code class="directive"><a href="./mod/core.html#enablesendfile">EnableSendfile</a></code> now
         defaults to Off.</li>
 
         <li><code class="directive"><a href="./mod/core.html#fileetag">FileETag</a></code> now
         defaults to "MTime Size" (without INode).</li>
-
-        <li><code class="module"><a href="./mod/mod_log_config.html">mod_log_config</a></code>: <a href="modules/mod_log_config.html#formats">${cookie}C</a>
-        matches whole cookie names.  Previously any substring would
-        match.</li>
 
         <li><code class="module"><a href="./mod/mod_dav_fs.html">mod_dav_fs</a></code>: The format of the <code class="directive"><a href="./mod/mod_dav_fs.html#davlockdb">DavLockDB</a></code> file has changed for
         systems with inodes.  The old <code class="directive"><a href="./mod/mod_dav_fs.html#davlockdb">DavLockDB</a></code> file must be deleted on
@@ -278,6 +277,17 @@ Allow from example.org
 
         <li><code class="module"><a href="./mod/mod_reqtimeout.html">mod_reqtimeout</a></code>: If the module is loaded, it
         will now set some default timeouts.</li>
+
+        <li><code class="module"><a href="./mod/mod_dumpio.html">mod_dumpio</a></code>: <code class="directive">DumpIOLogLevel</code>
+        is no longer supported.  Data is always logged at <code class="directive"><a href="./mod/core.html#loglevel">LogLevel</a></code> <code>trace7</code>.</li>
+
+        <li>On Unix platforms, piped logging commands configured using
+        either <code class="directive"><a href="./mod/core.html#errorlog">ErrorLog</a></code> or
+        <code class="directive"><a href="./mod/mod_log_config.html#customlog">CustomLog</a></code> were invoked using
+        <code>/bin/sh -c</code> in 2.2 and earlier.  In 2.4 and later,
+        piped logging commands are executed directly.  To restore the
+        old behaviour, see the <a href="logs.html#piped">piped logging
+        documentation</a>.</li>
 
       </ul>
     
@@ -366,6 +376,9 @@ Allow from example.org
     <ul>
       <li><code>configuration error:  couldn't check user: /path</code> -
       load module <code class="module"><a href="./mod/mod_authn_core.html">mod_authn_core</a></code>.</li>
+      <li><code>.htaccess</code> files aren't being processed - Check for an
+      appropriate <code class="directive"><a href="./mod/core.html#allowoverride">AllowOverride</a></code> directive;
+      the default changed to <code>None</code> in 2.4.</li>
     </ul>
     </li>
 </ul>

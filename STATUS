@@ -32,7 +32,8 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.6   : Tagged on July 15, 2013.
+    2.4.7   : Tagged on November 19, 2013.
+    2.4.6   : Tagged on July 15, 2013. Released July, 22, 2013
     2.4.5   : Tagged on July 11, 2013, not released.
     2.4.4   : Tagged on February 18, 2013. Released Feb 25, 2013
     2.4.3   : Tagged on August 17, 2012. Released Aug 18, 2012
@@ -84,6 +85,11 @@ CURRENT RELEASE NOTES:
     as well, if they apply.  Logical progression is commit to trunk
     then merge into branches/2.4.x, as applicable.
 
+  * Current exceptions for RTC for this branch:
+    . mod_lua
+    . documentation
+    . non-Unix build
+    . non-Unix, single-platform code
 
 RELEASE SHOWSTOPPERS:
 
@@ -95,68 +101,6 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
-
-  * core, mod_ssl: Lift the restriction that prevents mod_ssl taking
-    full advantage of the event MPM. Enable the ability for a module
-    to reverse the sense of a poll event from a read to a write or vice
-    versa.
-    trunk patches: http://svn.apache.org/r1470679
-                   http://svn.apache.org/r1477094
-    2.4.x patch: http://people.apache.org/~minfrin/httpd-event-ssl.patch
-    +1: minfrin, jim
-    -0.5: sf: I would prefer if this sat in trunk for a few months first
-              to receive more testing.
-
-  * core: Add pre_htaccess hook.
-    trunk patch: http://svn.apache.org/r1389339
-    2.4.x patch: trunk patch works modulo CHANGES and mmn bump
-    +1: minfrin, jim
-    trawick: I like sf's idea on the list for a different API to solve
-             the same problem.  We shouldn't proceed with this patch.
-
-    Alternate proposal:
-    core: Add open_htaccess hook.
-    trunk patch: http://svn.apache.org/r1389339
-                 http://svn.apache.org/r1498880
-    2.4.x patch: http://people.apache.org/~sf/open_htaccess_hook.patch
-    +1: sf, jorton, 
-    +0.5: jj: I would prefer if this sat in trunk for a few months first
-              to receive more testing.
-    +/-0: trawick: I would prefer if Steinar verifies that it is fine for
-                   him (however simple that verification would be).  There's
-                   no need to proceed until he is ready to use it anyway.
-
-  * core: Stop the HTTP_IN filter from attempting to write error buckets
-    to the output filters
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1482522
-    2.4.x patch: trunk patch works modulo CHANGES and ap_mmn
-    +1:  jim
-
-  * mod_proxy: support Unix domain sockets
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1451633
-                 https://svn.apache.org/viewvc?view=revision&revision=1451905
-                 https://svn.apache.org/viewvc?view=revision&revision=1451921
-                 https://svn.apache.org/viewvc?view=revision&revision=1452259
-                 https://svn.apache.org/viewvc?view=revision&revision=1453981
-                 https://svn.apache.org/viewvc?view=revision&revision=1501913
-    2.4.x patch: trunk patch works modulo CHANGES, ap_mmn, and doc note to
-                 include version note
-    +1: jim, druggeri
-    druggeri note: Fails as a BalancerMember, FWIW
-
-  * mod_proxy: Ensure network errors detected by the proxy are returned as
-    504 Gateway Timout as opposed to 502 Bad Gateway
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1480058
-    2.4.x patch: trunk patch works modulo CHANGES
-    +1:
-    -1: rpluem: This change is still disputed. See
-        http://mail-archives.apache.org/mod_mbox/httpd-dev/201305.mbox/%3C1B16B9E3-87BA-4EEF-939C-7C7313B54714%40gbiv.com%3E
-
-  * mod_proxy: save DNS lookups
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1462269
-                 https://svn.apache.org/viewvc?view=revision&revision=1463455
-    2.4.x patch: trunk patch works
-    +1: jim, druggeri
 
   * mod_socache_shmcb.c: Remove arbitrary restriction on shared memory size
     previously limited to 64MB.
@@ -173,67 +117,99 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
     minfrin: Surely we should just fix these unsigned ints? Not sure what value
              there would be in trying to bake in an arbitrary limit in the mean
              time when we can just fix the underlying problem instead.
-         jj: Agree w/ minfrin
+        jim: Agree w/ minfrin
+    sf:      This would require someone to do the work. Until someone has the 
+             necessary free cycles, I propose to include
+             http://svn.apache.org/r1515162
 
-  * modules: Fix some compiler warnings.
-    trunk patch: http://svn.apache.org/r1500345
-                 http://svn.apache.org/r1500362
-                 http://svn.apache.org/r1500423
-                 http://svn.apache.org/r1500483
-                 http://svn.apache.org/r1500519
-    2.4.x patch: trunk patches work
-    +1: fuankg
-    comments:
-          jj: In general, casts are sometimes used to "hide" problems
-              that exist, esp when using the incorrect data types...
-              Are these casts safe?
-      fuankg: replied to list with further details about patches.
+  * ab: Check if malloc succeeded
+    PR54344
+    trunk: http://svn.apache.org/viewvc?view=revision&revision=1488492
+    2.4.x: trunk patch works
+    +1: jailletc36, jim
+    trawick: what happens if malloc() fails?  same msg error over and over?
+             (doubtful it gets better for more than a very short while, until
+             the leak or fragmentation overtakes temporary freeing of memory)
+             is the state of that connection messed up from leaving
+             ssl_proceed_handshake() early?
+    sf: I also think that aborting on oom with a clean error message would
+        be better.
+        I would add http://svn.apache.org/viewvc?view=revision&revision=1542533
 
-  * mod_cache: fill in APLOGNO value
-    trunk: http://svn.apache.org/r1481396
-           http://svn.apache.org/r1502665
-    2.4.x patch: trunk works
-    +1 covener, fuankg
+  * mod_auth_form: Make sure the optional functions are loaded even when
+    the AuthFormProvider isn't specified.
+    trunk patch: https://svn.apache.org/r1531672
+    2.4.x patch: trunk patch works, modulo CHANGES
+    +1: minfrin, jim
+    -0 covener: does that mean just loading mod_auth_form w/o mod_request 
+                and mod_filter now causes a post-config failure?
+    minfrin: It does, however it would only affect configs where mod_auth_form
+             has been loaded but not used, as any attempt to use mod_auth_form
+             without mod_request and mod_session present would cause the very
+             same failure. Would a warning in the release notes be good enough?
 
-  * mod_deflate: Improve error detection when decompressing request bodies
-    with trailing garbage: handle case where trailing bytes are in
-    the same bucket.
-    trunk: http://svn.apache.org/r1502772
-    2.4.x patch: trunk works (minus log-message-tags)
-    +1 rjung
+  * mod_proxy: support Unix domain sockets
+    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1451633
+                 https://svn.apache.org/viewvc?view=revision&revision=1451905
+                 https://svn.apache.org/viewvc?view=revision&revision=1451921
+                 https://svn.apache.org/viewvc?view=revision&revision=1452259
+                 https://svn.apache.org/viewvc?view=revision&revision=1453981
+                 https://svn.apache.org/viewvc?view=revision&revision=1501913
+                 https://svn.apache.org/viewvc?view=revision&revision=1513508
+                 https://svn.apache.org/viewvc?view=revision&revision=1531340
+                 https://svn.apache.org/viewvc?view=revision&revision=1531370
+                 https://svn.apache.org/viewvc?view=revision&revision=1531962
+                 https://svn.apache.org/viewvc?view=revision&revision=1533065
+                 https://svn.apache.org/viewvc?view=revision&revision=1540052
+    2.4.x patch: http://people.apache.org/~jim/patches/uds-2.4.patch
+    +1: jim
+    +/-0: druggeri: I think we should hold until we can work out the performance difference
+                    between old and new versions of the patches.
 
-
-A list of further possible backports can be found at:                                                                                                                                   
-    http://people.apache.org/~rjung/patches/possible-backports-httpd-trunk-2_4.txt
-If you want to propose one of those, please still add them here.
-
+  * mod_proxy: Use consistent canon formats for http, ajp and fcgi (if provided
+    port is the default port, don't add to canon URI).
+    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1542562
+    2.4.x patch: http://people.apache.org/~jim/patches/proxy-port-scheme.patch
+    +1: jim
 
 OTHER PROPOSALS
 
-   * opinion on more complete DefaultRuntimeDir use in 2.4.x?
-     o If a module has a config directive for the run-time file that
-       treats the configured path as relative to server root, preserve
-       that behavior but change the location when not configured to
-       respect DefaultRuntimeDir.  With these changes, users with no
-       per-runtime-file configuration directives can control
-       everything with DefaultRuntimeDir.
-       BUT: Existing users of DefaultRuntimeDir might get a short-term scare
-       when some unconfigured run-time file starts respecting their
-       DefaultRuntimeDir directive after an upgrade.
-       +1: trawick, jim, rjung
-       rjung: applicable trunk revisions WITHOUT the compatibility tweaks
-              described above:
-          scoreboard         r1369477
-          core/pid file      r1369808
-          core/mutex         r1370288
-          mod_socache_XXX    r1370225, r1407385
-          mod_ldap           r1371684
-          mod_cache          r1407381
-          mod_slotmem_plain  r1370763
-        igalic: We have three votes, what's the status here?
-       Independently, backport any doc tweaks to 2.4 API migration page.
+   * A list of further possible backports can be found at: 
+     http://people.apache.org/~rjung/patches/possible-backports-httpd-trunk-2_4.txt
+     If you want to propose one of those, please add them above.
+
+
+PATCHES/ISSUES THAT ARE BEING WORKED
+
+  * protocol: draft-ietf-httpbis-p1-messaging-23 fixes regarding interactions
+              between TE and content-length in the same req/resp.
+    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1524192
+                 https://svn.apache.org/viewvc?view=revision&revision=1524770
+                 https://svn.apache.org/viewvc?view=revision&revision=1527925
+                 https://svn.apache.org/viewvc?view=revision&revision=1541270
+                 https://svn.apache.org/viewvc?view=revision&revision=1541368
+    2.4.x patch (plus CHANGES entry above):
+      http://people.apache.org/~wrowe/httpd-2.4-r1524192-r1524770-TE-CL-v2.patch
+    +1:
+    [wrowe asks] Where is verification of (!keepalive)?  Do we know the
+                 connection will be closed anytime in the near future?
 
 PATCHES/ISSUES THAT ARE STALLED
+
+  * core: Stop the HTTP_IN filter from attempting to write error buckets
+    to the output filters
+    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1482522
+                 https://svn.apache.org/viewvc?view=revision&revision=1482918
+    2.4.x patch: /* working on it */
+    +1:  jim
+
+  * mod_proxy: Ensure network errors detected by the proxy are returned as
+    504 Gateway Timout as opposed to 502 Bad Gateway
+    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1480058
+    2.4.x patch: trunk patch works modulo CHANGES
+    +1:
+    -1: rpluem: This change is still disputed. See
+        http://mail-archives.apache.org/mod_mbox/httpd-dev/201305.mbox/%3C1B16B9E3-87BA-4EEF-939C-7C7313B54714%40gbiv.com%3E
 
   * cross-compile: allow to provide CC_FOR_BUILD so that gen_test_char will be
     compiled by the build compiler instead of the host compiler.

@@ -309,7 +309,7 @@ PROXY_DECLARE(char *)
         url = "";
     }
     else {
-        *(url++) = '\0';    /* skip seperating '/' */
+        *(url++) = '\0';    /* skip separating '/' */
     }
 
     /* find _last_ '@' since it might occur in user/password part */
@@ -386,7 +386,7 @@ PROXY_DECLARE(int) ap_proxyerror(request_rec *r, int statuscode, const char *mes
 static const char *
      proxy_get_host_of_request(request_rec *r)
 {
-    char *url, *user = NULL, *password = NULL, *err, *host;
+    char *url, *user = NULL, *password = NULL, *err, *host = NULL;
     apr_port_t port;
 
     if (r->hostname != NULL) {
@@ -1080,7 +1080,6 @@ PROXY_DECLARE(proxy_balancer *) ap_proxy_get_balancer(apr_pool_t *p,
     int i;
     proxy_hashes hash;
 
-    ap_str_tolower(uri);
     c = strchr(uri, ':');
     if (c == NULL || c[1] != '/' || c[2] != '/' || c[3] == '\0') {
         return NULL;
@@ -1089,6 +1088,7 @@ PROXY_DECLARE(proxy_balancer *) ap_proxy_get_balancer(apr_pool_t *p,
     if ((c = strchr(c + 3, '/'))) {
         *c = '\0';
     }
+    ap_str_tolower(uri);
     hash.def = ap_proxy_hashfunc(uri, PROXY_HASHFUNC_DEFAULT);
     hash.fnv = ap_proxy_hashfunc(uri, PROXY_HASHFUNC_FNV);
     balancer = (proxy_balancer *)conf->balancers->elts;
@@ -2132,34 +2132,46 @@ ap_proxy_determine_connection(apr_pool_t *p, request_rec *r,
             conn->port = uri->port;
         }
         socket_cleanup(conn);
-        err = apr_sockaddr_info_get(&(conn->addr),
-                                    conn->hostname, APR_UNSPEC,
-                                    conn->port, 0,
-                                    conn->pool);
-    }
-    else if (!worker->cp->addr) {
-        if ((err = PROXY_THREAD_LOCK(worker)) != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, err, r, APLOGNO(00945) "lock");
-            return HTTP_INTERNAL_SERVER_ERROR;
+        if (!worker->s->is_address_reusable || worker->s->disablereuse) {
+            /*
+             * Only do a lookup if we should not reuse the backend address.
+             * Otherwise we will look it up once for the worker.
+             */
+            err = apr_sockaddr_info_get(&(conn->addr),
+                                        conn->hostname, APR_UNSPEC,
+                                        conn->port, 0,
+                                        conn->pool);
         }
-
+    }
+    if (worker->s->is_address_reusable && !worker->s->disablereuse) {
         /*
-         * Worker can have the single constant backend adress.
-         * The single DNS lookup is used once per worker.
-         * If dynamic change is needed then set the addr to NULL
-         * inside dynamic config to force the lookup.
+         * Looking up the backend address for the worker only makes sense if
+         * we can reuse the address.
          */
-        err = apr_sockaddr_info_get(&(worker->cp->addr),
-                                    conn->hostname, APR_UNSPEC,
-                                    conn->port, 0,
-                                    worker->cp->pool);
-        conn->addr = worker->cp->addr;
-        if ((uerr = PROXY_THREAD_UNLOCK(worker)) != APR_SUCCESS) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, uerr, r, APLOGNO(00946) "unlock");
+        if (!worker->cp->addr) {
+            if ((err = PROXY_THREAD_LOCK(worker)) != APR_SUCCESS) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, err, r, APLOGNO(00945) "lock");
+                return HTTP_INTERNAL_SERVER_ERROR;
+            }
+
+            /*
+             * Worker can have the single constant backend adress.
+             * The single DNS lookup is used once per worker.
+             * If dynamic change is needed then set the addr to NULL
+             * inside dynamic config to force the lookup.
+             */
+            err = apr_sockaddr_info_get(&(worker->cp->addr),
+                                        conn->hostname, APR_UNSPEC,
+                                        conn->port, 0,
+                                        worker->cp->pool);
+            conn->addr = worker->cp->addr;
+            if ((uerr = PROXY_THREAD_UNLOCK(worker)) != APR_SUCCESS) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, uerr, r, APLOGNO(00946) "unlock");
+            }
         }
-    }
-    else {
-        conn->addr = worker->cp->addr;
+        else {
+            conn->addr = worker->cp->addr;
+        }
     }
     /* Close a possible existing socket if we are told to do so */
     if (conn->close) {

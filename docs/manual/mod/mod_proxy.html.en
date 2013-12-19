@@ -72,6 +72,7 @@
         <tr><td>HTTP/0.9, HTTP/1.0, and
           HTTP/1.1</td><td><code class="module"><a href="../mod/mod_proxy_http.html">mod_proxy_http</a></code></td></tr>
         <tr><td>SCGI</td><td><code class="module"><a href="../mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code></td></tr>
+        <tr><td>WS and WSS (Web-sockets)</td><td><code class="module"><a href="../mod/mod_proxy_wstunnel.html">mod_proxy_wstunnel</a></code></td></tr>
         </table>
       </li>
     </ul>
@@ -138,6 +139,7 @@
 <li><code class="module"><a href="../mod/mod_proxy_ftp.html">mod_proxy_ftp</a></code></li>
 <li><code class="module"><a href="../mod/mod_proxy_http.html">mod_proxy_http</a></code></li>
 <li><code class="module"><a href="../mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code></li>
+<li><code class="module"><a href="../mod/mod_proxy_wstunnel.html">mod_proxy_wstunnel</a></code></li>
 <li><code class="module"><a href="../mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code></li>
 <li><code class="module"><a href="../mod/mod_ssl.html">mod_ssl</a></code></li>
 </ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
@@ -1369,15 +1371,6 @@ ProxyPass / balancer://hotcluster/
     removes the normal limited protection against URL-based attacks
     provided by the proxy.</p>
 
-    <p>The optional <var>interpolate</var> keyword (available in
-    httpd 2.2.9 and later), in combination with
-    <code class="directive">ProxyPassInterpolateEnv</code> causes the ProxyPass
-    to interpolate environment variables, using the syntax
-    <var>${VARNAME}</var>.  Note that many of the standard CGI-derived
-    environment variables will not exist when this interpolation happens,
-    so you may still have to resort to <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code>
-    for complex rules.</p>
-
     <p>Normally, mod_proxy will include the query string when
     generating the <var>SCRIPT_FILENAME</var> environment variable.
     The optional <var>noquery</var> keyword (available in
@@ -1394,6 +1387,31 @@ ProxyPass / balancer://hotcluster/
     <p>If you require a more flexible reverse-proxy configuration, see the
     <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> directive with the
     <code>[P]</code> flag.</p>
+
+    <p>The optional <var>interpolate</var> keyword (available in
+    httpd 2.2.9 and later), in combination with
+    <code class="directive">ProxyPassInterpolateEnv</code> causes the ProxyPass
+    to interpolate environment variables, using the syntax
+    <var>${VARNAME}</var>.  Note that many of the standard CGI-derived
+    environment variables will not exist when this interpolation happens,
+    so you may still have to resort to <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code>
+    for complex rules.  Also note that interpolation is not supported
+    within the scheme portion of a URL.  Dynamic determination of the
+    scheme can be accomplished with <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code> as in the
+    following example.</p>
+
+    <pre class="prettyprint lang-config">
+RewriteEngine On
+
+RewriteCond %{HTTPS} =off
+RewriteRule . - [E=protocol:http]
+RewriteCond %{HTTPS} =on
+RewriteRule . - [E=protocol:https]
+
+RewriteRule ^/mirror/foo/(.*) %{ENV:protocol}://backend.example.com/$1 [P]
+ProxyPassReverse  /mirror/foo/ http://backend.example.com/
+ProxyPassReverse  /mirror/foo/ https://backend.example.com/
+    </pre>
 
 
 </div>
@@ -1573,7 +1591,8 @@ ProxyPassReverseCookiePath  /  /mirror/foo/
     httpd 2.2.9 and later), used together with
     <code class="directive">ProxyPassInterpolateEnv</code>, enables interpolation
     of environment variables specified using the format <var>${VARNAME}</var>.
-    </p>
+    Note that interpolation is not supported within the scheme portion of a
+    URL.</p>
 
     <p>When used inside a <code class="directive"><a href="../mod/core.html#location">&lt;Location&gt;</a></code> section, the first argument is omitted and the local
     directory is obtained from the <code class="directive"><a href="../mod/core.html#location">&lt;Location&gt;</a></code>. The same occurs inside a <code class="directive"><a href="../mod/core.html#locationmatch">&lt;LocationMatch&gt;</a></code> section, but will probably not work as

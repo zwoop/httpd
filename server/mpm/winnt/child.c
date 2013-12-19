@@ -45,7 +45,22 @@
 
 #ifdef __MINGW32__
 #include <mswsock.h>
-#endif
+
+#ifndef WSAID_ACCEPTEX
+#define WSAID_ACCEPTEX \
+  {0xb5367df1, 0xcbac, 0x11cf, {0x95, 0xca, 0x00, 0x80, 0x5f, 0x48, 0xa1, 0x92}}
+typedef BOOL (WINAPI *LPFN_ACCEPTEX)(SOCKET, SOCKET, PVOID, DWORD, DWORD, DWORD, LPDWORD, LPOVERLAPPED);
+#endif /* WSAID_ACCEPTEX */
+
+#ifndef WSAID_GETACCEPTEXSOCKADDRS
+#define WSAID_GETACCEPTEXSOCKADDRS \
+  {0xb5367df2, 0xcbac, 0x11cf, {0x95, 0xca, 0x00, 0x80, 0x5f, 0x48, 0xa1, 0x92}}
+typedef VOID (WINAPI *LPFN_GETACCEPTEXSOCKADDRS)(PVOID, DWORD, DWORD, DWORD,
+                                                 struct sockaddr **, LPINT,
+                                                 struct sockaddr **, LPINT);
+#endif /* WSAID_GETACCEPTEXSOCKADDRS */
+
+#endif /* __MINGW32__ */
 
 /*
  * The Windows MPM uses a queue of completion contexts that it passes
@@ -281,6 +296,10 @@ static unsigned int __stdcall winnt_accept(void *lr_)
     winnt_conn_ctx_t *context = NULL;
     DWORD BytesRead;
     SOCKET nlsd;
+    LPFN_ACCEPTEX lpfnAcceptEx = NULL;
+    LPFN_GETACCEPTEXSOCKADDRS lpfnGetAcceptExSockaddrs = NULL;
+    GUID GuidAcceptEx = WSAID_ACCEPTEX;
+    GUID GuidGetAcceptExSockaddrs = WSAID_GETACCEPTEXSOCKADDRS;
     core_server_config *core_sconf;
     const char *accf_name;
     int rv;
@@ -296,7 +315,15 @@ static unsigned int __stdcall winnt_accept(void *lr_)
     core_sconf = ap_get_core_module_config(ap_server_conf->module_config);
     accf_name = apr_table_get(core_sconf->accf_map, lr->protocol);
 
-    if (strcmp(accf_name, "data") == 0)
+    if (!accf_name) {
+        accf = 0;
+        accf_name = "none";
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, ap_server_conf,
+                     APLOGNO(02531) "winnt_accept: Listen protocol '%s' has "
+                     "no known accept filter. Using 'none' instead",
+                     lr->protocol);
+    }
+    else if (strcmp(accf_name, "data") == 0)
         accf = 2;
     else if (strcmp(accf_name, "connect") == 0)
         accf = 1;
@@ -325,6 +352,24 @@ static unsigned int __stdcall winnt_accept(void *lr_)
 
     if (accf > 0) /* 'data' or 'connect' */
     {
+        if (WSAIoctl(nlsd, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                     &GuidAcceptEx, sizeof GuidAcceptEx, 
+                     &lpfnAcceptEx, sizeof lpfnAcceptEx, 
+                     &BytesRead, NULL, NULL) == SOCKET_ERROR) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, apr_get_netos_error(),
+                         ap_server_conf, APLOGNO(02322)
+                         "winnt_accept: failed to retrieve AcceptEx, try 'AcceptFilter none'");
+            return 1;
+        }
+        if (WSAIoctl(nlsd, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                     &GuidGetAcceptExSockaddrs, sizeof GuidGetAcceptExSockaddrs,
+                     &lpfnGetAcceptExSockaddrs, sizeof lpfnGetAcceptExSockaddrs,
+                     &BytesRead, NULL, NULL) == SOCKET_ERROR) {
+            ap_log_error(APLOG_MARK, APLOG_ERR, apr_get_netos_error(),
+                         ap_server_conf, APLOGNO(02323)
+                         "winnt_accept: failed to retrieve GetAcceptExSockaddrs, try 'AcceptFilter none'");
+            return 1;
+        }
         /* first, high priority event is an already accepted connection */
         events[1] = exit_event;
         events[2] = max_requests_per_child_event;
@@ -421,9 +466,9 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
             /* AcceptEx on the completion context. The completion context will be
              * signaled when a connection is accepted.
              */
-            if (!AcceptEx(nlsd, context->accept_socket, buf, len,
-                          PADDED_ADDR_SIZE, PADDED_ADDR_SIZE, &BytesRead,
-                          &context->overlapped)) {
+            if (!lpfnAcceptEx(nlsd, context->accept_socket, buf, len,
+                              PADDED_ADDR_SIZE, PADDED_ADDR_SIZE, &BytesRead,
+                              &context->overlapped)) {
                 rv = apr_get_netos_error();
                 if ((rv == APR_FROM_OS_ERROR(WSAECONNRESET)) ||
                     (rv == APR_FROM_OS_ERROR(WSAEACCES))) {
@@ -540,9 +585,9 @@ reinit: /* target of data or connect upon too many AcceptEx failures */
             /* Get the local & remote address
              * TODO; error check
              */
-            GetAcceptExSockaddrs(buf, len, PADDED_ADDR_SIZE, PADDED_ADDR_SIZE,
-                                 &context->sa_server, &context->sa_server_len,
-                                 &context->sa_client, &context->sa_client_len);
+            lpfnGetAcceptExSockaddrs(buf, len, PADDED_ADDR_SIZE, PADDED_ADDR_SIZE,
+                                     &context->sa_server, &context->sa_server_len,
+                                     &context->sa_client, &context->sa_client_len);
 
             /* For 'data', craft a bucket for our data result
              * and pass to worker_main as context->overlapped.Pointer
@@ -801,12 +846,12 @@ static DWORD __stdcall worker_main(void *thread_num_val)
                                      context->sock, thread_num, sbh,
                                      context->ba);
 
-        if (!c)
-        {
+        if (!c) {
             /* ap_run_create_connection closes the socket on failure */
             context->accept_socket = INVALID_SOCKET;
-            if (e)
+            if (e) { 
                 apr_bucket_free(e);
+            }
             continue;
         }
 
@@ -824,17 +869,14 @@ static DWORD __stdcall worker_main(void *thread_num_val)
             c->aborted = 1;
         }
 
-        if (e && c->aborted)
-        {
+        if (e && c->aborted) {
             apr_bucket_free(e);
         }
-        else
-        {
+        else {
             ap_set_module_config(c->conn_config, &mpm_winnt_module, context);
         }
 
-        if (!c->aborted)
-        {
+        if (!c->aborted) {
             ap_run_process_connection(c);
 
             apr_socket_opt_get(context->sock, APR_SO_DISCONNECTED,
@@ -908,12 +950,12 @@ static void create_listener_thread(void)
 }
 
 
-void child_main(apr_pool_t *pconf)
+void child_main(apr_pool_t *pconf, DWORD parent_pid)
 {
     apr_status_t status;
     apr_hash_t *ht;
     ap_listen_rec *lr;
-    HANDLE child_events[2];
+    HANDLE child_events[3];
     HANDLE *child_handles;
     int listener_started = 0;
     int threads_created = 0;
@@ -923,6 +965,7 @@ void child_main(apr_pool_t *pconf)
     DWORD tid;
     int rv;
     int i;
+    int num_events;
 
     apr_pool_create(&pchild, pconf);
     apr_pool_tag(pchild, "pchild");
@@ -939,6 +982,16 @@ void child_main(apr_pool_t *pconf)
     }
     child_events[0] = exit_event;
     child_events[1] = max_requests_per_child_event;
+
+    if (parent_pid != my_pid) {
+        child_events[2] = OpenProcess(SYNCHRONIZE, FALSE, parent_pid);
+        num_events = 3;
+    }
+    else {
+        /* presumably -DONE_PROCESS */
+        child_events[2] = NULL;
+        num_events = 2;
+    }
 
     /*
      * Wait until we have permission to start accepting connections.
@@ -1056,10 +1109,10 @@ void child_main(apr_pool_t *pconf)
      */
     while (1) {
 #if !APR_HAS_OTHER_CHILD
-        rv = WaitForMultipleObjects(2, (HANDLE *)child_events, FALSE, INFINITE);
+        rv = WaitForMultipleObjects(num_events, (HANDLE *)child_events, FALSE, INFINITE);
         cld = rv - WAIT_OBJECT_0;
 #else
-        rv = WaitForMultipleObjects(2, (HANDLE *)child_events, FALSE, 1000);
+        rv = WaitForMultipleObjects(num_events, (HANDLE *)child_events, FALSE, 1000);
         cld = rv - WAIT_OBJECT_0;
         if (rv == WAIT_TIMEOUT) {
             apr_proc_other_child_refresh_all(APR_OC_REASON_RUNNING);
@@ -1078,6 +1131,13 @@ void child_main(apr_pool_t *pconf)
             ap_log_error(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, ap_server_conf, APLOGNO(00357)
                          "Child: Exit event signaled. Child process is "
                          "ending.");
+            break;
+        }
+        else if (cld == 2) {
+            /* The parent is dead.  Shutdown the child process. */
+            ap_log_error(APLOG_MARK, APLOG_CRIT, 0, ap_server_conf, APLOGNO(02538)
+                         "Child: Parent process exited abruptly. Child process "
+                         "is ending");
             break;
         }
         else {
@@ -1245,6 +1305,9 @@ void child_main(apr_pool_t *pconf)
 
     apr_pool_destroy(pchild);
     CloseHandle(exit_event);
+    if (child_events[2] != NULL) {
+        CloseHandle(child_events[2]);
+    }
 }
 
 #endif /* def WIN32 */

@@ -99,7 +99,11 @@ Listen [2001:db8::a00:20ff:fea7:ccea]:80
       <div class="example"><p><code>
       (48)Address already in use: make_sock: could not bind to address [::]:80
       </code></p></div>
-    </div>
+
+      <p>Sorun giderme ile ilgili ipuçları için
+      <a href="http://wiki.apache.org/httpd/CouldNotBindToAddress">wiki
+      belgesine</a> bakınız.</p>
+</div>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="./images/up.gif" /></a></div>
 <div class="section">

@@ -273,6 +273,7 @@ int requests = 1;       /* Number of requests to make */
 int heartbeatres = 100; /* How often do we say we're alive */
 int concurrency = 1;    /* Number of multiple requests to make */
 int percentile = 1;     /* Show percentile served */
+int nolength = 0;		/* Accept variable document length */
 int confidence = 1;     /* Show confidence estimator and warnings */
 int tlimit = 0;         /* time limit in secs */
 int keepalive = 0;      /* try and do keepalive connections */
@@ -281,22 +282,20 @@ char servername[1024];  /* name that server reports */
 char *hostname;         /* host name from URL */
 const char *host_field;       /* value of "Host:" header field */
 const char *path;             /* path name */
-char postfile[1024];    /* name of file containing post data */
 char *postdata;         /* *buffer containing data from postfile */
 apr_size_t postlen = 0; /* length of data to be POSTed */
-char content_type[1024];/* content type to put in POST header */
+char *content_type = NULL;     /* content type to put in POST header */
 const char *cookie,           /* optional cookie line */
            *auth,             /* optional (basic/uuencoded) auhentication */
            *hdrs;             /* optional arbitrary headers */
 apr_port_t port;        /* port number */
-char proxyhost[1024];   /* proxy host name */
+char *proxyhost = NULL; /* proxy host name */
 int proxyport = 0;      /* proxy port */
 const char *connecthost;
 const char *myhost;
 apr_port_t connectport;
 const char *gnuplot;          /* GNUplot file */
 const char *csvperc;          /* CSV Percentile file */
-char url[1024];
 const char *fullurl;
 const char *colonhost;
 int isproxy = 0;
@@ -783,7 +782,10 @@ static void output_results(int sig)
 #endif
     printf("\n");
     printf("Document Path:          %s\n", path);
-    printf("Document Length:        %" APR_SIZE_T_FMT " bytes\n", doclen);
+    if (nolength)
+        printf("Document Length:        Variable\n");
+    else
+        printf("Document Length:        %" APR_SIZE_T_FMT " bytes\n", doclen);
     printf("\n");
     printf("Concurrency Level:      %d\n", concurrency);
     printf("Time taken for tests:   %.3f seconds\n", timetaken);
@@ -792,7 +794,8 @@ static void output_results(int sig)
     if (bad)
         printf("   (Connect: %d, Receive: %d, Length: %d, Exceptions: %d)\n",
             err_conn, err_recv, err_length, err_except);
-    printf("Write errors:           %d\n", epipe);
+    if (epipe)
+        printf("Write errors:           %d\n", epipe);
     if (err_response)
         printf("Non-2xx responses:      %d\n", err_response);
     if (keepalive)
@@ -815,9 +818,9 @@ static void output_results(int sig)
                (double) totalread / 1024 / timetaken);
         if (send_body) {
             printf("                        %.2f kb/s sent\n",
-               (double) totalposted / timetaken / 1024);
+               (double) totalposted / 1024 / timetaken);
             printf("                        %.2f kb/s total\n",
-               (double) (totalread + totalposted) / timetaken / 1024);
+               (double) (totalread + totalposted) / 1024 / timetaken);
         }
     }
 
@@ -965,9 +968,8 @@ static void output_results(int sig)
             printf("              min   avg   max\n");
 #define CONF_FMT_STRING "%5" APR_TIME_T_FMT " %5" APR_TIME_T_FMT "%5" APR_TIME_T_FMT "\n"
             printf("Connect:    " CONF_FMT_STRING, mincon, meancon, maxcon);
-            printf("Processing: " CONF_FMT_STRING, mintot - mincon,
-                                                   meantot - meancon,
-                                                   maxtot - maxcon);
+            printf("Processing: " CONF_FMT_STRING, mind, meand, maxd);
+            printf("Waiting:    " CONF_FMT_STRING, minwait, meanwait, maxwait);
             printf("Total:      " CONF_FMT_STRING, mintot, meantot, maxtot);
 #undef CONF_FMT_STRING
         }
@@ -1055,9 +1057,14 @@ static void output_html_results(void)
     printf("<tr %s><th colspan=2 %s>Document Path:</th>"
        "<td colspan=2 %s>%s</td></tr>\n",
        trstring, tdstring, tdstring, path);
-    printf("<tr %s><th colspan=2 %s>Document Length:</th>"
-       "<td colspan=2 %s>%" APR_SIZE_T_FMT " bytes</td></tr>\n",
-       trstring, tdstring, tdstring, doclen);
+    if (nolength)
+        printf("<tr %s><th colspan=2 %s>Document Length:</th>"
+            "<td colspan=2 %s>Variable</td></tr>\n",
+            trstring, tdstring, tdstring);
+    else
+        printf("<tr %s><th colspan=2 %s>Document Length:</th>"
+            "<td colspan=2 %s>%" APR_SIZE_T_FMT " bytes</td></tr>\n",
+            trstring, tdstring, tdstring, doclen);
     printf("<tr %s><th colspan=2 %s>Concurrency Level:</th>"
        "<td colspan=2 %s>%d</td></tr>\n",
        trstring, tdstring, tdstring, concurrency);
@@ -1100,16 +1107,16 @@ static void output_html_results(void)
            trstring, tdstring, tdstring, (double) done / timetaken);
         printf("<tr %s><th colspan=2 %s>Transfer rate:</th>"
            "<td colspan=2 %s>%.2f kb/s received</td></tr>\n",
-           trstring, tdstring, tdstring, (double) totalread / timetaken);
+           trstring, tdstring, tdstring, (double) totalread / 1024 / timetaken);
         if (send_body) {
             printf("<tr %s><td colspan=2 %s>&nbsp;</td>"
                "<td colspan=2 %s>%.2f kb/s sent</td></tr>\n",
                trstring, tdstring, tdstring,
-               (double) totalposted / timetaken);
+               (double) totalposted / 1024 / timetaken);
             printf("<tr %s><td colspan=2 %s>&nbsp;</td>"
                "<td colspan=2 %s>%.2f kb/s total</td></tr>\n",
                trstring, tdstring, tdstring,
-               (double) (totalread + totalposted) / timetaken);
+               (double) (totalread + totalposted) / 1024 / timetaken);
         }
     }
     {
@@ -1295,7 +1302,7 @@ static void close_connection(struct connection * c)
             /* first time here */
             doclen = c->bread;
         }
-        else if (c->bread != doclen) {
+        else if ((c->bread != doclen) && !nolength) {
             bad++;
             err_length++;
         }
@@ -1539,7 +1546,7 @@ static void read_connection(struct connection * c)
             /* first time here */
             doclen = c->bread;
         }
-        else if (c->bread != doclen) {
+        else if ((c->bread != doclen) && !nolength) {
             bad++;
             err_length++;
         }
@@ -1666,7 +1673,7 @@ static void test(void)
             keepalive ? "Connection: Keep-Alive\r\n" : "",
             cookie, auth,
             postlen,
-            (content_type[0]) ? content_type : "text/plain", hdrs);
+            (content_type != NULL) ? content_type : "text/plain", hdrs);
     }
     if (snprintf_res >= sizeof(_request)) {
         err("Request too long\n");
@@ -1703,7 +1710,7 @@ static void test(void)
         exit(1);
     }
 #endif              /* NOT_ASCII */
-    
+
     if (myhost) {
         /* This only needs to be done once */
         if ((rv = apr_sockaddr_info_get(&mysa, myhost, APR_UNSPEC, 0, 0, cntxt)) != APR_SUCCESS) {
@@ -1715,7 +1722,7 @@ static void test(void)
     }
 
     /* This too */
-    if ((rv = apr_sockaddr_info_get(&destsa, connecthost, 
+    if ((rv = apr_sockaddr_info_get(&destsa, connecthost,
                                     myhost ? mysa->family : APR_UNSPEC,
                                     connectport, 0, cntxt))
        != APR_SUCCESS) {
@@ -1903,6 +1910,7 @@ static void usage(const char *progname)
     fprintf(stderr, "    -d              Do not show percentiles served table.\n");
     fprintf(stderr, "    -S              Do not show confidence estimators and warnings.\n");
     fprintf(stderr, "    -q              Do not show progress when doing more than 150 requests\n");
+    fprintf(stderr, "    -l              Accept variable document length (use this for dynamic pages)\n");
     fprintf(stderr, "    -g filename     Output collected data to gnuplot format file.\n");
     fprintf(stderr, "    -e filename     Output CSV file with percentages served\n");
     fprintf(stderr, "    -r              Don't exit on socket receive errors.\n");
@@ -1922,7 +1930,7 @@ static void usage(const char *progname)
 #endif
 
     fprintf(stderr, "    -Z ciphersuite  Specify SSL/TLS cipher suite (See openssl ciphers)\n");
-    fprintf(stderr, "    -f protocol     Specify SSL/TLS protocol\n"); 
+    fprintf(stderr, "    -f protocol     Specify SSL/TLS protocol\n");
     fprintf(stderr, "                    (" SSL2_HELP_MSG "SSL3, TLS1" TLS1_X_HELP_MSG " or ALL)\n");
 #endif
     exit(EINVAL);
@@ -2059,7 +2067,7 @@ int main(int argc, const char * const argv[])
     tdstring = "bgcolor=white";
     cookie = "";
     auth = "";
-    proxyhost[0] = '\0';
+    proxyhost = "";
     hdrs = "";
 
     apr_app_initialize(&argc, &argv, NULL);
@@ -2087,7 +2095,7 @@ int main(int argc, const char * const argv[])
     myhost = NULL; /* 0.0.0.0 or :: */
 
     apr_getopt_init(&opt, cntxt, argc, argv);
-    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:rkVhwix:y:z:C:H:P:A:g:X:de:SqB:"
+    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:lrkVhwix:y:z:C:H:P:A:g:X:de:SqB:"
 #ifdef USE_SSL
             "Z:f:"
 #endif
@@ -2149,6 +2157,9 @@ int main(int argc, const char * const argv[])
                 method = PUT;
                 send_body = 1;
                 break;
+            case 'l':
+                nolength = 1;
+                break;
             case 'r':
                 recverrok = 1;
                 break;
@@ -2161,7 +2172,7 @@ int main(int argc, const char * const argv[])
                                              * something */
                 break;
             case 'T':
-                strcpy(content_type, opt_arg);
+                content_type = apr_pstrdup(cntxt, opt_arg);
                 break;
             case 'C':
                 cookie = apr_pstrcat(cntxt, "Cookie: ", opt_arg, "\r\n", NULL);
@@ -2232,7 +2243,7 @@ int main(int argc, const char * const argv[])
                         p++;
                         proxyport = atoi(p);
                     }
-                    strcpy(proxyhost, opt_arg);
+                    proxyhost = apr_pstrdup(cntxt, opt_arg);
                     isproxy = 1;
                 }
                 break;

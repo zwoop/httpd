@@ -144,9 +144,11 @@ static apr_status_t ap_session_load(request_rec * r, session_rec ** z)
         }
     }
 
-    /* make sure the expiry is set, if present */
-    if (!zz->expiry && dconf->maxage) {
-        zz->expiry = now + dconf->maxage * APR_USEC_PER_SEC;
+    /* make sure the expiry and maxage are set, if present */
+    if (dconf->maxage) {
+        if (!zz->expiry) {
+            zz->expiry = now + dconf->maxage * APR_USEC_PER_SEC;
+        }
         zz->maxage = dconf->maxage;
     }
 
@@ -193,6 +195,11 @@ static apr_status_t ap_session_save(request_rec * r, session_rec * z)
             z->expiry = now + dconf->maxage * APR_USEC_PER_SEC;
             z->maxage = dconf->maxage;
         }
+
+        /* reset the expiry before saving if present */
+        if (z->dirty && z->maxage) {
+            z->expiry = now + z->maxage * APR_USEC_PER_SEC;
+        } 
 
         /* encode the session */
         rv = ap_run_session_encode(r, z);
@@ -443,6 +450,8 @@ static apr_status_t session_output_filter(ap_filter_t * f,
                 override = apr_table_get(r->headers_out, conf->header);
             }
             if (override) {
+                apr_table_unset(r->err_headers_out, conf->header);
+                apr_table_unset(r->headers_out, conf->header);
                 z->encoded = override;
                 z->dirty = 1;
                 session_identity_decode(r, z);

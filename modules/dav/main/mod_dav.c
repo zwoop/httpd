@@ -396,11 +396,9 @@ static int dav_error_response_tag(request_rec *r,
  */
 static const char *dav_xml_escape_uri(apr_pool_t *p, const char *uri)
 {
-    const char *e_uri = ap_escape_uri(p, uri);
-
     /* check the easy case... */
-    if (ap_strchr_c(e_uri, '&') == NULL)
-        return e_uri;
+    if (ap_strchr_c(uri, '&') == NULL)
+        return uri;
 
     /* there was a '&', so more work is needed... sigh. */
 
@@ -408,7 +406,7 @@ static const char *dav_xml_escape_uri(apr_pool_t *p, const char *uri)
      * Note: this is a teeny bit of overkill since we know there are no
      * '<' or '>' characters, but who cares.
      */
-    return apr_xml_quote_string(p, e_uri, 0);
+    return apr_xml_quote_string(p, uri, 0);
 }
 
 
@@ -604,7 +602,8 @@ static int dav_handle_err(request_rec *r, dav_error *err,
     return DONE;
 }
 
-/* handy function for return values of methods that (may) create things */
+/* handy function for return values of methods that (may) create things.
+ * locn if provided is assumed to be escaped. */
 static int dav_created(request_rec *r, const char *locn, const char *what,
                        int replaced)
 {
@@ -612,8 +611,6 @@ static int dav_created(request_rec *r, const char *locn, const char *what,
 
     if (locn == NULL) {
         locn = r->unparsed_uri;
-    } else {
-        locn = ap_escape_uri(r->pool, locn);
     }
 
     /* did the target resource already exist? */
@@ -2756,7 +2753,7 @@ static int dav_method_copymove(request_rec *r, int is_move)
      * The multistatus responses will contain the information about any
      * resource that fails the validation.
      *
-     * We check the parent resource, too, since this is a MOVE. Moving the
+     * We check the parent resource, too, if this is a MOVE. Moving the
      * resource effectively removes it from the parent collection, so we
      * must ensure that we have met the appropriate conditions.
      *
@@ -2765,7 +2762,9 @@ static int dav_method_copymove(request_rec *r, int is_move)
      */
     if ((err = dav_validate_request(r, resource, depth, NULL,
                                     &multi_response,
-                                    DAV_VALIDATE_PARENT
+                                    (is_move ? DAV_VALIDATE_PARENT
+                                             : DAV_VALIDATE_RESOURCE
+                                               | DAV_VALIDATE_NO_MODIFY)
                                     | DAV_VALIDATE_USE_424,
                                     NULL)) != NULL) {
         err = dav_push_error(r->pool, err->status, 0,
@@ -3002,7 +3001,7 @@ static int dav_method_copymove(request_rec *r, int is_move)
     }
 
     /* return an appropriate response (HTTP_CREATED or HTTP_NO_CONTENT) */
-    return dav_created(r, lookup.rnew->uri, "Destination",
+    return dav_created(r, lookup.rnew->unparsed_uri, "Destination",
                        resnew_state == DAV_RESOURCE_EXISTS);
 }
 
@@ -4608,7 +4607,7 @@ static int dav_method_bind(request_rec *r)
 
     /* return an appropriate response (HTTP_CREATED) */
     /* ### spec doesn't say what happens when destination was replaced */
-    return dav_created(r, lookup.rnew->uri, "Binding", 0);
+    return dav_created(r, lookup.rnew->unparsed_uri, "Binding", 0);
 }
 
 

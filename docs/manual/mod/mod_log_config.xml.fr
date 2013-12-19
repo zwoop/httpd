@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1421892 -->
+<!-- English Revision : 1523269 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -37,7 +37,7 @@ serveur</description>
     personnalisable, et peuvent &ecirc;tre enregistr&eacute;s directement dans un
     fichier, ou redirig&eacute;s vers un programme externe. La journalisation
     conditionnelle est support&eacute;e, si bien que des requ&ecirc;tes individuelles
-    peuvent &ecirc;tre incluses ou exclues des journaux en fonction de leurs
+    peuvent &ecirc;tre incluses ou exclues des journaux en fonction de leur
     caract&eacute;ristiques.</p>
 
     <p>Ce module fournit trois directives : <directive
@@ -62,7 +62,7 @@ d'Apache</a></seealso>
     requ&ecirc;tes dans le fichier journal. Elle peut contenir des caract&egrave;res
     litt&eacute;raux qui seront reproduits dans le fichier journal, et les
     caract&egrave;res de contr&ocirc;le de style C "\n" et "\t" repr&eacute;sentant
-    respectivement un saut &agrave; la ligne et une tabulation. Les guillemets
+    respectivement une nouvelle ligne et une tabulation. Les guillemets
     et les anti-slashes litt&eacute;raux doivent &ecirc;tre &eacute;chapp&eacute;s &agrave; l'aide
     d'anti-slashes.</p>
 
@@ -80,10 +80,11 @@ d'Apache</a></seealso>
         <td>Le signe "pourcentage"</td></tr>
 
     <tr><td><code>%a</code></td>
-        <td>Le port et l'adresse IP distants</td></tr>
+        <td>L'adresse IP distante (voir le module
+	<module>mod_remoteip</module>).</td></tr>
 
     <tr><td><code>%{c}a</code></td>
-        <td>Port et adresse IP distants sous-jacents de la connexion (voir le module
+        <td>Adresse IP distante de la connexion(voir le module
 	<module>mod_remoteip</module>)</td></tr>
 
     <tr><td><code>%A</code></td>
@@ -95,8 +96,8 @@ d'Apache</a></seealso>
 
     <tr><td><code>%b</code></td>
         <td>La taille de la r&eacute;ponse en octets, en excluant les en-t&ecirc;tes
-	HTTP. Au format <code>"Common Log Format" (CLF)</code> , c'est &agrave; dire
-        un '<code>-</code>' &agrave; la place d'un 0 lorsqu'aucun octet n'est renvoy&eacute;.</td></tr>
+	HTTP. Au format CLF , c'est &agrave; dire un '<code>-</code>' &agrave; la
+	place d'un 0 lorsqu'aucun octet n'est renvoy&eacute;.</td></tr>
 
     <tr><td><code>%{<var>NOMVAR</var>}C</code></td>
         <td>Le contenu du cookie <var>NOMVAR</var> dans la requ&ecirc;te
@@ -115,10 +116,10 @@ d'Apache</a></seealso>
         <td>Nom de fichier</td></tr>
 
     <tr><td><code>%h</code></td>
-        <td>Nom de l'h&ocirc;te distant. Contiendra son adresse IP si la directive
+        <td>Serveur distant. Contiendra l'adresse IP si la directive
 	<directive module="core">HostnameLookups</directive> est d&eacute;finie
 	&agrave; <code>Off</code>, ce qui est sa valeur par d&eacute;faut. Si cette
-	adresse IP n'est enregistr&eacute;e que pour certains h&ocirc;tes, vous
+	adresse IP n'est enregistr&eacute;e que pour certains serveurs, vous
 	avez probablement d&eacute;fini des directives de contr&ocirc;le d'acc&egrave;s qui
 	mentionnent ces derniers par leurs noms. Voir la <a
         href="mod_authz_host.html#reqhost">documentation de Require
@@ -130,10 +131,10 @@ d'Apache</a></seealso>
     <tr><td><code>%{<var>NOMVAR</var>}i</code></td>
         <td>Le contenu des lignes d'en-t&ecirc;te
 	<code><var>NOMVAR</var>:</code> dans la requ&ecirc;te envoy&eacute;e au
-	serveur. Ces en-t&ecirc;tes peuvent avoir &eacute;t&eacute; modifi&eacute;s par d'autres
-        modules (par exemple <module>mod_headers</module>). Si vous
-        &ecirc;tes int&eacute;ress&eacute; par ce qu'&eacute;tait l'en-t&ecirc;te de la requ&ecirc;te avant
-        d'&ecirc;tre modifi&eacute; par la plupart des modules, utilisez
+	serveur. Ces en-t&ecirc;tes sont ajout&eacute;s par d'autres modules (par
+	exemple <module>mod_headers</module>). Si vous &ecirc;tes int&eacute;ress&eacute;
+	par ce qu'&eacute;tait l'en-t&ecirc;te de la requ&ecirc;te avant d'&ecirc;tre modifi&eacute;
+	par la plupart des modules, utilisez
 	<module>mod_setenvif</module> pour copier l'en-t&ecirc;te dans une
 	variable d'environnement interne et journaliser sa valeur via
 	le champ <code>%{<var>VARNAME</var>}e</code> d&eacute;crit plus haut.
@@ -142,7 +143,7 @@ d'Apache</a></seealso>
 
     <tr><td><code>%k</code></td>
         <td>Nombre de requ&ecirc;tes persistantes en cours pour cette
-	connexion. Int&eacute;ressant si la directive <directive
+	connexion. Interessant si la directive <directive
 	module="core">KeepAlive</directive> est utilis&eacute;e ; par exemple,
 	'1' signifie la premi&egrave;re requ&ecirc;te apr&egrave;s la requ&ecirc;te initiale, '2'
 	la seconde, etc... ; autrement, il s'agit toujours de 0
@@ -208,19 +209,19 @@ d'Apache</a></seealso>
 	la derni&egrave;re.</td></tr>
 
     <tr><td><code>%t</code></td>
-        <td>Date &agrave; laquelle la requ&ecirc;te a &eacute;t&eacute; re&ccedil;ue (au format [18/Sep/2011:19:18:28 -0400])
-	Le dernier nombre indique le d&eacute;calage horaire par rapport &agrave; l'heure GMT.</td></tr>
+        <td>Date &agrave; laquelle la requ&ecirc;te a &eacute;t&eacute; re&ccedil;ue (au format anglais
+	standard)</td></tr>
 
     <tr><td><code>%{<var>format</var>}t</code></td>
         <td>La date, sous la forme sp&eacute;cifi&eacute;e par format, qui devrait
-	&ecirc;tre au format &eacute;tendu <code>strftime(3)</code> (possiblement
+	&ecirc;tre au format &eacute;tendu <code>strftime(3)</code> (&eacute;ventuellement
 	localis&eacute;). Si le format commence par <code>begin:</code> (valeur
 	par d&eacute;faut), la date est extraite au d&eacute;but du traitement de la
 	requ&ecirc;te ; s'il commence par <code>end:</code>, la date
 	correspond au moment o&ugrave; l'entr&eacute;e du journal est inscrite, par
 	cons&eacute;quent vers la fin du traitement de la requ&ecirc;te. Hormis les
 	formats support&eacute;s par <code>strftime(3)</code>, les formats
-	suivants sont &eacute;galement disponibles :
+	suivants sont aussi disponibles :
         <table>
         <tr><td><code>sec</code></td><td>nombre de secondes depuis Epoch</td></tr>
         <tr><td><code>msec</code></td><td>nombre de millisecondes depuis  Epoch</td></tr>
@@ -230,21 +231,19 @@ d'Apache</a></seealso>
         </table>
         Ces symboles ne peuvent pas &ecirc;tre combin&eacute;s entre eux ou avec un
 	formatage <code>strftime(3)</code> dans la m&ecirc;me cha&icirc;ne de
-	format. Vous pouvez en revanche utiliser plusieurs symboles
+	format. Par contre, vous pouvez utiliser plusieurs symboles
 	<code>%{<var>format</var>}t</code>.</td></tr>
 
     <tr><td><code>%T</code></td>
         <td>Le temps mis pour servir la requ&ecirc;te, en secondes.</td></tr>
 
     <tr><td><code>%u</code></td>
-        <td>Le nom d'utilisateur distant, si la requ&ecirc;te a fait l'objet d'une
-        authentification par le client (ce champ peut &ecirc;tre consid&eacute;r&eacute; comme
-        erron&eacute; ou sans int&eacute;r&ecirc;t si le statut de retour (<code>%s</code>) est
-        401).</td></tr>
+        <td>L'utilisateur distant (en provenance d'auth ; peut &ecirc;tre faux
+	si le statut de retour (<code>%s</code>) est 401).</td></tr>
 
     <tr><td><code>%U</code></td>
         <td>Le chemin de la requ&ecirc;te, &agrave; l'exclusion de toute cha&icirc;ne
-	d'arguments ("<code>query string</code>").</td></tr>
+	d'arguments.</td></tr>
 
     <tr><td><code>%v</code></td>
         <td>Le nom canonique du serveur qui a servi la requ&ecirc;te, d&eacute;fini
@@ -252,12 +251,13 @@ d'Apache</a></seealso>
 	module="core">ServerName</directive>.</td></tr>
 
     <tr><td><code>%V</code></td>
-        <td>Le nom du serveur en tenant compte de la d&eacute;finition de la
+        <td>La nom du serveur en tenant compte de la d&eacute;finition de la
 	directive <directive module="core"
         >UseCanonicalName</directive>.</td></tr>
 
     <tr><td><code>%X</code></td>
-        <td>Statut de la connexion lorsque la r&eacute;ponse a &eacute;t&eacute; renvoy&eacute;e :
+        <td>Statut de la connexion lorsque la r&eacute;ponse a &eacute;t&eacute; renvoy&eacute;e
+	:
 
         <table>
         <columnspec><column width=".2"/><column width=".6"/></columnspec>
@@ -279,9 +279,17 @@ d'Apache</a></seealso>
 	<module>mod_logio</module>.</td></tr>
 
     <tr><td><code>%O</code></td>
-        <td>Le nombre d'octets envoy&eacute;s, y compris les en-t&ecirc;tes, ne peut
+        <td>Nombre d'octets envoy&eacute;s, y compris les en-t&ecirc;tes, ne peut
 	&ecirc;tre nul. N&eacute;cessite l'activation de
 	<module>mod_logio</module>.</td></tr>
+
+    <tr><td><code>%S</code></td>
+        <td>Nombre d'octets transmis (en &eacute;mission et r&eacute;ception), y
+	compris corps et en-t&ecirc;tes de requ&ecirc;te. Ce nombre ne peut pas &ecirc;tre
+	nul, et il correspond &agrave; la combinaison des formats %I et %O.
+	<module>mod_logio</module> doit &ecirc;tre charg&eacute; pour pouvoir
+	utiliser ce format.</td></tr>
+
     </table>
 
     <section id="modifiers"><title>Modificateurs</title>
@@ -290,28 +298,14 @@ d'Apache</a></seealso>
       &eacute;l&eacute;ments
       en fonction du code de statut de la r&eacute;ponse, en ins&eacute;rant une liste
       de codes de statut s&eacute;par&eacute;s par des virgules imm&eacute;diatement apr&egrave;s le
-      caract&egrave;re "%". La liste des codes de statut peut &ecirc;tre pr&eacute;c&eacute;d&eacute;e
-      d'un "<code>!</code>" pour formuler une n&eacute;gation.</p>
-
-      <table border="1" style="zebra">
-      <columnspec><column width=".2"/><column width=".8"/></columnspec>
-      <tr><th>Cha&icirc;ne de caract&egrave;res de formatage</th>
-      <th>Interpr&eacute;tation</th></tr>
-
-      <tr>
-      <td><code>%400,501{User-agent}i</code></td>
-
-      <td>Enregistrera l'en-t&ecirc;te <code>User-agent</code> uniquementdans le
-      cas d'une erreur 400 ou 501. Avec les autres codes de statut, c'est la
-      cha&icirc;ne litt&eacute;rale <code>"-"</code> qui sera enregistr&eacute;e.
-      </td></tr>
-
-       <tr><td><code>%!200,304,302{Referer}i</code></td>
-       <td>
-       Enregistrera l'en-t&ecirc;te <code>Referer</code> pour toutes les requ&ecirc;tes qui
-      <em>ne</em> renvoient <em>aucun</em> des trois codes sp&eacute;cifi&eacute;s.
-      </td></tr>
-      </table>
+      caract&egrave;re "%". Par exemple, <code>"%400,501{User-agent}i"</code>
+      n'enregistrera l'en-t&ecirc;te <code>User-agent</code> que dans le cas
+      d'une erreur 400 ou 501. Avec les autres codes de statut, c'est la
+      cha&icirc;ne litt&eacute;rale <code>"-"</code> qui sera enregistr&eacute;e. La liste
+      de codes peut &ecirc;tre pr&eacute;c&eacute;d&eacute;e d'un "<code>!</code>" pour inverser la
+      condition : <code>"%!200,304,302{Referer}i"</code> enregistre
+      l'en-t&ecirc;te <code>Referer</code> pour toutes les requ&ecirc;tes qui
+      <em>ne</em> renvoient <em>pas</em> un des trois codes sp&eacute;cifi&eacute;s.</p>
 
       <p>Les modificateurs "&lt;" et "&gt;" peuvent &ecirc;tre utilis&eacute;s pour
       les requ&ecirc;tes qui ont &eacute;t&eacute; redirig&eacute;es en interne afin de choisir si
@@ -338,11 +332,11 @@ d'Apache</a></seealso>
       <code>\</code> doivent &ecirc;tre &eacute;chapp&eacute;s par un anti-slash, et tous
       les "blancs" doivent &ecirc;tre &eacute;crits selon leur notation de style C
       (<code>\n</code>, <code>\t</code>, etc...). Avant la version
-      2.0.46, aucun &eacute;chappement n'&eacute;tait r&eacute;alis&eacute; sur ces cha&icirc;nes, et il
+      2.0.46, aucun &eacute;chappement n'&eacute;tait effectu&eacute; sur ces cha&icirc;nes, et il
       fallait &ecirc;tre tr&egrave;s prudent lors de l'exploitation des journaux
       bruts.</p>
 
-      <p>&Agrave; la diff&eacute;rence de la version 1.3, dans httpd 2.0, les cha&icirc;nes
+      <p>A la diff&eacute;rence de la version 1.3, dans httpd 2.0, les cha&icirc;nes
       de format <code>%b</code> et <code>%B</code> ne repr&eacute;sentent pas
       le nombre d'octets envoy&eacute;s au client, mais simplement la taille en
       octets de la r&eacute;ponse HTTP (les deux &eacute;tant diff&eacute;rents, par exemple,
@@ -350,13 +344,11 @@ d'Apache</a></seealso>
       <code>%O</code> fourni par <module>mod_logio</module>,
       enregistrera le nombre r&eacute;el d'octets envoy&eacute;s sur le r&eacute;seau.</p>
 
-      <note>
       <p>Note : <module>mod_cache</module> est impl&eacute;ment&eacute; en tant que
       gestionnaire basique et non en tant que gestionnaire standard.
       C'est pourquoi la cha&icirc;ne de format <code>%R</code> ne renverra pas
       d'information &agrave; propos du gestionnaire lorsqu'une mise en cache de
       contenu entre en jeu.</p>
-      </note>
 
     </section>
 
@@ -365,13 +357,13 @@ d'Apache</a></seealso>
       <p>Quelques cha&icirc;nes de format couramment utilis&eacute;es :</p>
 
       <dl>
-        <dt>Format de journal courant (Common Log Format - CLF)</dt>
+        <dt>Format de journal courant (CLF)</dt>
         <dd><code>"%h %l %u %t \"%r\" %&gt;s %b"</code></dd>
 
         <dt>Format de journal courant avec un serveur virtuel</dt>
         <dd><code>"%v %h %l %u %t \"%r\" %&gt;s %b"</code></dd>
 
-        <dt>Format de journal NCSA &eacute;tendu/combin&eacute;</dt>
+        <dt>Format de journal NCSA &eacute;tandu/combin&eacute;</dt>
         <dd><code>"%h %l %u %t \"%r\" %&gt;s %b \"%{Referer}i\"
         \"%{User-agent}i\""</code></dd>
 
@@ -416,7 +408,7 @@ avant de les &eacute;crire sur disque</description>
 
 <usage>
     <p>Lorsque la directive <directive>BufferedLogs</directive> est &agrave;
-    "on", <module>mod_log_config</module> conserve plusieurs entr&eacute;es
+    "on", <module>mod_log_config</module> stocke de nombreuses entr&eacute;es
     du journal en m&eacute;moire, et les &eacute;crit d'un seul bloc sur disque,
     plut&ocirc;t que de les &eacute;crire apr&egrave;s chaque requ&ecirc;te. Sur certains
     syst&egrave;mes, ceci peut am&eacute;liorer l'efficacit&eacute; des acc&egrave;s disque, et par
@@ -425,8 +417,27 @@ avant de les &eacute;crire sur disque</description>
     d&eacute;finie au niveau d'un serveur virtuel.</p>
 
     <note>Cette directive doit &ecirc;tre utilis&eacute;e avec
-    pr&eacute;caution car un crash peut provoquer la perte de donn&eacute;es de
+    pr&eacute;cautions car un crash peut provoquer la perte de donn&eacute;es de
     journalisation.</note>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>CookieLog</name>
+<description>D&eacute;finit le nom du fichier pour la journalisation des
+cookies</description>
+<syntax>CookieLog <var>nom-fichier</var></syntax>
+<contextlist><context>server config</context><context>virtual host</context>
+</contextlist>
+<compatibility>Cette directive est obsol&egrave;te.</compatibility>
+
+<usage>
+    <p>La directive <directive>CookieLog</directive> permet de d&eacute;finir
+    le nom du fichier pour la journalisation des cookies. Le nom du
+    fichier est relatif au r&eacute;pertoire d&eacute;fini par la directive <directive
+    module="core">ServerRoot</directive>. Cette directive n'est pr&eacute;sente
+    qu'&agrave; des fins de compatibilit&eacute; avec with <code>mod_cookies</code>,
+    et est obsol&egrave;te.</p>
 </usage>
 </directivesynopsis>
 
@@ -442,11 +453,11 @@ expr=<var>expression</var>]</syntax>
 </contextlist>
 
 <usage>
-    <p>La directive <directive>CustomLog</directive> contr&ocirc;le
+    <p>La directive <directive>CustomLog</directive> permet de contr&ocirc;ler
     la journalisation des requ&ecirc;tes destin&eacute;es au serveur. Un format de
-    journalisation est sp&eacute;cifi&eacute;, et la journalisation peut s'effectuer de
+    journal est sp&eacute;cifi&eacute;, et la journalisation peut s'effectuer de
     mani&egrave;re conditionnelle en fonction des caract&eacute;ristiques de la
-    requ&ecirc;te au moyen de variables d'environnement.</p>
+    requ&ecirc;te en utilisant des variables d'environnement.</p>
 
     <p>Le premier argument, qui sp&eacute;cifie l'emplacement o&ugrave; les journaux
     seront &eacute;crits, accepte deux types de valeurs :</p>

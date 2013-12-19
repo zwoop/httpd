@@ -71,6 +71,9 @@ açıklanmıştır.</p>
     son karakteri “\” (tersbölü) olmalı, satırsonu karakteri ile bu tersbölü
     karakteri arasında başka karakter bulunmamalıdır.</p>
 
+    <p>Yönergelerdeki değiştirgeler boşluklarla ayrılır. Eğer bir değiştirge
+    kendi içinde boşluklar içeriyorsa tırnak içine alınır.</p>
+
     <p>Yapılandırma dosyalarındaki yönergelerin isimleri harf büyüklüğüne
     duyarlı olduğu halde argümanları genellikle harf büyüklüğüne duyarlı
     değildir. Diyez (“#”) karakteri ile başlayan satırlar açıklama olarak

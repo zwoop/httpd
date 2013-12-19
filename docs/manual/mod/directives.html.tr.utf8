@@ -81,6 +81,7 @@
 <li><a href="mod_auth_basic.html#authbasicauthoritative">AuthBasicAuthoritative</a></li>
 <li><a href="mod_auth_basic.html#authbasicfake">AuthBasicFake</a></li>
 <li><a href="mod_auth_basic.html#authbasicprovider">AuthBasicProvider</a></li>
+<li><a href="mod_auth_basic.html#authbasicusedigestalgorithm">AuthBasicUseDigestAlgorithm</a></li>
 <li><a href="mod_authn_dbd.html#authdbduserpwquery">AuthDBDUserPWQuery</a></li>
 <li><a href="mod_authn_dbd.html#authdbduserrealmquery">AuthDBDUserRealmQuery</a></li>
 <li><a href="mod_authz_dbm.html#authdbmgroupfile">AuthDBMGroupFile</a></li>
@@ -346,6 +347,7 @@
 <li><a href="mod_lua.html#luahookcheckuserid">LuaHookCheckUserID</a></li>
 <li><a href="mod_lua.html#luahookfixups">LuaHookFixups</a></li>
 <li><a href="mod_lua.html#luahookinsertfilter">LuaHookInsertFilter</a></li>
+<li><a href="mod_lua.html#luahooklog">LuaHookLog</a></li>
 <li><a href="mod_lua.html#luahookmaptostorage">LuaHookMapToStorage</a></li>
 <li><a href="mod_lua.html#luahooktranslatename">LuaHookTranslateName</a></li>
 <li><a href="mod_lua.html#luahooktypechecker">LuaHookTypeChecker</a></li>
@@ -608,7 +610,7 @@
 <li><a href="mod_log_config.html#transferlog">TransferLog</a></li>
 <li><a href="mod_mime.html#typesconfig">TypesConfig</a></li>
 <li><a href="core.html#undefine" id="U" name="U">UnDefine</a></li>
-<li><a href="mod_macro.html#undefmacro">undefMacro</a></li>
+<li><a href="mod_macro.html#undefmacro">UndefMacro</a></li>
 <li><a href="mod_env.html#unsetenv">UnsetEnv</a></li>
 <li><a href="mod_macro.html#use">Use</a></li>
 <li><a href="core.html#usecanonicalname">UseCanonicalName</a></li>

@@ -48,8 +48,7 @@
 <ul><li><a href="install.html">Compilation et installation</a></li>
 <li><a href="invoking.html">Démarrage</a></li>
 <li><a href="stopping.html">Arrêt ou redémarrage</a></li>
-<li><a href="mod/directives.html">Directives de configuration à l'exécution</a></li>
-<li><a href="mod/quickreference.html">Référence rapide des directives</a></li>
+<li><a href="mod/quickreference.html">Directives de configuration à l'exécution</a></li>
 <li><a href="mod/">Modules</a></li>
 <li><a href="mpm.html">Modules multi-processus (MPMs)</a></li>
 <li><a href="filter.html">Filtres</a></li>
@@ -59,7 +58,8 @@
 <li><a href="glossary.html">Glossaire</a></li>
 </ul>
 </div></td><td><div class="category"><h2><a name="usersguide" id="usersguide">Guide de l'utilisateur</a></h2>
-<ul><li><a href="bind.html">Ecoute sélective</a></li>
+<ul><li><a href="getting-started.html">Bien démarrer</a></li>
+<li><a href="bind.html">Ecoute sélective</a></li>
 <li><a href="configuring.html">Fichiers de configuration</a></li>
 <li><a href="sections.html">Sections de configuration</a></li>
 <li><a href="caching.html">Mise en cache du contenu</a></li>

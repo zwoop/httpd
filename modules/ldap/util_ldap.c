@@ -60,6 +60,7 @@
 #endif
 
 #define AP_LDAP_HOPLIMIT_UNSET -1
+#define AP_LDAP_CHASEREFERRALS_SDKDEFAULT -1
 #define AP_LDAP_CHASEREFERRALS_OFF 0
 #define AP_LDAP_CHASEREFERRALS_ON 1
 
@@ -364,7 +365,7 @@ static int uldap_connection_init(request_rec *r,
     ldap_option = ldc->deref;
     ldap_set_option(ldc->ldap, LDAP_OPT_DEREF, &ldap_option);
 
-    if (ldc->ChaseReferrals == AP_LDAP_CHASEREFERRALS_ON) {
+    if (ldc->ChaseReferrals != AP_LDAP_CHASEREFERRALS_SDKDEFAULT) {
         /* Set options for rebind and referrals. */
         ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01278)
                 "LDAP: Setting referrals to %s.",
@@ -384,7 +385,9 @@ static int uldap_connection_init(request_rec *r,
             uldap_connection_unbind(ldc);
             return(result->rc);
         }
+    }
 
+    if (ldc->ChaseReferrals == AP_LDAP_CHASEREFERRALS_ON) {
         if ((ldc->ReferralHopLimit != AP_LDAP_HOPLIMIT_UNSET) && ldc->ChaseReferrals == AP_LDAP_CHASEREFERRALS_ON) {
             /* Referral hop limit - only if referrals are enabled and a hop limit is explicitly requested */
             ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, r->server, APLOGNO(01280)
@@ -941,6 +944,7 @@ start_over:
                       "failed with server down";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
     if (result == LDAP_TIMEOUT && failures == 0) {
@@ -952,6 +956,7 @@ start_over:
                       "failed with timeout";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
     if (result != LDAP_SUCCESS) {
@@ -1096,6 +1101,7 @@ start_over:
         ldc->reason = "ldap_compare_s() failed with server down";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
     if (result == LDAP_TIMEOUT && failures == 0) {
@@ -1106,6 +1112,7 @@ start_over:
         ldc->reason = "ldap_compare_s() failed with timeout";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
 
@@ -1206,13 +1213,14 @@ start_over:
 
     /* try to do the search */
     result = ldap_search_ext_s(ldc->ldap, (char *)dn, LDAP_SCOPE_BASE,
-                               (char *)"cn=*", subgroupAttrs, 0,
+                               NULL, subgroupAttrs, 0,
                                NULL, NULL, NULL, APR_LDAP_SIZELIMIT, &sga_res);
     if (AP_LDAP_IS_SERVER_DOWN(result)) {
         ldc->reason = "ldap_search_ext_s() for subgroups failed with server"
                       " down";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
     if (result == LDAP_TIMEOUT && failures == 0) {
@@ -1223,6 +1231,7 @@ start_over:
         ldc->reason = "ldap_search_ext_s() for subgroups failed with timeout";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
 
@@ -1691,8 +1700,18 @@ start_over:
         ldc->reason = "ldap_search_ext_s() for user failed with server down";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
+
+    if (result == LDAP_TIMEOUT) {
+        ldc->reason = "ldap_search_ext_s() for user failed with timeout";
+        uldap_connection_unbind(ldc);
+        failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
+        goto start_over;
+    }
+
 
     /* if there is an error (including LDAP_NO_SUCH_OBJECT) return now */
     if (result != LDAP_SUCCESS) {
@@ -1754,6 +1773,7 @@ start_over:
         ldap_msgfree(res);
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
 
@@ -1949,6 +1969,7 @@ start_over:
         ldc->reason = "ldap_search_ext_s() for user failed with server down";
         uldap_connection_unbind(ldc);
         failures++;
+        ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r, "%s (attempt %d)", ldc->reason, failures);
         goto start_over;
     }
 
@@ -2536,15 +2557,25 @@ static const char *util_ldap_set_connection_timeout(cmd_parms *cmd,
 
 static const char *util_ldap_set_chase_referrals(cmd_parms *cmd,
                                                  void *config,
-                                                 int mode)
+                                                 const char *arg)
 {
     util_ldap_config_t *dc =  config;
 
     ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, cmd->server, APLOGNO(01311)
-                      "LDAP: Setting referral chasing %s",
-                      (mode == AP_LDAP_CHASEREFERRALS_ON) ? "ON" : "OFF");
+                      "LDAP: Setting referral chasing %s", arg);
 
-    dc->ChaseReferrals = mode;
+    if (0 == strcasecmp(arg, "on")) {
+        dc->ChaseReferrals = AP_LDAP_CHASEREFERRALS_ON;
+    }
+    else if (0 == strcasecmp(arg, "off")) {
+        dc->ChaseReferrals = AP_LDAP_CHASEREFERRALS_OFF;
+    }
+    else if (0 == strcasecmp(arg, "default")) {
+        dc->ChaseReferrals = AP_LDAP_CHASEREFERRALS_SDKDEFAULT;
+    }
+    else {
+        return "LDAPReferrals must be 'on', 'off', or 'default'";
+    }
 
     return(NULL);
 }
@@ -3076,9 +3107,9 @@ static const command_rec util_ldap_cmds[] = {
                   "Specify the LDAP socket connection timeout in seconds "
                   "(default: 10)"),
 
-    AP_INIT_FLAG("LDAPReferrals", util_ldap_set_chase_referrals,
+    AP_INIT_TAKE1("LDAPReferrals", util_ldap_set_chase_referrals,
                   NULL, OR_AUTHCFG,
-                  "Choose whether referrals are chased ['ON'|'OFF'].  Default 'ON'"),
+                  "Choose whether referrals are chased ['ON'|'OFF'|'DEFAULT'].  Default 'ON'"),
 
     AP_INIT_TAKE1("LDAPReferralHopLimit", util_ldap_set_referral_hop_limit,
                   NULL, OR_AUTHCFG,

@@ -80,12 +80,16 @@ d'Apache</a></li>
 
     <table class="bordered"><tr class="header"><th>Chaîne&nbsp;de&nbsp;Format</th>
         <th>Description</th></tr>
-<tr><td><code>%...I</code></td>
+<tr><td><code>%I</code></td>
         <td>Octets reçus, en-têtes et corps de requête inclus ; ne peut
 	pas être nul.</td></tr>
-<tr class="odd"><td><code>%...O</code></td>
+<tr class="odd"><td><code>%O</code></td>
         <td>Octets envoyés, en-têtes inclus ; ne peut
 	pas être nul.</td></tr>
+<tr><td><code>%S</code></td>
+	<td>Nombre d'octets transmis (en émission et réception), y
+	compris corps et en-têtes de requête. Ce nombre ne peut pas être
+	nul, et il correspond à la combinaison des formats %I et %O.</td></tr>
 </table>
 
     <p>En général, cette fonctionnalité s'utilise comme suit :</p>

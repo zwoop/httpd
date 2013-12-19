@@ -3,7 +3,7 @@
 <?xml-stylesheet type="text/xsl" href="./style/manual.fr.xsl"?>
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
-<!-- English Revision : 1333447 -->
+<!-- English Revision : 1524238 -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -40,8 +40,7 @@
     <page href="install.html">Compilation et installation</page>
     <page href="invoking.html">D&eacute;marrage</page>
     <page href="stopping.html">Arr&ecirc;t ou red&eacute;marrage</page>
-    <page href="mod/directives.html">Directives de configuration &agrave; l'ex&eacute;cution</page>
-    <page href="mod/quickreference.html">R&eacute;f&eacute;rence rapide des directives</page>
+    <page href="mod/quickreference.html">Directives de configuration &agrave; l'ex&eacute;cution</page>
     <page href="mod/">Modules</page>
     <page href="mpm.html">Modules multi-processus (MPMs)</page>
     <page href="filter.html">Filtres</page>
@@ -52,6 +51,7 @@
 </category>
 
 <category id="usersguide"><title>Guide de l'utilisateur</title>
+    <page href="getting-started.html">Bien d&eacute;marrer</page>
     <page href="bind.html">Ecoute s&eacute;lective</page>
     <page href="configuring.html">Fichiers de configuration</page>
     <page href="sections.html">Sections de configuration</page>
