@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_proxy_fcgi - Serveur Apache HTTP</title>
+<title>mod_proxy_fcgi - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -27,6 +27,8 @@
 <p><span>Langues Disponibles: </span><a href="../en/mod/mod_proxy_fcgi.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
 <a href="../fr/mod/mod_proxy_fcgi.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div>
+<div class="outofdate">Cette traduction peut être périmée. Vérifiez la version
+            anglaise pour les changements récents.</div>
 <table class="module"><tr><th><a href="module-dict.html#Description">Description:</a></th><td>Module fournissant le support de FastCGI à
 <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code></td></tr>
 <tr><th><a href="module-dict.html#Status">Statut:</a></th><td>Extension</td></tr>
@@ -73,9 +75,7 @@
     d'activer <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code> et
     <code class="module"><a href="../mod/mod_proxy_fcgi.html">mod_proxy_fcgi</a></code>.</p>
 
-    <div class="example"><h3>Instance d'application unique</h3><pre class="prettyprint lang-config">
-      ProxyPass /mon_appli/ fcgi://localhost:4000/
-      </pre>
+    <div class="example"><h3>Instance d'application unique</h3><pre class="prettyprint lang-config">ProxyPass /mon_appli/ fcgi://localhost:4000/</pre>
 </div>
 
     <p>Cette application doit être en mesure de gérer plusieurs
@@ -93,9 +93,23 @@
     suivant :</p>
 
     <div class="example"><h3>Instance d'application unique, pas de réutilisation
-    des connexions</h3><pre class="prettyprint lang-config">
-      ProxyPass /mon_appli/ fcgi://localhost:4000/ disablereuse=on
-      </pre>
+    des connexions</h3><pre class="prettyprint lang-config">ProxyPass /mon_appli/ fcgi://localhost:4000/ disablereuse=on</pre>
+</div>
+
+    <p>Dans l'exemple suivant, l'URI de la requête est transmis en tant
+    que chemin du système de fichiers pour l'exécution du démon PHP-FPM.
+    L'URL de la requête est implicitement ajoutée au second paramètre.
+    PHP-FPM est à l'écoute de l'hôte et du port qui suivent fcgi://.</p>
+    <div class="example"><h3>PHP-FPM</h3><pre class="prettyprint lang-config">ProxyPassMatch ^/myapp/.*\.php(/.*)?$ fcgi://localhost:9000/var/www/</pre>
+</div>
+
+    <p>Dans l'exemple suivant, l'URI de la requête est transmis en tant
+    que chemin du système de fichiers pour l'exécution du démon PHP-FPM.
+    Dans ce cas cependant, PHP-FPM est à l'écoute d'un socket de domaine
+    unix (UDS). Cette fonctionnalité est disponible à partir de la
+    version 2.4.9. Avec cette syntaxe, si un nom d'hôte et un port sont
+    ajoutés après fcgi://, ils seront ignorés.</p>
+    <div class="example"><h3>PHP-FPM with UDS</h3><pre class="prettyprint lang-config">ProxyPassMatch ^/(.*\.php(/.*)?)$ "unix:/var/run/php5-fpm.sock|fcgi://localhost/var/www/"</pre>
 </div>
 
     <p>La passerelle à répartition de charge nécessite le chargement du
@@ -106,13 +120,30 @@
     par défaut et sera utilisé dans cet exemple de configuration.</p>
 
     <div class="example"><h3>Passerelle à répartition de charge vers plusieurs
-    instances de l'application</h3><pre class="prettyprint lang-config">
-ProxyPass /myapp/ balancer://myappcluster/
+    instances de l'application</h3><pre class="prettyprint lang-config">ProxyPass /myapp/ balancer://myappcluster/
 &lt;Proxy balancer://myappcluster/&gt;
     BalancerMember fcgi://localhost:4000
     BalancerMember fcgi://localhost:4001
-&lt;/Proxy&gt;
-    </pre>
+&lt;/Proxy&gt;</pre>
+</div>
+
+    <p>Vous pouvez aussi forcer le traitement d'une requête en tant que
+    requête de mandataire inverse en créant un court-circuiteur de
+    gestionnaire approprié. Dans l'exemple ci-dessous, toutes les
+    requêtes pour des scripts PHP seront transmises au serveur FastCGI
+    spécifié par mandat inverse. Cette fonctionnalité est disponible à
+    partir de la version 2.4.10 du serveur HTTP Apache. Pour des raisons
+    de performances, il est recommandé de définir un <a href="mod_proxy.html#workers">worker (configuration d'un
+    mandataire)</a> représentant le même serveur fcgi:// d'arrière-plan.
+    Avec cette configuration, il est possible d'effectuer une
+    correspondance directe entre l'URI et le chemin du fichier sur le
+    serveur, et le chemin local du fichier sera alors transmis au serveur
+    d'arrière-plan. Lorsque FastCGI est configuré ainsi, le serveur est
+    en mesure de calculer le PATH_INFO le plus approprié.
+      </p>
+      <div class="example"><h3>Proxy via Handler</h3><pre class="prettyprint lang-config">&lt;FilesMatch \.php$&gt;
+    SetHandler  "proxy:unix:/path/to/app.sock|fcgi://localhost/"
+&lt;/FilesMatch&gt;</pre>
 </div>
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -158,7 +189,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_fcgi.h
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

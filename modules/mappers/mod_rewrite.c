@@ -192,6 +192,9 @@ static const char* really_last_key = "rewrite_really_last";
 #define OPTION_NOSLASH              1<<3
 #define OPTION_ANYURI               1<<4
 #define OPTION_MERGEBASE            1<<5
+#define OPTION_INHERIT_DOWN         1<<6
+#define OPTION_INHERIT_DOWN_BEFORE  1<<7
+#define OPTION_IGNORE_INHERIT       1<<8
 
 #ifndef RAND_MAX
 #define RAND_MAX 32767
@@ -231,6 +234,9 @@ static const char* really_last_key = "rewrite_really_last";
 #define subreq_ok(r) (!r->main || \
     (r->main->uri && r->uri && strcmp(r->main->uri, r->uri)))
 
+#ifndef REWRITE_MAX_ROUNDS
+#define REWRITE_MAX_ROUNDS 32000
+#endif
 
 /*
  * +-------------------------------------------------------+
@@ -308,6 +314,7 @@ typedef struct {
     data_item *env;                  /* added environment variables           */
     data_item *cookie;               /* added cookies                         */
     int        skip;                 /* number of next rules to skip          */
+    int        maxrounds;            /* limit on number of loops with N flag  */
 } rewriterule_entry;
 
 typedef struct {
@@ -2135,7 +2142,10 @@ static char *lookup_variable(char *var, rewrite_ctx *ctx)
             break;
 
         case 16:
-            if (!strcmp(var, "REQUEST_FILENAME")) {
+            if (*var == 'C' && !strcmp(var, "CONN_REMOTE_ADDR")) {
+                result = r->connection->client_ip;
+            }
+            else if (!strcmp(var, "REQUEST_FILENAME")) {
                 result = r->filename; /* same as script_filename (15) */
             }
             break;
@@ -2623,7 +2633,7 @@ static apr_status_t rewritelock_remove(void *data)
         apr_global_mutex_destroy(rewrite_mapr_lock_acquire);
         rewrite_mapr_lock_acquire = NULL;
     }
-    return(0);
+    return APR_SUCCESS;
 }
 
 
@@ -2758,7 +2768,9 @@ static void *config_server_merge(apr_pool_t *p, void *basev, void *overridesv)
 
     a->server  = overrides->server;
 
-    if (a->options & OPTION_INHERIT) {
+    if (a->options & OPTION_INHERIT ||
+            (base->options & OPTION_INHERIT_DOWN &&
+             !(a->options & OPTION_IGNORE_INHERIT))) {
         /*
          *  local directives override
          *  and anything else is inherited
@@ -2770,7 +2782,9 @@ static void *config_server_merge(apr_pool_t *p, void *basev, void *overridesv)
         a->rewriterules    = apr_array_append(p, overrides->rewriterules,
                                               base->rewriterules);
     }
-    else if (a->options & OPTION_INHERIT_BEFORE) {
+    else if (a->options & OPTION_INHERIT_BEFORE || 
+            (base->options & OPTION_INHERIT_DOWN_BEFORE &&
+             !(a->options & OPTION_IGNORE_INHERIT))) {
         /*
          *  local directives override
          *  and anything else is inherited (preserving order)
@@ -2847,13 +2861,17 @@ static void *config_perdir_merge(apr_pool_t *p, void *basev, void *overridesv)
 
     a->directory  = overrides->directory;
 
-    if (a->options & OPTION_INHERIT) {
+    if (a->options & OPTION_INHERIT ||
+            (base->options & OPTION_INHERIT_DOWN &&
+             !(a->options & OPTION_IGNORE_INHERIT))) {
         a->rewriteconds = apr_array_append(p, overrides->rewriteconds,
                                            base->rewriteconds);
         a->rewriterules = apr_array_append(p, overrides->rewriterules,
                                            base->rewriterules);
     }
-    else if (a->options & OPTION_INHERIT_BEFORE) {
+    else if (a->options & OPTION_INHERIT_BEFORE || 
+            (base->options & OPTION_INHERIT_DOWN_BEFORE &&
+             !(a->options & OPTION_IGNORE_INHERIT))) {
         a->rewriteconds    = apr_array_append(p, base->rewriteconds,
                                               overrides->rewriteconds);
         a->rewriterules    = apr_array_append(p, base->rewriterules,
@@ -2904,6 +2922,15 @@ static const char *cmd_rewriteoptions(cmd_parms *cmd,
         }
         else if (!strcasecmp(w, "inheritbefore")) {
             options |= OPTION_INHERIT_BEFORE;
+        }
+        else if (!strcasecmp(w, "inheritdown")) {
+            options |= OPTION_INHERIT_DOWN;
+        }
+        else if(!strcasecmp(w, "inheritdownbefore")) {
+            options |= OPTION_INHERIT_DOWN_BEFORE;
+        }
+        else if (!strcasecmp(w, "ignoreinherit")) {
+            options |= OPTION_IGNORE_INHERIT;
         }
         else if (!strcasecmp(w, "allownoslash")) {
             options |= OPTION_NOSLASH;
@@ -3498,6 +3525,10 @@ static const char *cmd_rewriterule_setflag(apr_pool_t *p, void *_cfg,
         }
         else if (!*key || !strcasecmp(key, "ext")) {       /* next */
             cfg->flags |= RULEFLAG_NEWROUND;
+            if (val && *val) { 
+                cfg->maxrounds = atoi(val);
+            }
+
         }
         else if (((*key == 'S' || *key == 's') && !key[1])
             || !strcasecmp(key, "osubreq")) {              /* nosubreq */
@@ -3649,6 +3680,7 @@ static const char *cmd_rewriterule(cmd_parms *cmd, void *in_dconf,
     newrule->env = NULL;
     newrule->cookie = NULL;
     newrule->skip   = 0;
+    newrule->maxrounds = REWRITE_MAX_ROUNDS;
     if (a3 != NULL) {
         if ((err = cmd_parseflagfield(cmd->pool, newrule, a3,
                                       cmd_rewriterule_setflag)) != NULL) {
@@ -4192,6 +4224,7 @@ static int apply_rewrite_list(request_rec *r, apr_array_header_t *rewriterules,
     int rc;
     int s;
     rewrite_ctx *ctx;
+    int round = 1;
 
     ctx = apr_palloc(r->pool, sizeof(*ctx));
     ctx->perdir = perdir;
@@ -4280,6 +4313,15 @@ static int apply_rewrite_list(request_rec *r, apr_array_header_t *rewriterules,
              *  the rewriting ruleset again.
              */
             if (p->flags & RULEFLAG_NEWROUND) {
+                if (++round >= p->maxrounds) { 
+                    ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02596)
+                                  "RewriteRule '%s' and URI '%s' exceeded "
+                                  "maximum number of rounds (%d) via the [N] flag", 
+                                  p->pattern, r->uri, p->maxrounds);
+
+                    r->status = HTTP_INTERNAL_SERVER_ERROR;
+                    return ACTION_STATUS; 
+                }
                 goto loop;
             }
 
@@ -5004,7 +5046,7 @@ static int hook_fixup(request_rec *r)
             rewritelog((r, 1, dconf->directory, "internal redirect with %s "
                         "[INTERNAL REDIRECT]", r->filename));
             r->filename = apr_pstrcat(r->pool, "redirect:", r->filename, NULL);
-            r->handler = "redirect-handler";
+            r->handler = REWRITE_REDIRECT_HANDLER_NAME;
             return OK;
         }
     }
@@ -5050,7 +5092,7 @@ static int hook_mimetype(request_rec *r)
  */
 static int handler_redirect(request_rec *r)
 {
-    if (strcmp(r->handler, "redirect-handler")) {
+    if (strcmp(r->handler, REWRITE_REDIRECT_HANDLER_NAME)) {
         return DECLINED;
     }
 

@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_deflate - Apache HTTP Server</title>
+<title>mod_deflate - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -46,6 +46,9 @@ client</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatebuffersize">DeflateBufferSize</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatecompressionlevel">DeflateCompressionLevel</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatefilternote">DeflateFilterNote</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#deflateinflatelimitrequestbody">DeflateInflateLimitRequestBody</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#deflateinflateratioburst">DeflateInflateRatioBurst</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#deflateinflateratiolimit">DeflateInflateRatioLimit</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatememlevel">DeflateMemLevel</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatewindowsize">DeflateWindowSize</a></li>
 </ul>
@@ -61,42 +64,24 @@ client</td></tr>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="recommended" id="recommended">Sample Configurations</a></h2>
-    <p>This is a simple sample configuration for the impatient.</p>
+    <div class="warning"><h3>Compression and TLS</h3>
+        <p>Some web applications are vulnerable to an information disclosure
+        attack when a TLS connection carries deflate compressed data. For more
+        information, review the details of the "BREACH" family of attacks.</p>
+    </div>
+    <p>This is a simple configuration that compresses common text-based content types.</p>
 
-    <div class="example"><h3>Compress only a few types</h3><pre class="prettyprint lang-config">
-      AddOutputFilterByType DEFLATE text/html text/plain text/xml
-      </pre>
-</div>
-
-    <p>The following configuration, while resulting in more compressed content,
-    is also much more complicated.  Do not use this unless you fully understand
-    all the configuration details.</p>
-
-    <div class="example"><h3>Compress everything except images</h3><pre class="prettyprint lang-config">
-&lt;Location /&gt;
-    # Insert filter
-    SetOutputFilter DEFLATE
-    
-    # Netscape 4.x has some problems...
-    BrowserMatch ^Mozilla/4         gzip-only-text/html
-    
-    # Netscape 4.06-4.08 have some more problems
-    BrowserMatch ^Mozilla/4\.0[678] no-gzip
-    
-    # MSIE masquerades as Netscape, but it is fine
-    BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
-    # Don't compress images
-    SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
-    
-    # Make sure proxies don't deliver the wrong content
-    Header append Vary User-Agent env=!dont-vary
-&lt;/Location&gt;
-      </pre>
+    <div class="example"><h3>Compress only a few types</h3><pre class="prettyprint lang-config">AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript</pre>
 </div>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="enable" id="enable">Enabling Compression</a></h2>
+    <div class="warning"><h3>Compression and TLS</h3>
+        <p>Some web applications are vulnerable to an information disclosure
+        attack when a TLS connection carries deflate compressed data. For more
+        information, review the details of the "BREACH" family of attacks.</p>
+    </div>
 
     <h3><a name="output" id="output">Output Compression</a></h3>
       <p>Compression is implemented by the <code>DEFLATE</code>
@@ -104,58 +89,19 @@ client</td></tr>
       will enable compression for documents in the container where it
       is placed:</p>
 
-      <pre class="prettyprint lang-config">
-        SetOutputFilter DEFLATE
-      </pre>
+      <pre class="prettyprint lang-config">SetOutputFilter DEFLATE
+SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip</pre>
 
-
-      <p>Some popular browsers cannot handle compression of all content
-      so you may want to set the <code>gzip-only-text/html</code> note to
-      <code>1</code> to only allow html files to be compressed (see
-      below). If you set this to <em>anything but <code>1</code></em> it
-      will be ignored.</p>
 
       <p>If you want to restrict the compression to particular MIME types
       in general, you may use the <code class="directive"><a href="../mod/mod_filter.html#addoutputfilterbytype">AddOutputFilterByType</a></code> directive. Here is an example of
       enabling compression only for the html files of the Apache
       documentation:</p>
 
-      <pre class="prettyprint lang-config">
-&lt;Directory "/your-server-root/manual"&gt;
+      <pre class="prettyprint lang-config">&lt;Directory "/your-server-root/manual"&gt;
     AddOutputFilterByType DEFLATE text/html
-&lt;/Directory&gt;
-      </pre>
+&lt;/Directory&gt;</pre>
 
-
-      <p>For browsers that have problems even with compression of all file
-      types, use the <code class="directive"><a href="../mod/mod_setenvif.html#browsermatch">BrowserMatch</a></code> directive to set the <code>no-gzip</code>
-      note for that particular browser so that no compression will be
-      performed. You may combine <code>no-gzip</code> with <code>gzip-only-text/html</code> to get the best results. In that case
-      the former overrides the latter. Take a look at the following
-      excerpt from the <a href="#recommended">configuration example</a>
-      defined in the section above:</p>
-
-      <pre class="prettyprint lang-config">
-BrowserMatch ^Mozilla/4         gzip-only-text/html
-BrowserMatch ^Mozilla/4\.0[678] no-gzip
-BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
-      </pre>
-
-
-      <p>At first we probe for a <code>User-Agent</code> string that
-      indicates a Netscape Navigator version of 4.x. These versions
-      cannot handle compression of types other than
-      <code>text/html</code>. The versions 4.06, 4.07 and 4.08 also
-      have problems with decompressing html files. Thus, we completely
-      turn off the deflate filter for them.</p>
-
-      <p>The third <code class="directive"><a href="../mod/mod_setenvif.html#browsermatch">BrowserMatch</a></code>
-      directive fixes the guessed identity of the user agent, because
-      the Microsoft Internet Explorer identifies itself also as "Mozilla/4"
-      but is actually able to handle requested compression. Therefore we
-      match against the additional string "MSIE" (<code>\b</code> means
-      "word boundary") in the <code>User-Agent</code> Header and turn off
-      the restrictions defined before.</p>
 
       <div class="note"><h3>Note</h3>
         The <code>DEFLATE</code> filter is always inserted after RESOURCE
@@ -175,12 +121,10 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
       this feature you have to insert the <code>INFLATE</code> filter into
       the outputfilter chain using <code class="directive"><a href="../mod/core.html#setoutputfilter">SetOutputFilter</a></code> or <code class="directive"><a href="../mod/mod_mime.html#addoutputfilter">AddOutputFilter</a></code>, for example:</p>
 
-      <pre class="prettyprint lang-config">
-&lt;Location /dav-area&gt;
+      <pre class="prettyprint lang-config">&lt;Location /dav-area&gt;
     ProxyPass http://example.com/
     SetOutputFilter INFLATE
-&lt;/Location&gt;
-      </pre>
+&lt;/Location&gt;</pre>
 
 
       <p>This Example will uncompress gzip'ed output from example.com, so other
@@ -194,11 +138,9 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
       this feature you have to insert the <code>DEFLATE</code> filter into
       the input filter chain using <code class="directive"><a href="../mod/core.html#setinputfilter">SetInputFilter</a></code> or <code class="directive"><a href="../mod/mod_mime.html#addinputfilter">AddInputFilter</a></code>, for example:</p>
 
-      <pre class="prettyprint lang-config">
-&lt;Location /dav-area&gt;
+      <pre class="prettyprint lang-config">&lt;Location /dav-area&gt;
     SetInputFilter DEFLATE
-&lt;/Location&gt;
-      </pre>
+&lt;/Location&gt;</pre>
 
 
       <p>Now if a request contains a <code>Content-Encoding:
@@ -233,9 +175,7 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
     in a typical configuration where the addition of the <code>DEFLATE</code>
     filter depends on the <code>User-Agent</code>, you should add:</p>
 
-    <pre class="prettyprint lang-config">
-      Header append Vary User-Agent
-    </pre>
+    <pre class="prettyprint lang-config">Header append Vary User-Agent</pre>
 
 
     <p>If your decision about compression depends on other information
@@ -243,9 +183,7 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
     <code>Vary</code> header to the value <code>*</code>. This prevents
     compliant proxies from caching entirely.</p>
 
-    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">
-      Header set Vary *
-      </pre>
+    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">Header set Vary *</pre>
 </div>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -295,12 +233,10 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
     the directive. You can use that note for statistical purposes by
     adding the value to your <a href="../logs.html#accesslog">access log</a>.</p>
 
-    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">
-      DeflateFilterNote ratio
+    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">      DeflateFilterNote ratio
     
       LogFormat '"%r" %b (%{ratio}n) "%{User-agent}i"' deflate
-      CustomLog logs/deflate_log deflate
-      </pre>
+      CustomLog logs/deflate_log deflate</pre>
 </div>
 
     <p>If you want to extract more accurate values from your logs, you
@@ -322,20 +258,72 @@ BrowserMatch \bMSIE             !no-gzip !gzip-only-text/html
 
     <p>Thus you may log it this way:</p>
 
-    <div class="example"><h3>Accurate Logging</h3><pre class="prettyprint lang-config">
-DeflateFilterNote Input instream
+    <div class="example"><h3>Accurate Logging</h3><pre class="prettyprint lang-config">DeflateFilterNote Input instream
 DeflateFilterNote Output outstream
 DeflateFilterNote Ratio ratio
 
 LogFormat '"%r" %{outstream}n/%{instream}n (%{ratio}n%%)' deflate
-CustomLog logs/deflate_log deflate
-</pre>
+CustomLog logs/deflate_log deflate</pre>
 </div>
 
 <h3>See also</h3>
 <ul>
 <li><code class="module"><a href="../mod/mod_log_config.html">mod_log_config</a></code></li>
 </ul>
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="DeflateInflateLimitRequestBody" id="DeflateInflateLimitRequestBody">DeflateInflateLimitRequestBody</a> <a name="deflateinflatelimitrequestbody" id="deflateinflatelimitrequestbody">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Maximum size of inflated request bodies</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>DeflateInflateLimitRequestBody<var>value</var></code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>None, but LimitRequestBody applies after deflation</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_deflate</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>2.4.10 and later</td></tr>
+</table>
+    <p>The <code class="directive">DeflateInflateLimitRequestBody</code> directive 
+        specifies the maximum size of an inflated request body. If it is unset,
+        <code class="directive"><a href="../mod/core.html#limitrequestbody">LimitRequestBody</a></code> is applied to the
+        inflated body.</p>
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="DeflateInflateRatioBurst" id="DeflateInflateRatioBurst">DeflateInflateRatioBurst</a> <a name="deflateinflateratioburst" id="deflateinflateratioburst">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Maximum number of times the inflation ratio for request bodies 
+             can be crossed</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>DeflateInflateRatioBurst <var>value</var></code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>3</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_deflate</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>2.4.10 and later</td></tr>
+</table>
+    <p>The <code class="directive">DeflateInflateRatioBurst</code> directive 
+       specifies the maximum number of times the 
+       <code class="directive">DeflateInflateRatioLimit</code> cab be crossed before 
+       terminating the request.</p>
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="DeflateInflateRatioLimit" id="DeflateInflateRatioLimit">DeflateInflateRatioLimit</a> <a name="deflateinflateratiolimit" id="deflateinflateratiolimit">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Maximum inflation ratio for request bodies</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>DeflateInflateRatioLimit <var>value</var></code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>200</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_deflate</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>2.4.10 and later</td></tr>
+</table>
+    <p>The <code class="directive">DeflateInflateRatioLimit</code> directive 
+        specifies the maximum ratio of deflated to inflated size of an 
+        inflated request body. This ratio is checked as the body is
+        streamed in, and if crossed more than 
+        <code class="directive">DeflateInflateRatioBurst</code> times the request
+        will be terminated.</p>
+
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="DeflateMemLevel" id="DeflateMemLevel">DeflateMemLevel</a> <a name="deflatememlevel" id="deflatememlevel">Directive</a></h2>
@@ -391,7 +379,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_deflate.html
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

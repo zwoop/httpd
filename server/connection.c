@@ -64,29 +64,39 @@ AP_IMPLEMENT_HOOK_RUN_ALL(int,pre_connection,(conn_rec *c, void *csd),(c, csd),O
 #define MAX_SECS_TO_LINGER 30
 #endif
 
-AP_CORE_DECLARE(void) ap_flush_conn(conn_rec *c)
+AP_CORE_DECLARE(apr_status_t) ap_shutdown_conn(conn_rec *c, int flush)
 {
+    apr_status_t rv;
     apr_bucket_brigade *bb;
     apr_bucket *b;
 
     bb = apr_brigade_create(c->pool, c->bucket_alloc);
 
-    /* FLUSH bucket */
-    b = apr_bucket_flush_create(c->bucket_alloc);
-    APR_BRIGADE_INSERT_TAIL(bb, b);
+    if (flush) {
+        /* FLUSH bucket */
+        b = apr_bucket_flush_create(c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(bb, b);
+    }
 
     /* End Of Connection bucket */
     b = ap_bucket_eoc_create(c->bucket_alloc);
     APR_BRIGADE_INSERT_TAIL(bb, b);
 
-    ap_pass_brigade(c->output_filters, bb);
+    rv = ap_pass_brigade(c->output_filters, bb);
+    apr_brigade_destroy(bb);
+    return rv;
+}
+
+AP_CORE_DECLARE(void) ap_flush_conn(conn_rec *c)
+{
+    (void)ap_shutdown_conn(c, 1);
 }
 
 /* we now proceed to read from the client until we get EOF, or until
- * MAX_SECS_TO_LINGER has passed.  the reasons for doing this are
+ * MAX_SECS_TO_LINGER has passed.  The reasons for doing this are
  * documented in a draft:
  *
- * http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-connection-00.txt
+ * http://tools.ietf.org/html/draft-ietf-http-connection-00.txt
  *
  * in a nutshell -- if we don't make this effort we risk causing
  * TCP RST packets to be sent which can tear down a connection before
@@ -141,7 +151,7 @@ AP_DECLARE(void) ap_lingering_close(conn_rec *c)
 {
     char dummybuf[512];
     apr_size_t nbytes;
-    apr_time_t timeup = 0;
+    apr_time_t now, timeup = 0;
     apr_socket_t *csd = ap_get_conn_socket(c);
 
     if (ap_start_lingering_close(c)) {
@@ -165,6 +175,7 @@ AP_DECLARE(void) ap_lingering_close(conn_rec *c)
         if (apr_socket_recv(csd, dummybuf, &nbytes) || nbytes == 0)
             break;
 
+        now = apr_time_now();
         if (timeup == 0) {
             /*
              * First time through;
@@ -175,14 +186,14 @@ AP_DECLARE(void) ap_lingering_close(conn_rec *c)
              * DoS attacks.
              */
             if (apr_table_get(c->notes, "short-lingering-close")) {
-                timeup = apr_time_now() + apr_time_from_sec(SECONDS_TO_LINGER);
+                timeup = now + apr_time_from_sec(SECONDS_TO_LINGER);
             }
             else {
-                timeup = apr_time_now() + apr_time_from_sec(MAX_SECS_TO_LINGER);
+                timeup = now + apr_time_from_sec(MAX_SECS_TO_LINGER);
             }
             continue;
         }
-    } while (apr_time_now() < timeup);
+    } while (now < timeup);
 
     apr_socket_close(csd);
     return;

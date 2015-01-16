@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <!DOCTYPE manualpage SYSTEM "../style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1174747:1542756 (outdated) -->
+<!-- English Revision: 1637114 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -31,9 +31,16 @@
   <summary>
 
     <p>Il y a de nombreux points importants &agrave; conna&icirc;tre avant de
-    compiler Apache pour Microsoft Windows. Avant de commencer, lisez le
-    document <a href="windows.html">Utiliser Apache avec Microsoft
+    compiler Le serveur HTTP Apache pour Microsoft Windows. Avant de commencer, lisez le
+    document <a href="windows.html">Utiliser le serveur HTTP Apache avec Microsoft
     Windows</a>.</p>
+
+    <p>httpd peut &ecirc;tre compil&eacute; sous Windows en utilisant une cha&icirc;ne de
+    compilation bas&eacute;e sur cmake, ou &agrave; partir de fichiers projet Visual
+    Studio maintenus par les d&eacute;veloppeurs de httpd. La cha&icirc;ne de
+    compilation bas&eacute;e sur cmake supporte directement davantage de
+    versions de Visual Studio, mais poss&egrave;de actuellement des
+    fonctionnalit&eacute;s tr&egrave;s limit&eacute;es.</p>
 
   </summary>
 
@@ -80,7 +87,7 @@
         <p>Apache peut &ecirc;tre compil&eacute; en utilisant l'outil ligne de
 	commande, ou depuis l'espace de travail IDE Visual Studio. Pour
 	la compilation depuis la ligne de commandes, l'environnement
-	doit comporter les variables <code>PATH</code>,
+	doit comporter les variables the <code>PATH</code>,
 	<code>INCLUDE</code>, <code>LIB</code>, ainsi que d'autres
 	variables qui peuvent &ecirc;tre d&eacute;finies via le script
 	<code>vcvars32.bat</code> :</p>
@@ -150,7 +157,7 @@
 
         <note>Si awk.exe n'est pas trouv&eacute;, la cible install du fichier
 	Makefile.win n'effectuera aucune substitution dans les fichiers
-	.conf install&eacute;s. Vous devrez alors modifier manuellement les fichiers
+	.conf install&eacute;s. Vous devez modifier manuellement les fichiers
 	.conf install&eacute;s afin de permettre au serveur de d&eacute;marrer.
 	Recherchez et remplacez toutes les balises "@token@" par une
 	valeur appropri&eacute;e.</note>
@@ -163,7 +170,7 @@
 
         <note>Notez aussi, si vous utilisez les outils Cygwin (<a
 	href="http://www.cygwin.com/">http://www.cygwin.com/</a>), que
-	l'utilitaire awk se nomme <code>gawk.exe</code> et que le
+	l'utilitaire awk de nomme <code>gawk.exe</code> et que le
 	fichier <code>awk.exe</code> est en fait un lien symbolique vers
 	le fichier <code>gawk.exe</code>. Le shell de commandes Windows
 	ne reconna&icirc;t pas les liens symboliques, et par cons&eacute;quent la
@@ -214,9 +221,10 @@
         <p>La configuration et la compilation d'OpenSSL n&eacute;cessite
 	l'installation de perl.</p>
 
-        <p>Pour compiler <module>mod_ssl</module> ou le projet
-	<code>abs.exe</code>, qui n'est autre que ab.c avec le support SSL
-	activ&eacute;, vous devez t&eacute;l&eacute;charger OpenSSL &agrave; l'adresse <a
+        <p>Pour pouvoir compiler <module>mod_ssl</module> ou le projet
+	<code>abs.exe</code>, qui devient ab.c avec le support SSL
+	activ&eacute;, vous devez
+	t&eacute;l&eacute;charger OpenSSL &agrave; l'adresse <a
 	href="http://www.openssl.org/source/">http://www.openssl.org/source/</a>,
 	et l'installer dans un sous-r&eacute;pertoire du r&eacute;pertoire
 	<code>srclib</code> que vous nommerez <code>openssl</code>. Afin
@@ -235,10 +243,10 @@
         <note>Il est d&eacute;conseill&eacute; d'utiliser zlib-dynamic, car la charge
 	de la d&eacute;compression des flux SSL est alors transf&eacute;r&eacute;e &agrave; la
 	premi&egrave;re requ&ecirc;te qui doit charger la dll zlib. Notez que le
-	correctif propos&eacute; active le drapeau -L afin de
+	correctif propos&eacute; active le drapeau -L afin de pouvoir
 	fonctionner avec les compilations Windows, corrige le nom de
 	zdll.lib et s'assure que les fichiers .pdb sont g&eacute;n&eacute;r&eacute;s afin de
-	r&eacute;soudre les probl&egrave;mes. Si l'assembleur n'est pas
+	pouvoir r&eacute;soudre les probl&egrave;mes. Si l'assembleur n'est pas
 	install&eacute;, vous devez ajouter no-asm ci-dessus et utiliser le
 	script ms\do_ms.bat &agrave; la place de ms\do_masm.bat.</note>
       </li>
@@ -289,6 +297,41 @@
       </li>
 
     </ul>
+
+  </section>
+
+<section id="unixsrcbuild">
+
+    <title>Compilation &agrave; partir des sources Unix</title>
+
+    <p>Le projet du serveur HTTP Apache &agrave; pour politique de ne fournir
+    que des sources de type Unix. Les paquets source de type Windows
+    disponibles en t&eacute;l&eacute;chargement ont &eacute;t&eacute; &eacute;labor&eacute;s par des
+    contributeurs, et ne seront pas forc&eacute;ment reconduits pour toutes les
+    versions. Vous pouvez cependant compiler le serveur sous Windows &agrave;
+    partir des sources Unix en ajoutant quelques &eacute;tapes suppl&eacute;mentaires.</p>
+
+    <ol>
+    	<li>T&eacute;l&eacute;chargez et ouvrez le tarball source Unix de la derni&egrave;re
+	version du serveur HTTP Apache.</li>
+    	<li>T&eacute;l&eacute;chargez et ouvrez le tarball source Unix de la derni&egrave;re
+	version de APR, APR-Util et APR-Iconv, et copier l'arborescence
+	obtenue dans httpd-2.x.x\srclib\apr, httpd-2.x.x\srclib\apr-util
+	et httpd-2.x.x\srclib\apr-iconv</li>
+    	<li>Ouvrez la console et placez-vous au niveau du r&eacute;pertoire httpd-2.x.x</li>
+    	<li>Ex&eacute;cutez l'utilitaire de conversion de fins de ligne</li>
+    </ol>
+
+    <example>
+      perl srclib\apr\build\lineends.pl
+    </example>
+
+    <p>Vous pouvez maintenant compiler le serveur via l'environnement de
+    d&eacute;veloppement Visual Studio en utilisant l'IDE. Les compilations
+    du serveur en ligne de commande ne sont possibles avec des sources
+    de type Unix que si vous exportez les fichiers .mak comme indiqu&eacute;
+    ci-dessous.
+    </p>
 
   </section>
 
@@ -358,10 +401,11 @@
     simple, il suffit de r&eacute;ouvrir <code>Apache.dsw</code> dans l'IDE
     VC++ 7.0 et de le reconvertir.</p>
 
-    <note>Il y a un probl&egrave;me au niveau de la conversion .vcproj des fichiers
+    <!-- Traduction &agrave; revoir -->
+    <note>Il y a une erreur dans la conversion .vcproj des fichiers
     .dsp. devenv.exe interpr&egrave;te mal le drapeau
-    /D pour les drapeaux RC contenant de longues /D'efines,
-    si ces derni&egrave;res contiennent elles-m&ecirc;mes des espaces. Ainsi, la
+    /D pour les drapeaux RC contenant de grandes /D'&eacute;finitions entour&eacute;es
+    de guillemets, et contenant elles-m&ecirc;mes des espaces. Ainsi, la
     commande :
     <example>
       perl srclib\apr\build\cvtdsp.pl -2005
@@ -369,11 +413,12 @@
     va convertir les drapeaux /D pour les drapeaux RC afin d'utiliser
     une syntaxe alternative, interpr&eacute;table ; malheureusement, cette
     syntaxe n'est pas support&eacute;e par Visual Studio 97 ou ses fichiers
-    .mak export&eacute;s. Ces drapeaux /D transmettent la longue
+    .mak export&eacute;s. Ces drapeaux /D permettent de transmettre la longue
     description des fichiers de mod_apachemodule.so &agrave; leurs compilations
     d'identificateur de version de ressource .rc partag&eacute;e.</note>
 
 
+    <!-- Traduction &agrave; revoir -->
     <p>Les utilisateurs de Visual Studio 2002 (.NET) et versions
     sup&eacute;rieures doivent aussi utiliser
     la bo&icirc;te de dialogue Configuration Manager du menu Build pour
@@ -395,7 +440,7 @@
     <title>Export des fichiers .mak de la ligne de commandes</title>
 
 
-    <p>Les fichiers <code>.mak</code> export&eacute;s posent beaucoup de probl&egrave;mes,
+    <p>Les fichiers <code>.mak</code> export&eacute;s posent plus de probl&egrave;mes,
     mais les utilisateurs de Visual C++ 5.0 en ont besoin pour compiler
     <module>mod_ssl</module>, abs (<program>ab</program> avec support
     SSL) et/ou <module>mod_deflate</module>. Les fichiers .mak
@@ -474,18 +519,48 @@
 <title>Avertissement &agrave; propos de la compilation d'Apache &agrave; partir de
 l'arborescence de d&eacute;veloppement</title>
 
-
-
-  
 	<note>Notez que seuls les fichiers <code>.dsp</code> sont
 	maintenus d'une distribution <code>release</code> &agrave; l'autre. Les
 	fichiers <code>.mak</code> ne sont PAS r&eacute;g&eacute;n&eacute;r&eacute;s, suite &agrave;
-	l'&eacute;norme perte de temps des relecteurs. Vous ne
+	l'&eacute;norme perte de temps des relecteurs <!-- ??? -->. Vous ne
 	pouvez donc pas utiliser les commandes <code>NMAKE</code>
 	ci-dessus pour compiler des fichiers de projet <code>.dsp</code>
-	r&eacute;vis&eacute;s si vous n'exportez pas ensuite vous-m&ecirc;me tous les
+	r&eacute;vis&eacute;s si vous n'exporter pas ensuite vous-m&ecirc;me tous les
 	fichiers <code>.mak</code> du projet. Ceci n'est pas n&eacute;cessaire
 	si vous effectuez la compilation depuis l'environnement
 	Microsoft Developer Studio.</note>
-</section>	
+
+</section>
+
+  <section id="cmake">
+  <title>Compilation de httpd avec cmake</title>
+
+  <p>La documentation principale pour ce m&eacute;canisme de compilation se trouve
+  dans le fichier <code>README.cmake</code> situ&eacute; dans l'arborescence
+  des sources. Consultez ce fichier pour des instructions d&eacute;taill&eacute;es.</p>
+
+  <p>Pour compiler httpd avec cmake, vous devez compiler APR et APR-util
+  s&eacute;par&eacute;ment. Consultez les fichiers <code>README.cmake</code> de ces
+  projets pour obtenir des instructions.</p>
+
+  <p>Les principales limitations de la compilation bas&eacute;e sur cmake sont
+  h&eacute;rit&eacute;es du projet APR-util et sont &eacute;num&eacute;r&eacute;es ci-dessous &agrave; cause de
+  leur impact sur httpd :</p>
+
+  <ul>
+    <li>Il n'est pas possible de compiler le projet APR-iconv avec
+    cmake, et la compilation de APR-util ne peut pas utiliser de projet
+    APR-iconv pr&eacute;compil&eacute;. A cause de cela, il n'est pas possible
+    d'utiliser <module>mod_charset_lite</module> et probablement
+    d'autres modules tiers.</li>
+    <li>La compilation du sous-projet APR-util avec cmake ne supporte
+    pas la plupart des biblioth&egrave;ques optionnelles DBM et DBD utilis&eacute;es
+    par les fichiers projet Visual Studio inclus. Cela limite les
+    serveurs de bases de donn&eacute;es d'arri&egrave;re-plan support&eacute;s par de
+    nombreux modules tiers ou inclus.</li>
+  </ul>
+
+  </section>
+
 </manualpage>
+

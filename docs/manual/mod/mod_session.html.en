@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_session - Apache HTTP Server</title>
+<title>mod_session - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -160,10 +160,8 @@
       where the session will be stored. In this example, the session will be
       stored on the browser, in a cookie called <code>session</code>.</p>
 
-      <div class="example"><h3>Browser based session</h3><pre class="prettyprint lang-config">
-Session On
-SessionCookieName session path=/
-        </pre>
+      <div class="example"><h3>Browser based session</h3><pre class="prettyprint lang-config">Session On
+SessionCookieName session path=/</pre>
 </div>
 
       <p>The session is not useful unless it can be written to or read from. The
@@ -171,24 +169,20 @@ SessionCookieName session path=/
       the use of a predetermined HTTP response header called
       <code>X-Replace-Session</code>.</p>
 
-      <div class="example"><h3>Writing to a session</h3><pre class="prettyprint lang-config">
-Session On
+      <div class="example"><h3>Writing to a session</h3><pre class="prettyprint lang-config">Session On
 SessionCookieName session path=/
-SessionHeader X-Replace-Session
-        </pre>
+SessionHeader X-Replace-Session</pre>
 </div>
 
       <p>The header should contain name value pairs expressed in the same format
       as a query string in a URL, as in the example below. Setting a key to the
       empty string has the effect of removing that key from the session.</p>
 
-      <div class="example"><h3>CGI to write to a session</h3><pre class="prettyprint lang-sh">
-#!/bin/bash
+      <div class="example"><h3>CGI to write to a session</h3><pre class="prettyprint lang-sh">#!/bin/bash
 echo "Content-Type: text/plain"
 echo "X-Replace-Session: key1=foo&amp;key2=&amp;key3=bar"
 echo
-env
-        </pre>
+env</pre>
 </div>
 
       <p>If configured, the session can be read back from the HTTP_SESSION
@@ -196,12 +190,10 @@ env
       has to be explicitly turned on with the
       <code class="directive"><a href="#sessionenv">SessionEnv</a></code> directive.</p>
 
-      <div class="example"><h3>Read from a session</h3><pre class="prettyprint lang-config">
-Session On
+      <div class="example"><h3>Read from a session</h3><pre class="prettyprint lang-config">Session On
 SessionEnv On
 SessionCookieName session path=/
-SessionHeader X-Replace-Session
-        </pre>
+SessionHeader X-Replace-Session</pre>
 </div>
 
       <p>Once read, the CGI variable <code>HTTP_SESSION</code> should contain
@@ -221,11 +213,9 @@ SessionHeader X-Replace-Session
       placed on the browser using the <code class="module"><a href="../mod/mod_session_crypto.html">mod_session_crypto</a></code>
       module.</p>
 
-      <div class="example"><h3>Browser based encrypted session</h3><pre class="prettyprint lang-config">
-Session On
+      <div class="example"><h3>Browser based encrypted session</h3><pre class="prettyprint lang-config">Session On
 SessionCryptoPassphrase secret
-SessionCookieName session path=/
-        </pre>
+SessionCookieName session path=/</pre>
 </div>
 
       <p>The session will be automatically decrypted on load, and encrypted on
@@ -259,11 +249,9 @@ SessionCookieName session path=/
       <p>Standard cookie parameters can be specified after the name of the cookie,
       as in the example below.</p>
 
-      <div class="example"><h3>Setting cookie parameters</h3><pre class="prettyprint lang-config">
-Session On
+      <div class="example"><h3>Setting cookie parameters</h3><pre class="prettyprint lang-config">Session On
 SessionCryptoPassphrase secret
-SessionCookieName session path=/private;domain=example.com;httponly;secure;
-        </pre>
+SessionCookieName session path=/private;domain=example.com;httponly;secure;</pre>
 </div>
 
       <p>In cases where the Apache server forms the frontend for backend origin servers,
@@ -282,16 +270,14 @@ SessionCookieName session path=/private;domain=example.com;httponly;secure;
       <code class="module"><a href="../mod/mod_auth_form.html">mod_auth_form</a></code> saves the user's login name and password within
       the session.</p>
 
-      <div class="example"><h3>Form based authentication</h3><pre class="prettyprint lang-config">
-Session On
+      <div class="example"><h3>Form based authentication</h3><pre class="prettyprint lang-config">Session On
 SessionCryptoPassphrase secret
 SessionCookieName session path=/
 AuthFormProvider file
 AuthUserFile conf/passwd
 AuthType form
 AuthName realm
-#...
-        </pre>
+#...</pre>
 </div>
 
       <p>See the <code class="module"><a href="../mod/mod_auth_form.html">mod_auth_form</a></code> module for documentation and complete
@@ -517,7 +503,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_session.html
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -3,7 +3,7 @@
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
-<!-- English Revision : 1481368 -->
+<!-- English Revision : 1642592 -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -173,6 +173,18 @@ SetEnvIf User-Agent ^KnockKnock/2\.0 let_me_in
     commence par <code>KnockKnock/2.0</code> se verront autoriser
     l'acc&egrave;s, alors que tous les autres seront rejet&eacute;s.</p>
 
+    <p>Lorsque le serveur cherche un chemin via une <glossary
+   ref="subrequest">sous-requ&ecirc;te</glossary> interne (par exemple la
+   recherche d'un <directive
+   module="mod_dir">DirectoryIndex</directive>), ou lorsqu'il g&eacute;n&egrave;re un
+   listing du contenu d'un r&eacute;pertoire via le module
+   <module>mod_autoindex</module>, la sous-requ&ecirc;te n'h&eacute;rite pas des
+   variables d'environnement sp&eacute;cifiques &agrave; la requ&ecirc;te. En outre, &agrave; cause
+   des phases de l'API auxquelles <module>mod_setenvif</module> prend
+   part, les directives <directive
+   module="mod_setenvif">SetEnvIf</directive> ne sont pas &eacute;valu&eacute;es
+   s&eacute;par&eacute;ment dans la sous-requ&ecirc;te.</p>
+
   </section>
 
   <section id="reqall"><title>Require all</title>
@@ -223,10 +235,21 @@ SetEnvIf User-Agent ^KnockKnock/2\.0 let_me_in
   <section id="reqexpr"><title>Require expr</title>
 
   <p>Le fournisseur <code>expr</code> permet d'accorder l'autorisation
-  d'acc&egrave;s en fonction d'expressions arbitraires.</p>
+  d'acc&egrave;s de base en fonction d'expressions arbitraires.</p>
 
     <highlight language="config">
          Require expr "%{TIME_HOUR} -ge 9 &amp;&amp; %{TIME_HOUR} -le 17"
+    </highlight>
+
+    <highlight language="config">
+&lt;RequireAll&gt;
+    Require expr "!(%{QUERY_STRING} =~ /secret/)"
+    Require expr "%{REQUEST_URI} in { '/example.cgi', '/other.cgi' }" 
+&lt;/RequireAll&gt;
+    </highlight>
+
+    <highlight language="config">
+        Require expr "!(%{QUERY_STRING} =~ /secret/) &amp;&amp; %{REQUEST_URI} in { '/example.cgi', '/other.cgi' }" 
     </highlight>
 
     <p>La syntaxe de l'expression est d&eacute;crite dans la documentation de <a

@@ -17,6 +17,7 @@
   <modulefile>mod_authn_dbm.xml</modulefile>
   <modulefile>mod_authn_file.xml</modulefile>
   <modulefile>mod_authn_socache.xml</modulefile>
+  <modulefile>mod_authnz_fcgi.xml</modulefile>
   <modulefile>mod_authnz_ldap.xml</modulefile>
   <modulefile>mod_authz_core.xml</modulefile>
   <modulefile>mod_authz_dbd.xml</modulefile>
@@ -45,7 +46,7 @@
   <modulefile>mod_dumpio.xml</modulefile>
   <modulefile>mod_echo.xml</modulefile>
   <modulefile>mod_env.xml.tr</modulefile>
-  <modulefile>mod_example.xml</modulefile>
+  <modulefile>mod_example_hooks.xml</modulefile>
   <modulefile>mod_expires.xml</modulefile>
   <modulefile>mod_ext_filter.xml</modulefile>
   <modulefile>mod_file_cache.xml</modulefile>

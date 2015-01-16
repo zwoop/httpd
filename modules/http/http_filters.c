@@ -87,6 +87,23 @@ static apr_status_t bail_out_on_error(http_ctx_t *ctx,
     apr_bucket_brigade *bb = ctx->bb;
 
     apr_brigade_cleanup(bb);
+
+    if (f->r->proxyreq == PROXYREQ_RESPONSE) {
+        switch (http_error) {
+        case HTTP_REQUEST_ENTITY_TOO_LARGE:
+            return APR_ENOSPC;
+
+        case HTTP_REQUEST_TIME_OUT:
+            return APR_INCOMPLETE;
+
+        case HTTP_NOT_IMPLEMENTED:
+            return APR_ENOTIMPL;
+
+        default:
+            return APR_EGENERAL;
+        }
+    }
+
     e = ap_bucket_error_create(http_error,
                                NULL, f->r->pool,
                                f->c->bucket_alloc);
@@ -214,6 +231,49 @@ static apr_status_t get_chunk_line(http_ctx_t *ctx, apr_bucket_brigade *b,
 }
 
 
+static apr_status_t read_chunked_trailers(http_ctx_t *ctx, ap_filter_t *f,
+                                          apr_bucket_brigade *b, int merge)
+{
+    int rv;
+    apr_bucket *e;
+    request_rec *r = f->r;
+    apr_table_t *saved_headers_in = r->headers_in;
+    int saved_status = r->status;
+
+    r->status = HTTP_OK;
+    r->headers_in = r->trailers_in;
+    apr_table_clear(r->headers_in);
+    ctx->state = BODY_NONE;
+    ap_get_mime_headers(r);
+
+    if(r->status == HTTP_OK) {
+        r->status = saved_status;
+        e = apr_bucket_eos_create(f->c->bucket_alloc);
+        APR_BRIGADE_INSERT_TAIL(b, e);
+        ctx->eos_sent = 1;
+        rv = APR_SUCCESS;
+    }
+    else {
+        const char *error_notes = apr_table_get(r->notes,
+                                                "error-notes");
+        ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, 
+                      "Error while reading HTTP trailer: %i%s%s",
+                      r->status, error_notes ? ": " : "",
+                      error_notes ? error_notes : "");
+        rv = APR_EINVAL;
+    }
+
+    if(!merge) {
+        r->headers_in = saved_headers_in;
+    }
+    else {
+        r->headers_in = apr_table_overlay(r->pool, saved_headers_in,
+                r->trailers_in);
+    }
+
+    return rv;
+}
+
 /* This is the HTTP_INPUT filter for HTTP requests and responses from
  * proxied servers (mod_proxy).  It handles chunked and content-length
  * bodies.  This can only be inserted/used after the headers
@@ -223,12 +283,16 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                             ap_input_mode_t mode, apr_read_type_e block,
                             apr_off_t readbytes)
 {
+    core_server_config *conf;
     apr_bucket *e;
     http_ctx_t *ctx = f->ctx;
     apr_status_t rv;
     apr_off_t totalread;
     int http_error = HTTP_REQUEST_ENTITY_TOO_LARGE;
     apr_bucket_brigade *bb;
+
+    conf = (core_server_config *)
+        ap_get_module_config(f->r->server->module_config, &core_module);
 
     /* just get out of the way of things we don't want. */
     if (mode != AP_MODE_READBYTES && mode != AP_MODE_GETLINE) {
@@ -259,25 +323,30 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
         lenp = apr_table_get(f->r->headers_in, "Content-Length");
 
         if (tenc) {
-            if (!strcasecmp(tenc, "chunked")) {
+            if (strcasecmp(tenc, "chunked") == 0 /* fast path */
+                    || ap_find_last_token(f->r->pool, tenc, "chunked")) {
                 ctx->state = BODY_CHUNK;
             }
-            /* test lenp, because it gives another case we can handle */
-            else if (!lenp) {
-                /* Something that isn't in HTTP, unless some future
-                 * edition defines new transfer encodings, is unsupported.
+            else if (f->r->proxyreq == PROXYREQ_RESPONSE) {
+                /* http://tools.ietf.org/html/draft-ietf-httpbis-p1-messaging-23
+                 * Section 3.3.3.3: "If a Transfer-Encoding header field is
+                 * present in a response and the chunked transfer coding is not
+                 * the final encoding, the message body length is determined by
+                 * reading the connection until it is closed by the server."
                  */
+                ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(02555)
+                              "Unknown Transfer-Encoding: %s;"
+                              " using read-until-close", tenc);
+                tenc = NULL;
+            }
+            else {
                 ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, f->r, APLOGNO(01585)
                               "Unknown Transfer-Encoding: %s", tenc);
                 return bail_out_on_error(ctx, f, HTTP_NOT_IMPLEMENTED);
             }
-            else {
-                ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, f->r, APLOGNO(01586)
-                  "Unknown Transfer-Encoding: %s; using Content-Length", tenc);
-                tenc = NULL;
-            }
+            lenp = NULL;
         }
-        if (lenp && !tenc) {
+        if (lenp) {
             char *endstr;
 
             ctx->state = BODY_LENGTH;
@@ -342,7 +411,7 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                  * in a state of expecting one.
                  */
                 f->r->expecting_100 = 0;
-                tmp = apr_pstrcat(f->r->pool, AP_SERVER_PROTOCOL, " ",
+                tmp = apr_pstrcat(f->r->pool, AP_SERVER_PROTOCOL " ",
                                   ap_get_status_line(HTTP_CONTINUE), CRLF CRLF,
                                   NULL);
                 len = strlen(tmp);
@@ -394,22 +463,17 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
             if (rv != APR_SUCCESS || ctx->remaining < 0) {
                 ap_log_rerror(APLOG_MARK, APLOG_INFO, rv, f->r, APLOGNO(01589) "Error reading first chunk %s ",
                               (ctx->remaining < 0) ? "(overflow)" : "");
-                ctx->remaining = 0; /* Reset it in case we have to
-                                     * come back here later */
-                if (APR_STATUS_IS_TIMEUP(rv)) {
+                if (APR_STATUS_IS_TIMEUP(rv) || ctx->remaining > 0) {
                     http_error = HTTP_REQUEST_TIME_OUT;
                 }
+                ctx->remaining = 0; /* Reset it in case we have to
+                                     * come back here later */
                 return bail_out_on_error(ctx, f, http_error);
             }
 
             if (!ctx->remaining) {
-                /* Handle trailers by calling ap_get_mime_headers again! */
-                ctx->state = BODY_NONE;
-                ap_get_mime_headers(f->r);
-                e = apr_bucket_eos_create(f->c->bucket_alloc);
-                APR_BRIGADE_INSERT_TAIL(b, e);
-                ctx->eos_sent = 1;
-                return APR_SUCCESS;
+                return read_chunked_trailers(ctx, f, b,
+                        conf->merge_trailers == AP_MERGE_TRAILERS_ENABLE);
             }
         }
     }
@@ -447,6 +511,9 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                         return APR_EAGAIN;
                     }
                     /* If we get an error, then leave */
+                    if (rv == APR_EOF) {
+                        return APR_INCOMPLETE;
+                    }
                     if (rv != APR_SUCCESS) {
                         return rv;
                     }
@@ -500,22 +567,17 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
                 if (rv != APR_SUCCESS || ctx->remaining < 0) {
                     ap_log_rerror(APLOG_MARK, APLOG_INFO, rv, f->r, APLOGNO(01590) "Error reading chunk %s ",
                                   (ctx->remaining < 0) ? "(overflow)" : "");
-                    ctx->remaining = 0; /* Reset it in case we have to
-                                         * come back here later */
-                    if (APR_STATUS_IS_TIMEUP(rv)) {
+                    if (APR_STATUS_IS_TIMEUP(rv) || ctx->remaining > 0) {
                         http_error = HTTP_REQUEST_TIME_OUT;
                     }
+                    ctx->remaining = 0; /* Reset it in case we have to
+                                         * come back here later */
                     return bail_out_on_error(ctx, f, http_error);
                 }
 
                 if (!ctx->remaining) {
-                    /* Handle trailers by calling ap_get_mime_headers again! */
-                    ctx->state = BODY_NONE;
-                    ap_get_mime_headers(f->r);
-                    e = apr_bucket_eos_create(f->c->bucket_alloc);
-                    APR_BRIGADE_INSERT_TAIL(b, e);
-                    ctx->eos_sent = 1;
-                    return APR_SUCCESS;
+                    return read_chunked_trailers(ctx, f, b,
+                            conf->merge_trailers == AP_MERGE_TRAILERS_ENABLE);
                 }
             }
             break;
@@ -532,6 +594,10 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
 
     rv = ap_get_brigade(f->next, b, mode, block, readbytes);
 
+    if (rv == APR_EOF && ctx->state != BODY_NONE &&
+            ctx->remaining > 0) {
+        return APR_INCOMPLETE;
+    }
     if (rv != APR_SUCCESS) {
         return rv;
     }
@@ -547,8 +613,10 @@ apr_status_t ap_http_filter(ap_filter_t *f, apr_bucket_brigade *b,
         ctx->remaining -= totalread;
         if (ctx->remaining > 0) {
             e = APR_BRIGADE_LAST(b);
-            if (APR_BUCKET_IS_EOS(e))
-                return APR_EOF;
+            if (APR_BUCKET_IS_EOS(e)) {
+                apr_bucket_delete(e);
+                return APR_INCOMPLETE;
+            }
         }
     }
 

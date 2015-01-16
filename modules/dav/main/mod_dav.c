@@ -315,6 +315,7 @@ static const char *dav_cmd_davmintimeout(cmd_parms *cmd, void *config,
 static int dav_error_response(request_rec *r, int status, const char *body)
 {
     r->status = status;
+    r->status_line = ap_get_status_line(status);
 
     ap_set_content_type(r, "text/html; charset=ISO-8859-1");
 
@@ -396,9 +397,11 @@ static int dav_error_response_tag(request_rec *r,
  */
 static const char *dav_xml_escape_uri(apr_pool_t *p, const char *uri)
 {
+    const char *e_uri = ap_escape_uri(p, uri);
+
     /* check the easy case... */
-    if (ap_strchr_c(uri, '&') == NULL)
-        return uri;
+    if (ap_strchr_c(e_uri, '&') == NULL)
+        return e_uri;
 
     /* there was a '&', so more work is needed... sigh. */
 
@@ -406,7 +409,7 @@ static const char *dav_xml_escape_uri(apr_pool_t *p, const char *uri)
      * Note: this is a teeny bit of overkill since we know there are no
      * '<' or '>' characters, but who cares.
      */
-    return apr_xml_quote_string(p, uri, 0);
+    return apr_xml_quote_string(p, e_uri, 0);
 }
 
 
@@ -709,8 +712,8 @@ static dav_error *dav_get_resource(request_rec *r, int label_allowed,
     if (conf->provider == NULL) {
         return dav_new_error(r->pool, HTTP_METHOD_NOT_ALLOWED, 0, 0,
                              apr_psprintf(r->pool,
-				          "DAV not enabled for %s",
-					  ap_escape_html(r->pool, r->uri)));
+                             "DAV not enabled for %s",
+                             ap_escape_html(r->pool, r->uri)));
     }
 
     /* resolve the resource */

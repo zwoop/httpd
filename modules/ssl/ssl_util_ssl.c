@@ -70,52 +70,11 @@ void SSL_set_app_data2(SSL *ssl, void *arg)
 
 /*  _________________________________________________________________
 **
-**  High-Level Certificate / Private Key Loading
+**  High-Level Private Key Loading
 **  _________________________________________________________________
 */
 
-X509 *SSL_read_X509(char* filename, X509 **x509, pem_password_cb *cb)
-{
-    X509 *rc;
-    BIO *bioS;
-    BIO *bioF;
-
-    /* 1. try PEM (= DER+Base64+headers) */
-    if ((bioS=BIO_new_file(filename, "r")) == NULL)
-        return NULL;
-    rc = PEM_read_bio_X509 (bioS, x509, cb, NULL);
-    BIO_free(bioS);
-
-    if (rc == NULL) {
-        /* 2. try DER+Base64 */
-        if ((bioS=BIO_new_file(filename, "r")) == NULL)
-            return NULL;
-
-        if ((bioF = BIO_new(BIO_f_base64())) == NULL) {
-            BIO_free(bioS);
-            return NULL;
-        }
-        bioS = BIO_push(bioF, bioS);
-        rc = d2i_X509_bio(bioS, NULL);
-        BIO_free_all(bioS);
-
-        if (rc == NULL) {
-            /* 3. try plain DER */
-            if ((bioS=BIO_new_file(filename, "r")) == NULL)
-                return NULL;
-            rc = d2i_X509_bio(bioS, NULL);
-            BIO_free(bioS);
-        }
-    }
-    if (rc != NULL && x509 != NULL) {
-        if (*x509 != NULL)
-            X509_free(*x509);
-        *x509 = rc;
-    }
-    return rc;
-}
-
-EVP_PKEY *SSL_read_PrivateKey(char* filename, EVP_PKEY **key, pem_password_cb *cb, void *s)
+EVP_PKEY *SSL_read_PrivateKey(const char* filename, EVP_PKEY **key, pem_password_cb *cb, void *s)
 {
     EVP_PKEY *rc;
     BIO *bioS;
@@ -166,6 +125,7 @@ int SSL_smart_shutdown(SSL *ssl)
 {
     int i;
     int rc;
+    int flush;
 
     /*
      * Repeat the calls, because SSL_shutdown internally dispatches through a
@@ -175,8 +135,20 @@ int SSL_smart_shutdown(SSL *ssl)
      * connection and OpenSSL cannot recognize it.
      */
     rc = 0;
+    flush = !(SSL_get_shutdown(ssl) & SSL_SENT_SHUTDOWN);
     for (i = 0; i < 4 /* max 2x pending + 2x data = 4 */; i++) {
-        if ((rc = SSL_shutdown(ssl)))
+        rc = SSL_shutdown(ssl);
+        if (rc >= 0 && flush && (SSL_get_shutdown(ssl) & SSL_SENT_SHUTDOWN)) {
+            /* Once the close notity is sent through the output filters,
+             * ensure it is flushed through the socket.
+             */
+            if (BIO_flush(SSL_get_wbio(ssl)) <= 0) {
+                rc = -1;
+                break;
+            }
+            flush = 0;
+        }
+        if (rc != 0)
             break;
     }
     return rc;
@@ -187,29 +159,6 @@ int SSL_smart_shutdown(SSL *ssl)
 **  Certificate Checks
 **  _________________________________________________________________
 */
-
-/* check whether cert contains extended key usage with a SGC tag */
-BOOL SSL_X509_isSGC(X509 *cert)
-{
-    int ext_nid;
-    EXTENDED_KEY_USAGE *sk;
-    BOOL is_sgc;
-    int i;
-
-    is_sgc = FALSE;
-    sk = X509_get_ext_d2i(cert, NID_ext_key_usage, NULL, NULL);
-    if (sk) {
-        for (i = 0; i < sk_ASN1_OBJECT_num(sk); i++) {
-            ext_nid = OBJ_obj2nid(sk_ASN1_OBJECT_value(sk, i));
-            if (ext_nid == NID_ms_sgc || ext_nid == NID_ns_sgc) {
-                is_sgc = TRUE;
-                break;
-            }
-        }
-    EXTENDED_KEY_USAGE_free(sk);
-    }
-    return is_sgc;
-}
 
 /* retrieve basic constraints ingredients */
 BOOL SSL_X509_getBC(X509 *cert, int *ca, int *pathlen)

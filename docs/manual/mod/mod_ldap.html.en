@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_ldap - Apache HTTP Server</title>
+<title>mod_ldap - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -91,8 +91,7 @@ by other LDAP modules</td></tr>
     <code class="module"><a href="../mod/mod_ldap.html">mod_ldap</a></code> to increase the performance of HTTP Basic
     authentication provided by <code class="module"><a href="../mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code>.</p>
 
-    <pre class="prettyprint lang-config">
-# Enable the LDAP connection pool and shared
+    <pre class="prettyprint lang-config"># Enable the LDAP connection pool and shared
 # memory cache. Enable the LDAP cache status
 # handler. Requires that mod_ldap and mod_authnz_ldap
 # be loaded. Change the "yourdomain.example.com" to
@@ -106,17 +105,16 @@ LDAPOpCacheTTL 600
 
 &lt;Location /ldap-status&gt;
     SetHandler ldap-status
-    
+
     Require host yourdomain.example.com
-    
+
     Satisfy any
     AuthType Basic
     AuthName "LDAP Protected"
     AuthBasicProvider ldap
     AuthLDAPURL ldap://127.0.0.1/dc=example,dc=com?uid?one
     Require valid-user
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -142,9 +140,9 @@ LDAPOpCacheTTL 600
     credentials used when binding to an LDAP server. These
     credentials can be provided to LDAP servers that do not
     allow anonymous binds during referral chasing. To control
-    this feature, see the 
-    <code class="directive"><a href="#ldapreferrals">LDAPReferrals</a></code> and 
-    <code class="directive"><a href="#ldapreferralhoplimit">LDAPReferralHopLimit</a></code> 
+    this feature, see the
+    <code class="directive"><a href="#ldapreferrals">LDAPReferrals</a></code> and
+    <code class="directive"><a href="#ldapreferralhoplimit">LDAPReferralHopLimit</a></code>
     directives. By default, this feature is enabled.</p>
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -211,11 +209,9 @@ LDAPOpCacheTTL 600
       following directives could be used to access the
       <code class="module"><a href="../mod/mod_ldap.html">mod_ldap</a></code> cache information:</p>
 
-      <pre class="prettyprint lang-config">
-&lt;Location /server/cache-info&gt;
+      <pre class="prettyprint lang-config">&lt;Location /server/cache-info&gt;
     SetHandler ldap-status
-&lt;/Location&gt;
-      </pre>
+&lt;/Location&gt;</pre>
 
 
       <p>By fetching the URL <code>http://servername/cache-info</code>,
@@ -231,56 +227,52 @@ LDAPOpCacheTTL 600
 <h2><a name="usingssltls" id="usingssltls">Using SSL/TLS</a></h2>
 
     <p>The ability to create an SSL and TLS connections to an LDAP server
-    is defined by the directives 
-    <code class="directive"><a href="#ldaptrustedglobalcert">LDAPTrustedGlobalCert</a></code>, 
+    is defined by the directives
+    <code class="directive"><a href="#ldaptrustedglobalcert">LDAPTrustedGlobalCert</a></code>,
     <code class="directive"><a href="#ldaptrustedclientcert">LDAPTrustedClientCert</a></code>
-     and <code class="directive"><a href="#ldaptrustedmode">LDAPTrustedMode</a></code>. 
-    These directives specify the CA and optional client certificates to be used, 
-    as well as the type of encryption to be used on the connection (none, SSL or 
+     and <code class="directive"><a href="#ldaptrustedmode">LDAPTrustedMode</a></code>.
+    These directives specify the CA and optional client certificates to be used,
+    as well as the type of encryption to be used on the connection (none, SSL or
     TLS/STARTTLS).</p>
 
-    <pre class="prettyprint lang-config">
-# Establish an SSL LDAP connection on port 636. Requires that 
-# mod_ldap and mod_authnz_ldap be loaded. Change the 
+    <pre class="prettyprint lang-config"># Establish an SSL LDAP connection on port 636. Requires that
+# mod_ldap and mod_authnz_ldap be loaded. Change the
 # "yourdomain.example.com" to match your domain.
 
 LDAPTrustedGlobalCert CA_DER /certs/certfile.der
 
 &lt;Location /ldap-status&gt;
     SetHandler ldap-status
-    
+
     Require host yourdomain.example.com
-    
+
     Satisfy any
     AuthType Basic
     AuthName "LDAP Protected"
     AuthBasicProvider ldap
     AuthLDAPURL ldaps://127.0.0.1/dc=example,dc=com?uid?one
     Require valid-user
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
-    <pre class="prettyprint lang-config">
-# Establish a TLS LDAP connection on port 389. Requires that 
-# mod_ldap and mod_authnz_ldap be loaded. Change the 
+    <pre class="prettyprint lang-config"># Establish a TLS LDAP connection on port 389. Requires that
+# mod_ldap and mod_authnz_ldap be loaded. Change the
 # "yourdomain.example.com" to match your domain.
 
 LDAPTrustedGlobalCert CA_DER /certs/certfile.der
 
 &lt;Location /ldap-status&gt;
     SetHandler ldap-status
-    
+
     Require host yourdomain.example.com
-    
+
     Satisfy any
     AuthType Basic
     AuthName "LDAP Protected"
     AuthBasicProvider ldap
     AuthLDAPURL ldap://127.0.0.1/dc=example,dc=com?uid?one TLS
     Require valid-user
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -314,8 +306,7 @@ LDAPTrustedGlobalCert CA_DER /certs/certfile.der
         an error when an attempt is made to contact the LDAP server at
         runtime.</p>
 
-        <pre class="prettyprint lang-config">
-# Specify a Netscape CA certificate file
+        <pre class="prettyprint lang-config"># Specify a Netscape CA certificate file
 LDAPTrustedGlobalCert CA_CERT7_DB /certs/cert7.db
 # Specify an optional key3.db file for client certificate support
 LDAPTrustedGlobalCert CERT_KEY3_DB /certs/key3.db
@@ -333,8 +324,7 @@ LDAPTrustedGlobalCert CA_SECMOD /certs/secmod
     LDAPTrustedClientCert CERT_NICKNAME &lt;nickname&gt; [password]
     AuthLDAPURL ldaps://127.0.0.1/dc=example,dc=com?uid?one
     Require valid-user
-&lt;/Location&gt;
-        </pre>
+&lt;/Location&gt;</pre>
 
 
     
@@ -355,16 +345,14 @@ LDAPTrustedGlobalCert CA_SECMOD /certs/secmod
         LDAPTrustedMode parameter. If an ldaps:// URL is specified,
         SSL mode is forced, override this directive.</p>
 
-        <pre class="prettyprint lang-config">
-# Specify two CA certificate files
+        <pre class="prettyprint lang-config"># Specify two CA certificate files
 LDAPTrustedGlobalCert CA_DER /certs/cacert1.der
 LDAPTrustedGlobalCert CA_BASE64 /certs/cacert2.pem
 # Specify a client certificate file and key
 LDAPTrustedGlobalCert CERT_BASE64 /certs/cert1.pem
 LDAPTrustedGlobalCert KEY_BASE64 /certs/key1.pem [password]
 # Do not use this directive, as it will throw an error
-#LDAPTrustedClientCert CERT_BASE64 /certs/cert1.pem
-        </pre>
+#LDAPTrustedClientCert CERT_BASE64 /certs/cert1.pem</pre>
 
 
     
@@ -388,15 +376,14 @@ LDAPTrustedGlobalCert KEY_BASE64 /certs/key1.pem [password]
         (ldaps://) support has been deprecated to be replaced with TLS,
         although the SSL functionality still works.</p>
 
-        <pre class="prettyprint lang-config">
-# Specify two CA certificate files
+        <pre class="prettyprint lang-config"># Specify two CA certificate files
 LDAPTrustedGlobalCert CA_DER /certs/cacert1.der
 LDAPTrustedGlobalCert CA_BASE64 /certs/cacert2.pem
 &lt;Location /ldap-status&gt;
     SetHandler ldap-status
-    
+
     Require host yourdomain.example.com
-    
+
     LDAPTrustedClientCert CERT_BASE64 /certs/cert1.pem
     LDAPTrustedClientCert KEY_BASE64 /certs/key1.pem
     # CA certs respecified due to per-directory client certs
@@ -408,8 +395,7 @@ LDAPTrustedGlobalCert CA_BASE64 /certs/cacert2.pem
     AuthBasicProvider ldap
     AuthLDAPURL ldaps://127.0.0.1/dc=example,dc=com?uid?one
     Require valid-user
-&lt;/Location&gt;
-        </pre>
+&lt;/Location&gt;</pre>
 
 
     
@@ -485,13 +471,18 @@ LDAPTrustedGlobalCert CA_BASE64 /certs/cacert2.pem
 
     <p>A setting of 0 causes connections to never be saved in the backend
     connection pool.  The default value of -1, and any other negative value,
-     allows connections of any age to be reused.</p>
+    allows connections of any age to be reused.</p>
 
-    <p>The timemout is based on when the LDAP connection is returned to the 
-    pool, not based on the last time I/O has been performed over the backend
-    connection.  If the information is cached, the apparent idle time can exceed
-    the <code class="directive">LDAPConnectionPoolTTL</code>. </p> 
+    <p>For performance reasons, the reference time used by this directive is 
+    based on when the LDAP connection is returned to the pool, not the time
+    of the last successful I/O with the LDAP server.  </p>
 
+    <p>Since 2.4.10, new measures are in place to avoid the reference time
+    from being inflated by cache hits or slow requests.  First, the reference
+    time is not updated if no backend LDAP conncetions were needed. Second,
+    the reference time uses the time the HTTP request was received instead
+    of the time the request is completed.</p>
+    
     <div class="note"><p>This timeout defaults to units of seconds, but accepts
     suffixes for milliseconds (ms), minutes (min), and hours (h).
     </p></div>
@@ -596,7 +587,7 @@ valid</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ldap</td></tr>
 </table>
-    <p>This directive, if enabled by the <code>LDAPReferrals</code> directive,
+    <p>This directive, if enabled by the <code class="directive">LDAPReferrals</code> directive,
     limits the number of referral hops that are followed before terminating an
     LDAP query.</p>
 
@@ -615,35 +606,35 @@ valid</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>AuthConfig</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ldap</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>The <var>default</var> parameter is available in Apache 2.4.7 and later</td></tr>
 </table>
     <p>Some LDAP servers divide their directory among multiple domains and use referrals
     to direct a client when a domain boundary is crossed. This is similar to a HTTP redirect.
-    LDAP client libraries may or may not chase referrals by default. This directive 
-    explicitly configures the referral chasing in the underlying SDK.</p> 
-    
-  
-    <p><code class="directive">LDAPReferrals</code> takes the takes the following values:
+    LDAP client libraries may or may not chase referrals by default. This directive
+    explicitly configures the referral chasing in the underlying SDK.</p>
+
+
+    <p><code class="directive">LDAPReferrals</code> takes the following values:</p>
     <dl>
      <dt>"on"</dt>
      <dd> <p> When set to "on", the underlying SDK's referral chasing state
-              is enabled, <code class="directive">LDAPReferralHopLimit</code> is used to 
-              override the SDK's hop limit, and an LDAP rebind callback is 
+              is enabled, <code class="directive">LDAPReferralHopLimit</code> is used to
+              override the SDK's hop limit, and an LDAP rebind callback is
               registered.</p></dd>
      <dt>"off"</dt>
      <dd> <p> When set to "off", the underlying SDK's referral chasing state
               is disabled completely.</p></dd>
      <dt>"default"</dt>
      <dd> <p> When set to "default", the underlying SDK's referral chasing state
-              is not changed, <code class="directive">LDAPReferralHopLimit</code> is not 
-              used to overide the SDK's hop limit, and no LDAP rebind callback is 
+              is not changed, <code class="directive">LDAPReferralHopLimit</code> is not
+              used to overide the SDK's hop limit, and no LDAP rebind callback is
               registered.</p></dd>
     </dl>
-    </p>
 
-    <p> The directive <code>LDAPReferralHopLimit</code> works in conjunction with
+    <p>The directive <code class="directive">LDAPReferralHopLimit</code> works in conjunction with
     this directive to limit the number of referral hops to follow before terminating the LDAP query.
-    When referral processing is enabled by a value of "On", client credentials will be provided, 
-    via a rebind callback, for any LDAP server requiring them. </p>
+    When referral processing is enabled by a value of "On", client credentials will be provided,
+    via a rebind callback, for any LDAP server requiring them.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -656,7 +647,7 @@ valid</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ldap</td></tr>
 </table>
-    <p>The server will retry failed LDAP requests up to 
+    <p>The server will retry failed LDAP requests up to
     <code class="directive">LDAPRetries</code> times.  Setting this
     directive to 0 disables retries.</p>
     <p>LDAP errors such as timeouts and refused connections are retryable.</p>
@@ -673,7 +664,7 @@ valid</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ldap</td></tr>
 </table>
     <p>If <code class="directive">LDAPRetryDelay</code> is set to a non-zero
-    value, the server will delay retrying an LDAP request for the 
+    value, the server will delay retrying an LDAP request for the
     specified amount of time.  Setting this directive to 0 will
     result in any retry to occur without delay.</p>
 
@@ -869,7 +860,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_ldap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

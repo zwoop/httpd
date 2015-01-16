@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Utilisation du serveur HTTP Apache sous Microsoft Windows - Serveur Apache HTTP</title>
+<title>Utilisation du serveur HTTP Apache sous Microsoft Windows - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -26,8 +26,6 @@
 <a href="../fr/platform/windows.html" title="Français">&nbsp;fr&nbsp;</a> |
 <a href="../ko/platform/windows.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a></p>
 </div>
-<div class="outofdate">Cette traduction peut être périmée. Vérifiez la version
-            anglaise pour les changements récents.</div>
 
 
     <p>Ce document décrit l'installation, la configuration et
@@ -72,7 +70,12 @@
     
 
     <p>Le projet du serveur HTTP Apache proprement dit ne fournit pas de
-    distribution binaire mais seulement le code source. Si vous n'êtes
+    distribution binaire mais seulement le code source. Certains membres
+    du projet <em>peuvent</em> mettre à disposition des paquets binaires
+    à titre individuel, mais ceux-ci n'ont pas vocation à être
+    distribués publiquement.</p>
+    
+    <p>Si vous n'êtes
     pas en mesure de compiler le serveur HTTP Apache vous-même, vous
     pouvez vous procurer un paquet binaire auprès des nombreuses
     distributions disponibles sur Internet.</p>
@@ -82,6 +85,7 @@
     <ul>
     <li><a href="http://www.apachehaus.com/cgi-bin/download.plx">ApacheHaus</a></li>
     <li><a href="http://www.apachelounge.com/download/">Apache Lounge</a></li>
+    <li><a href="http://bitnami.com/stack/wamp">BitNami WAMP Stack</a></li>
     <li><a href="http://www.wampserver.com/">WampServer</a></li>
     <li><a href="http://www.apachefriends.org/en/xampp.html">XAMPP</a></li>
     </ul>
@@ -152,12 +156,10 @@
       assurer que seules des minuscules sont utilisées dans les URLs,
       vous pouvez utiliser ceci :</p>
 
-      <pre class="prettyprint lang-config">
-RewriteEngine On
+      <pre class="prettyprint lang-config">RewriteEngine On
 RewriteMap lowercase int:tolower
 RewriteCond %{REQUEST_URI} [A-Z]
-RewriteRule (.*) ${lowercase:$1} [R,L]
-      </pre>
+RewriteRule (.*) ${lowercase:$1} [R,L]</pre>
 </li>
 
       <li><p>Lors de son exécution, Apache n'a besoin d'un accès en
@@ -181,9 +183,7 @@ RewriteRule (.*) ${lowercase:$1} [R,L]
       (en plus des directives d'activation de status dans
       <code>access.conf</code>) :</p>
 
-      <pre class="prettyprint lang-config">
-        LoadModule status_module modules/mod_status.so
-      </pre>
+      <pre class="prettyprint lang-config">LoadModule status_module modules/mod_status.so</pre>
 
 
       <p>Des informations sont aussi à votre disposition pour <a href="../mod/mod_so.html#creating">créer des modules
@@ -656,24 +656,18 @@ RewriteRule (.*) ${lowercase:$1} [R,L]
   restriction due aux associations de lettres de lecteur, mais leur
   utilisation est déconseillée).</p>
 
-  <div class="example"><h3>Exemple de DocumentRoot avec chemin UNC</h3><pre class="prettyprint lang-config">
-  DocumentRoot //dochost/www/html/
-  </pre>
+  <div class="example"><h3>Exemple de DocumentRoot avec chemin UNC</h3><pre class="prettyprint lang-config">DocumentRoot //dochost/www/html/</pre>
 </div>
 
-  <div class="example"><h3>Exemple de DocumentRoot avec adresse IP dans le chemin UNC</h3><pre class="prettyprint lang-config">
-  DocumentRoot //192.168.1.50/docs/
-  </pre>
+  <div class="example"><h3>Exemple de DocumentRoot avec adresse IP dans le chemin UNC</h3><pre class="prettyprint lang-config">DocumentRoot //192.168.1.50/docs/</pre>
 </div>
 
   <div class="example"><h3>Exemple d'Alias et répertoire correspondant avec
-  chemin UNC</h3><pre class="prettyprint lang-config">
-Alias /images/ //imagehost/www/images/
+  chemin UNC</h3><pre class="prettyprint lang-config">Alias /images/ //imagehost/www/images/
 
 &lt;Directory //imagehost/www/images/&gt;
 #...
-&lt;Directory&gt;
-  </pre>
+&lt;Directory&gt;</pre>
 </div>
 
   <p>Lorsqu'Apache s'exécute en tant que service, vous devez créer un
@@ -702,7 +696,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/platform/windows.htm
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

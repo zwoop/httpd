@@ -32,8 +32,6 @@ available</description>
 <description>Configures optimizations for a Protocol's Listener Sockets</description>
 <syntax>AcceptFilter <var>protocol</var> <var>accept_filter</var></syntax>
 <contextlist><context>server config</context></contextlist>
-<compatibility>Available in Apache httpd 2.1.5 and later.
-On Windows from Apache httpd 2.3.3 and later.</compatibility>
 
 <usage>
     <p>This directive enables operating system specific optimizations for a
@@ -610,6 +608,7 @@ headers</description>
 <syntax>DefaultRuntimeDir <var>directory-path</var></syntax>
 <default>DefaultRuntimeDir DEFAULT_REL_RUNTIMEDIR (logs/)</default>
 <contextlist><context>server config</context></contextlist>
+<compatibility>Available in Apache 2.4.2 and later</compatibility>
 
 <usage>
     <p>The <directive>DefaultRuntimeDir</directive> directive sets the
@@ -880,6 +879,19 @@ the contents of file-system directories matching a regular expression.</descript
       not end in a trailing slash, so expressions that are anchored to the
       end of line ($) must be written with care.
     </note>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of paths to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <module>mod_rewrite</module>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<highlight language="config">
+&lt;DirectoryMatch ^/var/www/combined/(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/DirectoryMatch&gt;
+</highlight>
 </usage>
 <seealso><directive type="section" module="core">Directory</directive> for
 a description of how regular expressions are mixed in with normal
@@ -1325,7 +1337,6 @@ ErrorDocument 404 /cgi-bin/bad_urls.pl
 <syntax> ErrorLogFormat [connection|request] <var>format</var></syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
-<compatibility>Available in Apache httpd 2.3.9 and later</compatibility>
 
 <usage>
     <p><directive>ErrorLogFormat</directive> allows to specify what
@@ -1727,6 +1738,19 @@ filenames</description>
 </highlight>
 
     <p>would match most common Internet graphics formats.</p>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of files to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <module>mod_rewrite</module>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<highlight language="config">
+&lt;FilesMatch ^(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/FilesMatch&gt;
+</highlight>
 </usage>
 
 <seealso><a href="../sections.html">How &lt;Directory&gt;, &lt;Location&gt;
@@ -1868,7 +1892,7 @@ satisfied by a request at runtime</description>
 
     <p>would match HTTP/1.0 requests without a <var>Host:</var> header.
     Expressions may contain various shell-like operators for string
-    comparison (<code>=</code>, <code>!=</code>, <code>&lt;</code>, ...),
+    comparison (<code>==</code>, <code>!=</code>, <code>&lt;</code>, ...),
     integer comparison (<code>-eq</code>, <code>-ne</code>, ...),
     and others (<code>-n</code>, <code>-z</code>, <code>-f</code>, ...).
     It is also possible to use regular expressions, </p>
@@ -1880,6 +1904,9 @@ satisfied by a request at runtime</description>
     (<code>env</code>), and a large number of other properties. The full
     documentation is available in <a href="../expr.html">Expressions in
     Apache HTTP Server</a>.</p>
+
+    <p>Only directives that support the <a href="directive-dict.html#Context"
+    >directory context</a> can be used within this configuration section.</p>
 
 </usage>
 
@@ -2149,8 +2176,6 @@ requests on a persistent connection</description>
 <default>KeepAliveTimeout 5</default>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
-<compatibility>Specifying a value in milliseconds is available in
-Apache httpd 2.3.2 and later</compatibility>
 
 <usage>
     <p>The number of seconds Apache httpd will wait for a subsequent
@@ -2479,8 +2504,7 @@ from the client</description>
     <highlight language="config">LimitRequestLine 4094</highlight>
 
     <note>Under normal conditions, the value should not be changed from
-    the default. Also, you can't set this higher than 8190 without
-    modifying the source and rebuilding.</note>
+    the default.</note>
 
     <note type="warning"><title>Warning</title>
     <p> When name-based virtual hosting is used, the value for this
@@ -2679,6 +2703,19 @@ matching URLs</description>
 
     <p>would match URLs that contained the substring <code>/extra/data</code>
     or <code>/special/data</code>.</p>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of URLs to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <module>mod_rewrite</module>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<highlight language="config">
+&lt;LocationMatch ^/combined/(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/LocationMatch&gt;
+</highlight>
 </usage>
 
 <seealso><a href="../sections.html">How &lt;Directory&gt;, &lt;Location&gt;
@@ -3767,8 +3804,10 @@ itself</description>
     server).</p>
 
     <p>If no <directive>ServerName</directive> is specified, then the
-    server attempts to deduce the hostname by performing a reverse
-    lookup on the IP address. If no port is specified in the
+    server attempts to deduce the client visible hostname by performing a
+    reverse lookup on an IP address of the systems hostname.</p>
+    
+    <p>If no port is specified in the
     <directive>ServerName</directive>, then the server will use the
     port from the incoming request. For optimal reliability and
     predictability, you should specify an explicit hostname and port
@@ -4392,5 +4431,24 @@ hostname or IP address</description>
     and &lt;Files&gt; sections work</a> for an explanation of how these
     different sections are combined when a request is received</seealso>
 </directivesynopsis>
+
+<directivesynopsis>
+<name>MergeTrailers</name>
+<description>Determins whether trailers are merged into headers</description>
+<syntax>MergeTrailers [on|off]</syntax>
+<default>MergeTrailers off</default>
+<contextlist><context>server config</context><context>virtual host</context></contextlist>
+<compatibility>2.4.10 and later</compatibility>
+
+<usage>
+    <p>This directive controls whether HTTP trailers are copied into the
+    internal representation of HTTP headers. This mergeing occurs when the 
+    request body has been completely consumed, long after most header 
+    processing would have a chance to examine or modify request headers.</p>
+    <p>This option is provided for compatibility with releases prior to 2.4.10,
+    where trailers were always merged.</p>
+</usage>
+</directivesynopsis>
+
 
 </modulesynopsis>

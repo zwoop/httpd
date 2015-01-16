@@ -717,13 +717,13 @@ static dav_error * dav_fs_get_resource(
     resource->pool = r->pool;
 
     /* make sure the URI does not have a trailing "/" */
-    len = strlen(r->unparsed_uri);
-    if (len > 1 && r->unparsed_uri[len - 1] == '/') {
-        s = apr_pstrmemdup(r->pool, r->unparsed_uri, len-1);
+    len = strlen(r->uri);
+    if (len > 1 && r->uri[len - 1] == '/') {
+        s = apr_pstrmemdup(r->pool, r->uri, len-1);
         resource->uri = s;
     }
     else {
-        resource->uri = r->unparsed_uri;
+        resource->uri = r->uri;
     }
 
     if (r->finfo.filetype != APR_NOFILE) {
@@ -874,12 +874,13 @@ static int dav_fs_is_parent_resource(
             && ctx2->pathname[len1] == '/');
 }
 
-static apr_status_t tmpfile_cleanup(void *data) {
-        dav_stream *ds = data;
-        if (ds->temppath) {
-                apr_file_remove(ds->temppath, ds->p);
-        }
-        return APR_SUCCESS;
+static apr_status_t tmpfile_cleanup(void *data)
+{
+    dav_stream *ds = data;
+    if (ds->temppath) {
+        apr_file_remove(ds->temppath, ds->p);
+    }
+    return APR_SUCCESS;
 }
 
 /* custom mktemp that creates the file with APR_OS_DEFAULT permissions */
@@ -1482,18 +1483,6 @@ static dav_error * dav_fs_remove_resource(dav_resource *resource,
     return dav_fs_deleteset(info->pool, resource);
 }
 
-/* Take an unescaped path component and escape it and append it onto a
- * dav_buffer for a URI */
-static apr_size_t dav_fs_append_uri(apr_pool_t *p, dav_buffer *pbuf,
-                                    const char *path, apr_size_t pad)
-{
-    const char *epath = ap_escape_uri(p, path);
-    apr_size_t epath_len = strlen(epath);
-
-    dav_buffer_place_mem(p, pbuf, epath, epath_len + 1, pad);
-    return epath_len;
-}
-
 /* ### move this to dav_util? */
 /* Walk recursively down through directories, *
  * including lock-null resources as we go.    */
@@ -1549,7 +1538,6 @@ static dav_error * dav_fs_walker(dav_fs_walker_context *fsctx, int depth)
     }
     while ((apr_dir_read(&dirent, APR_FINFO_DIRENT, dirp)) == APR_SUCCESS) {
         apr_size_t len;
-        apr_size_t escaped_len;
 
         len = strlen(dirent.name);
 
@@ -1592,7 +1580,7 @@ static dav_error * dav_fs_walker(dav_fs_walker_context *fsctx, int depth)
 
         /* copy the file to the URI, too. NOTE: we will pad an extra byte
            for the trailing slash later. */
-        escaped_len = dav_fs_append_uri(pool, &fsctx->uri_buf, dirent.name, 1);
+        dav_buffer_place_mem(pool, &fsctx->uri_buf, dirent.name, len + 1, 1);
 
         /* if there is a secondary path, then do that, too */
         if (fsctx->path2.buf != NULL) {
@@ -1625,7 +1613,7 @@ static dav_error * dav_fs_walker(dav_fs_walker_context *fsctx, int depth)
             fsctx->path2.cur_len += len;
 
             /* adjust URI length to incorporate subdir and a slash */
-            fsctx->uri_buf.cur_len += escaped_len + 1;
+            fsctx->uri_buf.cur_len += len + 1;
             fsctx->uri_buf.buf[fsctx->uri_buf.cur_len - 1] = '/';
             fsctx->uri_buf.buf[fsctx->uri_buf.cur_len] = '\0';
 
@@ -1691,8 +1679,8 @@ static dav_error * dav_fs_walker(dav_fs_walker_context *fsctx, int depth)
             */
             dav_buffer_place_mem(pool, &fsctx->path1,
                                  fsctx->locknull_buf.buf + offset, len + 1, 0);
-            dav_fs_append_uri(pool, &fsctx->uri_buf,
-                              fsctx->locknull_buf.buf + offset, 0);
+            dav_buffer_place_mem(pool, &fsctx->uri_buf,
+                                 fsctx->locknull_buf.buf + offset, len + 1, 0);
             if (fsctx->path2.buf != NULL) {
                 dav_buffer_place_mem(pool, &fsctx->path2,
                                      fsctx->locknull_buf.buf + offset,

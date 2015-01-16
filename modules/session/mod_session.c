@@ -62,16 +62,16 @@ static int session_included(request_rec * r, session_dir_conf * conf)
         included = 0;
         for (i = 0; !included && i < conf->includes->nelts; i++) {
             const char *include = includes[i];
-            if (strncmp(r->uri, include, strlen(include))) {
+            if (strncmp(r->uri, include, strlen(include)) == 0) {
                 included = 1;
             }
         }
     }
 
     if (conf->excludes->nelts) {
-        for (i = 0; included && i < conf->includes->nelts; i++) {
+        for (i = 0; included && i < conf->excludes->nelts; i++) {
             const char *exclude = excludes[i];
-            if (strncmp(r->uri, exclude, strlen(exclude))) {
+            if (strncmp(r->uri, exclude, strlen(exclude)) == 0) {
                 included = 0;
             }
         }
@@ -126,22 +126,28 @@ static apr_status_t ap_session_load(request_rec * r, session_rec ** z)
 
     /* found a session that hasn't expired? */
     now = apr_time_now();
-    if (!zz || (zz->expiry && zz->expiry < now)) {
+    if (zz) {
+        if (zz->expiry && zz->expiry < now) {
+            zz = NULL;
+        }
+        else {
+            /* having a session we cannot decode is just as good as having
+               none at all */
+            rv = ap_run_session_decode(r, zz);
+            if (OK != rv) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01817)
+                              "error while decoding the session, "
+                              "session not loaded: %s", r->uri);
+                zz = NULL;
+            }
+        }
+    }
 
-        /* no luck, create a blank session */
+    /* no luck, create a blank session */
+    if (!zz) {
         zz = (session_rec *) apr_pcalloc(r->pool, sizeof(session_rec));
         zz->pool = r->pool;
         zz->entries = apr_table_make(zz->pool, 10);
-
-    }
-    else {
-        rv = ap_run_session_decode(r, zz);
-        if (OK != rv) {
-            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(01817)
-                          "error while decoding the session, "
-                          "session not loaded: %s", r->uri);
-            return rv;
-        }
     }
 
     /* make sure the expiry and maxage are set, if present */

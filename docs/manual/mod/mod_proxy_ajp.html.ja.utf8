@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_proxy_ajp - Apache HTTP サーバ</title>
+<title>mod_proxy_ajp - Apache HTTP サーバ バージョン 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -285,8 +285,7 @@
 <h2><a name="rpacetstruct" id="rpacetstruct">リクエストパケット構造</a></h2>
     <p>サーバからコンテナへ送られるメッセージが
     <em>Forward Request</em> 型の場合 :</p>
-    <div class="example"><pre>
-AJP13_FORWARD_REQUEST :=
+    <div class="example"><pre>AJP13_FORWARD_REQUEST :=
     prefix_code      (byte) 0x02 = JK_AJP13_FORWARD_REQUEST
     method           (byte)
     protocol         (string)
@@ -299,24 +298,18 @@ AJP13_FORWARD_REQUEST :=
     num_headers      (integer)
     request_headers *(req_header_name req_header_value)
     attributes      *(attribut_name attribute_value)
-    request_terminator (byte) OxFF
-    </pre></div>
+    request_terminator (byte) OxFF</pre></div>
     <p><code>request_headers</code> は次のような構造になっています :
-    </p><div class="example"><pre>
-req_header_name := 
+    </p><div class="example"><pre>req_header_name := 
     sc_req_header_name | (string)  [see below for how this is parsed]
 
 sc_req_header_name := 0xA0xx (integer)
 
-req_header_value := (string)
-</pre></div>
+req_header_value := (string)</pre></div>
     <p><code>属性</code> はオプションで、次のような構造をしています :</p>
-    <div class="example"><pre>
-attribute_name := sc_a_name | (sc_a_req_attribute string)
+    <div class="example"><pre>attribute_name := sc_a_name | (sc_a_req_attribute string)
 
-attribute_value := (string)
-
-    </pre></div>
+attribute_value := (string)</pre></div>
     <p>もっとも重要なヘッダは <code>content-length</code> だということに
     注意してください。コンテナは次のパケットを探すかどうかを、
     それを見て決めるからです。</p>
@@ -464,8 +457,7 @@ attribute_value := (string)
 <div class="section">
 <h2><a name="resppacketstruct" id="resppacketstruct">レスポンスパケット構造</a></h2>
     <p>コンテナがサーバに送り返すことのできるメッセージ:</p>
-    <div class="example"><pre>
-AJP13_SEND_BODY_CHUNK :=
+    <div class="example"><pre>AJP13_SEND_BODY_CHUNK :=
   prefix_code   3
   chunk_length  (integer)
   chunk        *(byte)
@@ -492,8 +484,7 @@ AJP13_END_RESPONSE :=
 
 AJP13_GET_BODY_CHUNK :=
   prefix_code       6
-  requested_length  (integer)
-    </pre></div>
+  requested_length  (integer)</pre></div>
   <h3>詳細 :</h3>
   <h3>Send Body Chunk</h3>
     <p>チャンクは基本的にはバイナリデータで、ブラウザに直接送られます。</p>
@@ -563,7 +554,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_ajp.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />この文書は <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> のライセンスで提供されています。.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />この文書は <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> のライセンスで提供されています。.</p>
 <p class="menu"><a href="../mod/">モジュール</a> | <a href="../mod/directives.html">ディレクティブ</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">用語</a> | <a href="../sitemap.html">サイトマップ</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>core - Apache HTTP Server</title>
+<title>core - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -89,6 +89,7 @@ available</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#maxrangeoverlaps">MaxRangeOverlaps</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#maxrangereversals">MaxRangeReversals</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#maxranges">MaxRanges</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#mergetrailers">MergeTrailers</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#mutex">Mutex</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#namevirtualhost">NameVirtualHost</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#options">Options</a></li>
@@ -125,8 +126,6 @@ available</td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache httpd 2.1.5 and later.
-On Windows from Apache httpd 2.3.3 and later.</td></tr>
 </table>
     <p>This directive enables operating system specific optimizations for a
        listening socket by the <code class="directive">Protocol</code> type.
@@ -140,9 +139,7 @@ On Windows from Apache httpd 2.3.3 and later.</td></tr>
     <p>Using <code>none</code> for an argument will disable any accept filters
        for that protocol.  This is useful for protocols that require a server
        send data first, such as <code>ftp:</code> or <code>nntp</code>:</p>
-    <pre class="prettyprint lang-config">
-    AcceptFilter nntp none
-    </pre>
+    <pre class="prettyprint lang-config">AcceptFilter nntp none</pre>
 
 
     <p>The default protocol names are <code>https</code> for port 443
@@ -152,10 +149,8 @@ On Windows from Apache httpd 2.3.3 and later.</td></tr>
        directive.</p>
 
     <p>The default values on FreeBSD are:</p>
-    <pre class="prettyprint lang-config">
-AcceptFilter http httpready
-AcceptFilter https dataready
-    </pre>
+    <pre class="prettyprint lang-config">AcceptFilter http httpready
+AcceptFilter https dataready</pre>
 
 
     <p>The <code>httpready</code> accept filter buffers entire HTTP requests at
@@ -167,10 +162,8 @@ AcceptFilter https dataready
        accf_data(9)</a> filter is used.</p>
 
     <p>The default values on Linux are:</p>
-    <pre class="prettyprint lang-config">
-AcceptFilter http data
-AcceptFilter https data
-    </pre>
+    <pre class="prettyprint lang-config">AcceptFilter http data
+AcceptFilter https data</pre>
 
 
     <p>Linux's <code>TCP_DEFER_ACCEPT</code> does not support buffering http
@@ -181,10 +174,8 @@ AcceptFilter https data
        tcp(7)</a> man page.</p>
 
     <p>The default values on Windows are:</p>
-    <pre class="prettyprint lang-config">
-AcceptFilter http data
-AcceptFilter https data
-    </pre>
+    <pre class="prettyprint lang-config">AcceptFilter http data
+AcceptFilter https data</pre>
 
 
     <p>Window's mpm_winnt interprets the AcceptFilter to toggle the AcceptEx()
@@ -266,13 +257,11 @@ AcceptFilter https data
     the request, so you can use the following configuration to enable
     such a script:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Files "mypaths.shtml"&gt;
+    <pre class="prettyprint lang-config">&lt;Files "mypaths.shtml"&gt;
   Options +Includes
   SetOutputFilter INCLUDES
   AcceptPathInfo On
-&lt;/Files&gt;
-    </pre>
+&lt;/Files&gt;</pre>
 
 
 
@@ -302,11 +291,9 @@ AcceptFilter https data
     <code>/usr/local/.acl</code> and <code>/usr/local/web/.acl</code>
     for directives, unless they have been disabled with</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory /&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /&gt;
     AllowOverride None
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
 <h3>See also</h3>
@@ -585,10 +572,8 @@ NoDecode option available in 2.3.12 and later.</td></tr>
 
     <p>Example:</p>
 
-    <pre class="prettyprint lang-config">
-AllowOverride None
-AllowOverrideList Redirect RedirectMatch
-    </pre>
+    <pre class="prettyprint lang-config">AllowOverride None
+AllowOverrideList Redirect RedirectMatch</pre>
 
 
     <p>In the example above only the <code>Redirect</code> and
@@ -597,13 +582,11 @@ AllowOverrideList Redirect RedirectMatch
 
     <p>Example:</p>
 
-    <pre class="prettyprint lang-config">
-AllowOverride AuthConfig
-AllowOverrideList CookieTracking CookieName
-    </pre>
+    <pre class="prettyprint lang-config">AllowOverride AuthConfig
+AllowOverrideList CookieTracking CookieName</pre>
 
 
-    <p>In the example above <code class="directive"><a href="#allowoverride&#10;    ">AllowOverride
+    <p>In the example above <code class="directive"><a href="#allowoverride">AllowOverride
     </a></code> grants permission to the <code>AuthConfig</code>
     directive grouping and <code class="directive">AllowOverrideList</code> grants
     permission to only two directives from the <code>FileInfo</code> directive
@@ -685,6 +668,7 @@ headers</td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache 2.4.2 and later</td></tr>
 </table>
     <p>The <code class="directive">DefaultRuntimeDir</code> directive sets the
     directory in which the server will create various run-time files
@@ -692,9 +676,7 @@ headers</td></tr>
     will be relative to <code class="directive">ServerRoot</code>.</p>
 
     <p><strong>Example</strong></p>
-   <pre class="prettyprint lang-config">
-DefaultRuntimeDir scratch/
-    </pre>
+   <pre class="prettyprint lang-config">DefaultRuntimeDir scratch/</pre>
 
 
     <p>The default location of <code class="directive">DefaultRuntimeDir</code> may be
@@ -769,8 +751,7 @@ which no other media type configuration could be found.
     the <code>${VAR}</code> syntax. The variable is always globally defined
     and not limited to the scope of the surrounding config section.</p>
 
-    <pre class="prettyprint lang-config">
-&lt;IfDefine TEST&gt;
+    <pre class="prettyprint lang-config">&lt;IfDefine TEST&gt;
   Define servername test.example.com
 &lt;/IfDefine&gt;
 &lt;IfDefine !TEST&gt;
@@ -778,8 +759,7 @@ which no other media type configuration could be found.
   Define SSL
 &lt;/IfDefine&gt;
 
-DocumentRoot /var/www/${servername}/htdocs
-    </pre>
+DocumentRoot /var/www/${servername}/htdocs</pre>
 
 
     <p>Variable names may not contain colon ":" characters, to avoid clashes
@@ -812,11 +792,9 @@ named file-system directory, sub-directories, and their contents.</td></tr>
     <code>/home/user/public_html</code>, but <code>&lt;Directory
     /home/*/public_html&gt;</code> will match. Example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/usr/local/httpd/htdocs"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/usr/local/httpd/htdocs"&gt;
   Options Indexes FollowSymLinks
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <div class="note">
@@ -832,11 +810,9 @@ named file-system directory, sub-directories, and their contents.</td></tr>
     expressions</a> can also be used, with the addition of the
     <code>~</code> character. For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory ~ "^/www/[0-9]{3}"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory ~ "^/www/[0-9]{3}"&gt;
 
-&lt;/Directory&gt;
-</pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>would match directories in <code>/www/</code> that consisted of
@@ -848,15 +824,13 @@ named file-system directory, sub-directories, and their contents.</td></tr>
     first, interspersed with the directives from the <a href="#accessfilename">.htaccess</a> files. For example,
     with</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory /&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /&gt;
   AllowOverride None
 &lt;/Directory&gt;
 
 &lt;Directory "/home"&gt;
   AllowOverride FileInfo
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>for access to the document <code>/home/web/dir/doc.html</code>
@@ -879,11 +853,9 @@ named file-system directory, sub-directories, and their contents.</td></tr>
     expressions are tested in the order they appeared in the
     configuration file. For example, with</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory ~ "abc$"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory ~ "abc$"&gt;
   # ... directives here ...
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>the regular expression section won't be considered until after
@@ -899,11 +871,9 @@ named file-system directory, sub-directories, and their contents.</td></tr>
     recommended that you change this with a block such
     as</strong></p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory /&gt;
+    <pre class="prettyprint lang-config">&lt;Directory /&gt;
   Require all denied
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p><strong>and then override this for directories you
@@ -940,11 +910,9 @@ the contents of file-system directories matching a regular expression.</td></tr>
     However, it takes as an argument a
     <a class="glossarylink" href="../glossary.html#regex" title="see glossary">regular expression</a>.  For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}"&gt;
+    <pre class="prettyprint lang-config">&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}"&gt;
     # ...
-&lt;/DirectoryMatch&gt;
-</pre>
+&lt;/DirectoryMatch&gt;</pre>
 
 
     <p>would match directories in <code>/www/</code> that consisted of three
@@ -963,6 +931,18 @@ the contents of file-system directories matching a regular expression.</td></tr>
       not end in a trailing slash, so expressions that are anchored to the
       end of line ($) must be written with care.
     </div>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of paths to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<pre class="prettyprint lang-config">&lt;DirectoryMatch ^/var/www/combined/(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/DirectoryMatch&gt;</pre>
+
 
 <h3>See also</h3>
 <ul>
@@ -1027,14 +1007,12 @@ satisfied by a request at runtime</td></tr>
     in the same scope has not been applied.
     For example: In </p>
 
-    <pre class="prettyprint lang-config">
-&lt;If "-z req('Host')"&gt;
+    <pre class="prettyprint lang-config">&lt;If "-z req('Host')"&gt;
   # ...
 &lt;/If&gt;
 &lt;Else&gt;
   # ...
-&lt;/Else&gt;
-    </pre>
+&lt;/Else&gt;</pre>
 
 
     <p> The <code class="directive">&lt;If&gt;</code> would match HTTP/1.0
@@ -1075,8 +1053,7 @@ satisfied</td></tr>
     <code class="directive">&lt;ElseIf&gt;</code> section in the same scope has
     not been applied.  For example: In </p>
 
-    <pre class="prettyprint lang-config">
-&lt;If "-R '10.1.0.0/16'"&gt;
+    <pre class="prettyprint lang-config">&lt;If "-R '10.1.0.0/16'"&gt;
   #...
 &lt;/If&gt;
 &lt;ElseIf "-R '10.0.0.0/8'"&gt;
@@ -1084,8 +1061,7 @@ satisfied</td></tr>
 &lt;/ElseIf&gt;
 &lt;Else&gt;
   #...
-&lt;/Else&gt;
-    </pre>
+&lt;/Else&gt;</pre>
 
 
     <p>The <code class="directive">&lt;ElseIf&gt;</code> would match if
@@ -1147,11 +1123,9 @@ for a complete reference and more examples.</li>
     <p>For NFS mounted files, this feature may be disabled explicitly for
     the offending files by specifying:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/path-to-nfs-files"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/path-to-nfs-files"&gt;
   EnableMMAP Off
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
 </div>
@@ -1203,11 +1177,9 @@ version 2.3.9.</td></tr>
     <p>For network mounted files, this feature may be disabled explicitly
     for the offending files by specifying:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/path-to-nfs-files"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/path-to-nfs-files"&gt;
   EnableSendfile Off
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
     <p>Please note that the per-directory and .htaccess configuration
        of <code class="directive">EnableSendfile</code> is not supported by
@@ -1232,8 +1204,7 @@ version 2.3.9.</td></tr>
     configuration parsing.  The typical use is for reporting required
     modules which are missing from the configuration.</p>
 
-    <pre class="prettyprint lang-config">
-# Example
+    <pre class="prettyprint lang-config"># Example
 # ensure that mod_include is loaded
 &lt;IfModule !include_module&gt;
   Error "mod_include is required by mod_foo.  Load it with LoadModule."
@@ -1249,8 +1220,7 @@ version 2.3.9.</td></tr>
 &lt;IfDefine !NOSSL&gt;
   Error "Either SSL or NOSSL must be defined."
 &lt;/IfDefine&gt;
-&lt;/IfDefine&gt;
-    </pre>
+&lt;/IfDefine&gt;</pre>
 
 
 
@@ -1292,13 +1262,11 @@ in case of an error</td></tr>
     full URL which the client can resolve. Alternatively, a message
     can be provided to be displayed by the browser. Examples:</p>
 
-    <pre class="prettyprint lang-config">
-ErrorDocument 500 http://foo.example.com/cgi-bin/tester
+    <pre class="prettyprint lang-config">ErrorDocument 500 http://foo.example.com/cgi-bin/tester
 ErrorDocument 404 /cgi-bin/bad_urls.pl
 ErrorDocument 401 /subscription_info.html
 ErrorDocument 403 "Sorry can't allow you access today"
-ErrorDocument 403 Forbidden!
-    </pre>
+ErrorDocument 403 Forbidden!</pre>
 
 
     <p>Additionally, the special value <code>default</code> can be used
@@ -1307,13 +1275,11 @@ ErrorDocument 403 Forbidden!
     Apache httpd's simple hardcoded message for configurations that would
     otherwise inherit an existing <code class="directive">ErrorDocument</code>.</p>
 
-    <pre class="prettyprint lang-config">
-ErrorDocument 404 /cgi-bin/bad_urls.pl
+    <pre class="prettyprint lang-config">ErrorDocument 404 /cgi-bin/bad_urls.pl
 
 &lt;Directory /web/docs&gt;
   ErrorDocument 404 default
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>Note that when you specify an <code class="directive">ErrorDocument</code>
@@ -1424,16 +1390,13 @@ ErrorDocument 404 /cgi-bin/bad_urls.pl
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Available in Apache httpd 2.3.9 and later</td></tr>
 </table>
     <p><code class="directive">ErrorLogFormat</code> allows to specify what
     supplementary information is logged in the error log in addition to the
     actual log message.</p>
 
-    <pre class="prettyprint lang-config">
-#Simple example
-ErrorLogFormat "[%t] [%l] [pid %P] %F: %E: [client %a] %M"
-    </pre>
+    <pre class="prettyprint lang-config">#Simple example
+ErrorLogFormat "[%t] [%l] [pid %P] %F: %E: [client %a] %M"</pre>
 
 
     <p>Specifying <code>connection</code> or <code>request</code> as first
@@ -1562,10 +1525,8 @@ ErrorLogFormat "[%t] [%l] [pid %P] %F: %E: [client %a] %M"
     with error log lines. If <code class="module"><a href="../mod/mod_unique_id.html">mod_unique_id</a></code> is loaded, its
     unique id will be used as log ID for requests.</p>
 
-    <pre class="prettyprint lang-config">
-#Example (default format for threaded MPMs)
-ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M%&nbsp;,\&nbsp;referer\&nbsp;%{Referer}i"
-    </pre>
+    <pre class="prettyprint lang-config">#Example (default format for threaded MPMs)
+ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M% ,\ referer\ %{Referer}i"</pre>
 
 
     <p>This would result in error messages such as:</p>
@@ -1577,20 +1538,16 @@ ErrorLogFormat "[%{u}t] [%-m:%l] [pid %P:tid %T] %7F: %E: [client\ %a] %M%&nbsp;
     <p>Notice that, as discussed above, some fields are omitted
     entirely because they are not defined.</p>
 
-    <pre class="prettyprint lang-config">
-#Example (similar to the 2.2.x format)
-ErrorLogFormat "[%t] [%l] %7F: %E: [client\ %a] %M%&nbsp;,\&nbsp;referer\&nbsp;%{Referer}i"
-    </pre>
+    <pre class="prettyprint lang-config">#Example (similar to the 2.2.x format)
+ErrorLogFormat "[%t] [%l] %7F: %E: [client\ %a] %M% ,\ referer\ %{Referer}i"</pre>
 
 
-    <pre class="prettyprint lang-config">
-#Advanced example with request/connection log IDs
+    <pre class="prettyprint lang-config">#Advanced example with request/connection log IDs
 ErrorLogFormat "[%{uc}t] [%-m:%-l] [R:%L] [C:%{C}L] %7F: %E: %M"
 ErrorLogFormat request "[%{uc}t] [R:%L] Request %k on C:%{c}L pid:%P tid:%T"
 ErrorLogFormat request "[%{uc}t] [R:%L] UA:'%+{User-Agent}i'"
 ErrorLogFormat request "[%{uc}t] [R:%L] Referer:'%+{Referer}i'"
-ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
-    </pre>
+ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"</pre>
 
 
 
@@ -1732,25 +1689,21 @@ filenames</td></tr>
     <p>The <var>filename</var> argument should include a filename, or
     a wild-card string, where <code>?</code> matches any single character,
     and <code>*</code> matches any sequences of characters.</p>
-    <pre class="prettyprint lang-config">
-&lt;Files "cat.html"&gt;
+    <pre class="prettyprint lang-config">&lt;Files "cat.html"&gt;
     # Insert stuff that applies to cat.html here
 &lt;/Files&gt;
 
 &lt;Files "?at.*"&gt;
     # This would apply to cat.html, bat.html, hat.php and so on.
-&lt;/Files&gt;
-</pre>
+&lt;/Files&gt;</pre>
 
     <p><a class="glossarylink" href="../glossary.html#regex" title="see glossary">Regular expressions</a>
     can also be used, with the addition of the
     <code>~</code> character. For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Files ~ "\.(gif|jpe?g|png)$"&gt;
+    <pre class="prettyprint lang-config">&lt;Files ~ "\.(gif|jpe?g|png)$"&gt;
     #...
-&lt;/Files&gt;
-</pre>
+&lt;/Files&gt;</pre>
 
 
     <p>would match most common Internet graphics formats. <code class="directive"><a href="#filesmatch">&lt;FilesMatch&gt;</a></code> is preferred,
@@ -1785,14 +1738,24 @@ filenames</td></tr>
     does. However, it accepts a <a class="glossarylink" href="../glossary.html#regex" title="see glossary">regular
     expression</a>. For example:</p>
 
-<pre class="prettyprint lang-config">
-&lt;FilesMatch "\.(gif|jpe?g|png)$"&gt;
+<pre class="prettyprint lang-config">&lt;FilesMatch "\.(gif|jpe?g|png)$"&gt;
     # ...
-&lt;/FilesMatch&gt;
-</pre>
+&lt;/FilesMatch&gt;</pre>
 
 
     <p>would match most common Internet graphics formats.</p>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of files to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<pre class="prettyprint lang-config">&lt;FilesMatch ^(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/FilesMatch&gt;</pre>
+
 
 <h3>See also</h3>
 <ul>
@@ -1833,8 +1796,7 @@ media type in the HTTP Content-Type header field</td></tr>
     <code class="directive">ForceType</code> settings
     by using the value of <code>None</code>:</p>
 
-    <pre class="prettyprint lang-config">
-# force all files to be image/gif:
+    <pre class="prettyprint lang-config"># force all files to be image/gif:
 &lt;Location /images&gt;
   ForceType image/gif
 &lt;/Location&gt;
@@ -1842,8 +1804,7 @@ media type in the HTTP Content-Type header field</td></tr>
 # but normal mime-type associations here:
 &lt;Location /images/mixed&gt;
   ForceType None
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
     <p>This directive primarily overrides the content types generated for
@@ -1938,7 +1899,7 @@ satisfied by a request at runtime</td></tr>
 
     <p>would match HTTP/1.0 requests without a <var>Host:</var> header.
     Expressions may contain various shell-like operators for string
-    comparison (<code>=</code>, <code>!=</code>, <code>&lt;</code>, ...),
+    comparison (<code>==</code>, <code>!=</code>, <code>&lt;</code>, ...),
     integer comparison (<code>-eq</code>, <code>-ne</code>, ...),
     and others (<code>-n</code>, <code>-z</code>, <code>-f</code>, ...).
     It is also possible to use regular expressions, </p>
@@ -1951,6 +1912,8 @@ satisfied by a request at runtime</td></tr>
     (<code>env</code>), and a large number of other properties. The full
     documentation is available in <a href="../expr.html">Expressions in
     Apache HTTP Server</a>.</p>
+
+    <p>Only directives that support the <a href="directive-dict.html#Context">directory context</a> can be used within this configuration section.</p>
 
 
 <h3>See also</h3>
@@ -2009,8 +1972,7 @@ if a test is true at startup</td></tr>
     multiple-parameter tests. Example:</p>
 
     <div class="example"><p><code>httpd -DReverseProxy -DUseCache -DMemCache ...</code></p></div>
-    <pre class="prettyprint lang-config">
-&lt;IfDefine ReverseProxy&gt;
+    <pre class="prettyprint lang-config">&lt;IfDefine ReverseProxy&gt;
   LoadModule proxy_module   modules/mod_proxy.so
   LoadModule proxy_http_module   modules/mod_proxy_http.so
   &lt;IfDefine UseCache&gt;
@@ -2022,8 +1984,7 @@ if a test is true at startup</td></tr>
       LoadModule cache_disk_module   modules/mod_cache_disk.so
     &lt;/IfDefine&gt;
   &lt;/IfDefine&gt;
-&lt;/IfDefine&gt;
-    </pre>
+&lt;/IfDefine&gt;</pre>
 
 
 </div>
@@ -2116,18 +2077,14 @@ wildcard matching available in 2.3.6 and later</td></tr>
 
     <p>Examples:</p>
 
-    <pre class="prettyprint lang-config">
-Include /usr/local/apache2/conf/ssl.conf
-Include /usr/local/apache2/conf/vhosts/*.conf
-    </pre>
+    <pre class="prettyprint lang-config">Include /usr/local/apache2/conf/ssl.conf
+Include /usr/local/apache2/conf/vhosts/*.conf</pre>
 
 
     <p>Or, providing paths relative to your <code class="directive"><a href="#serverroot">ServerRoot</a></code> directory:</p>
 
-    <pre class="prettyprint lang-config">
-Include conf/ssl.conf
-Include conf/vhosts/*.conf
-    </pre>
+    <pre class="prettyprint lang-config">Include conf/ssl.conf
+Include conf/vhosts/*.conf</pre>
 
 
     <p>Wildcards may be included in the directory or file portion of the
@@ -2223,8 +2180,6 @@ requests on a persistent connection</td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>Specifying a value in milliseconds is available in
-Apache httpd 2.3.2 and later</td></tr>
 </table>
     <p>The number of seconds Apache httpd will wait for a subsequent
     request before closing the connection. By adding a postfix of ms the
@@ -2267,11 +2222,9 @@ methods</td></tr>
     only to the methods <code>POST</code>, <code>PUT</code>, and
     <code>DELETE</code>, leaving all other methods unprotected:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Limit POST PUT DELETE&gt;
+    <pre class="prettyprint lang-config">&lt;Limit POST PUT DELETE&gt;
   Require valid-user
-&lt;/Limit&gt;
-    </pre>
+&lt;/Limit&gt;</pre>
 
 
     <p>The method names listed can be one or more of: <code>GET</code>,
@@ -2308,14 +2261,12 @@ methods</td></tr>
     <code>Require group editors</code> directive will be ignored
     in all cases:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;LimitExcept GET&gt;
+    <pre class="prettyprint lang-config">&lt;LimitExcept GET&gt;
   Require valid-user
 &lt;/LimitExcept&gt;
 &lt;Limit POST&gt;
   Require group editors
-&lt;/Limit&gt;
-    </pre>
+&lt;/Limit&gt;</pre>
 
 
 </div>
@@ -2341,11 +2292,9 @@ except the named ones</td></tr>
 
     <p>For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;LimitExcept POST GET&gt;
+    <pre class="prettyprint lang-config">&lt;LimitExcept POST GET&gt;
   Require valid-user
-&lt;/LimitExcept&gt;
-    </pre>
+&lt;/LimitExcept&gt;</pre>
 
 
 
@@ -2554,8 +2503,7 @@ from the client</td></tr>
 
 
     <div class="note">Under normal conditions, the value should not be changed from
-    the default. Also, you can't set this higher than 8190 without
-    modifying the source and rebuilding.</div>
+    the default.</div>
 
     <div class="warning"><h3>Warning</h3>
     <p> When name-based virtual hosting is used, the value for this
@@ -2630,22 +2578,18 @@ URLs</td></tr>
     /private1, /private1/ and /private1/file.txt will have the enclosed
     directives applied, but /private1other would not.
     </p>
-    <pre class="prettyprint lang-config">
-&lt;Location /private1&gt;
+    <pre class="prettyprint lang-config">&lt;Location /private1&gt;
     #  ...
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
     <p>
     In the example below, where a trailing slash is used, requests to
     /private2/ and /private2/file.txt will have the enclosed
     directives applied, but /private2 and /private2other would not.
     </p>
-    <pre class="prettyprint lang-config">
-&lt;Location /private2<em>/</em>&gt;
+    <pre class="prettyprint lang-config">&lt;Location /private2<em>/</em>&gt;
     # ...
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
     <div class="note"><h3>When to use <code class="directive">&lt;Location&gt;</code></h3>
@@ -2672,11 +2616,9 @@ URLs</td></tr>
     can also be used, with the addition of the <code>~</code>
     character. For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Location ~ "/(extra|special)/data"&gt;
+    <pre class="prettyprint lang-config">&lt;Location ~ "/(extra|special)/data"&gt;
     #...
-&lt;/Location&gt;
-</pre>
+&lt;/Location&gt;</pre>
 
 
     <p>would match URLs that contained the substring <code>/extra/data</code>
@@ -2691,12 +2633,10 @@ URLs</td></tr>
     directive. For example, to enable status requests, but allow them
     only from browsers at <code>example.com</code>, you might use:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Location /status&gt;
+    <pre class="prettyprint lang-config">&lt;Location /status&gt;
   SetHandler server-status
   Require host example.com
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
     <div class="note"><h3>Note about / (slash)</h3>
@@ -2743,15 +2683,25 @@ matching URLs</td></tr>
     it takes a <a class="glossarylink" href="../glossary.html#regex" title="see glossary">regular expression</a>
     as an argument instead of a simple string. For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;LocationMatch "/(extra|special)/data"&gt;
+    <pre class="prettyprint lang-config">&lt;LocationMatch "/(extra|special)/data"&gt;
     # ...
-&lt;/LocationMatch&gt;
-</pre>
+&lt;/LocationMatch&gt;</pre>
 
 
     <p>would match URLs that contained the substring <code>/extra/data</code>
     or <code>/special/data</code>.</p>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of URLs to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<pre class="prettyprint lang-config">&lt;LocationMatch ^/combined/(?&lt;sitename&gt;[^/]+)&gt;
+    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/LocationMatch&gt;</pre>
+
 
 <h3>See also</h3>
 <ul>
@@ -2942,21 +2892,17 @@ matching URLs</td></tr>
     as module specification. This means the following three specifications
     are equivalent:</p>
 
-    <pre class="prettyprint lang-config">
-LogLevel info ssl:warn
+    <pre class="prettyprint lang-config">LogLevel info ssl:warn
 LogLevel info mod_ssl.c:warn
-LogLevel info ssl_module:warn
-    </pre>
+LogLevel info ssl_module:warn</pre>
 
 
     <p>It is also possible to change the level per directory:</p>
 
-    <pre class="prettyprint lang-config">
-LogLevel info
+    <pre class="prettyprint lang-config">LogLevel info
 &lt;Directory "/usr/local/apache/htdocs/app"&gt;
   LogLevel debug
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <div class="note">
@@ -3097,6 +3043,25 @@ resource </td></tr>
       <dd>A positive number representing the maximum number of ranges the
       server is willing to satisfy.</dd>
     </dl>
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="MergeTrailers" id="MergeTrailers">MergeTrailers</a> <a name="mergetrailers" id="mergetrailers">Directive</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Determins whether trailers are merged into headers</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>MergeTrailers [on|off]</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>MergeTrailers off</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
+<tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>2.4.10 and later</td></tr>
+</table>
+    <p>This directive controls whether HTTP trailers are copied into the
+    internal representation of HTTP headers. This mergeing occurs when the 
+    request body has been completely consumed, long after most header 
+    processing would have a chance to examine or modify request headers.</p>
+    <p>This option is provided for compatibility with releases prior to 2.4.10,
+    where trailers were always merged.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -3314,10 +3279,8 @@ or specified mutexes</td></tr>
     <code>/var/httpd/locks</code>.  The mutex mechanism for all other mutexes
     will be changed from the compiled-in default to <code>sysvsem</code>.</p>
 
-    <pre class="prettyprint lang-config">
-Mutex sysvsem default
-Mutex fcntl:/var/httpd/locks mpm-accept
-    </pre>
+    <pre class="prettyprint lang-config">Mutex sysvsem default
+Mutex fcntl:/var/httpd/locks mpm-accept</pre>
 
 
 </div>
@@ -3468,15 +3431,13 @@ directory</td></tr>
 
     <p>For example, without any <code>+</code> and <code>-</code> symbols:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/web/docs"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/web/docs"&gt;
   Options Indexes FollowSymLinks
 &lt;/Directory&gt;
 
 &lt;Directory "/web/docs/spec"&gt;
   Options Includes
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>then only <code>Includes</code> will be set for the
@@ -3484,15 +3445,13 @@ directory</td></tr>
     <code class="directive">Options</code> directive uses the <code>+</code> and
     <code>-</code> symbols:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/web/docs"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/web/docs"&gt;
   Options Indexes FollowSymLinks
 &lt;/Directory&gt;
 
 &lt;Directory "/web/docs/spec"&gt;
   Options +Includes -Indexes
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>then the options <code>FollowSymLinks</code> and
@@ -3795,15 +3754,13 @@ to name-virtual hosts</td></tr>
     alternate names for a host, for use with <a href="../vhosts/name-based.html">name-based virtual hosts</a>. The
     <code class="directive">ServerAlias</code> may include wildcards, if appropriate.</p>
 
-    <pre class="prettyprint lang-config">
-&lt;VirtualHost *:80&gt;
+    <pre class="prettyprint lang-config">&lt;VirtualHost *:80&gt;
   ServerName server.example.com
   ServerAlias server server2.example.com server2
   ServerAlias *.example.com
   UseCanonicalName Off
   # ...
-&lt;/VirtualHost&gt;
-    </pre>
+&lt;/VirtualHost&gt;</pre>
 
 
     <p>Name-based virtual hosts for the best-matching set of  <code class="directive"><a href="#virtualhost">&lt;virtualhost&gt;</a></code>s are processed
@@ -3855,8 +3812,10 @@ itself</td></tr>
     server).</p>
 
     <p>If no <code class="directive">ServerName</code> is specified, then the
-    server attempts to deduce the hostname by performing a reverse
-    lookup on the IP address. If no port is specified in the
+    server attempts to deduce the client visible hostname by performing a
+    reverse lookup on an IP address of the systems hostname.</p>
+    
+    <p>If no port is specified in the
     <code class="directive">ServerName</code>, then the server will use the
     port from the incoming request. For optimal reliability and
     predictability, you should specify an explicit hostname and port
@@ -4094,21 +4053,17 @@ handler</td></tr>
     <code>http://servername/status</code> was called, you might put
     the following into <code>httpd.conf</code>:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Location "/status"&gt;
+    <pre class="prettyprint lang-config">&lt;Location "/status"&gt;
   SetHandler server-status
-&lt;/Location&gt;
-    </pre>
+&lt;/Location&gt;</pre>
 
 
     <p>You could also use this directive to configure a particular
     handler for files with a particular file extension. For example:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;FilesMatch \.php$&gt;
+    <pre class="prettyprint lang-config">&lt;FilesMatch \.php$&gt;
     SetHandler application/x-httpd-php
-&lt;/FilesMatch&gt;
-    </pre>
+&lt;/FilesMatch&gt;</pre>
 
 
     <p>You can override an earlier defined <code class="directive">SetHandler</code>
@@ -4173,11 +4128,9 @@ server</td></tr>
     in the <code>/www/data/</code> directory for server-side
     includes.</p>
 
-    <pre class="prettyprint lang-config">
-&lt;Directory "/www/data/"&gt;
+    <pre class="prettyprint lang-config">&lt;Directory "/www/data/"&gt;
   SetOutputFilter INCLUDES
-&lt;/Directory&gt;
-    </pre>
+&lt;/Directory&gt;</pre>
 
 
     <p>If more than one filter is specified, they must be separated
@@ -4428,15 +4381,13 @@ hostname or IP address</td></tr>
 
     </ul>
 
-    <pre class="prettyprint lang-config">
-&lt;VirtualHost 10.1.2.3:80&gt;
+    <pre class="prettyprint lang-config">&lt;VirtualHost 10.1.2.3:80&gt;
   ServerAdmin webmaster@host.example.com
   DocumentRoot /www/docs/host.example.com
   ServerName host.example.com
   ErrorLog logs/host.example.com-error_log
   TransferLog logs/host.example.com-access_log
-&lt;/VirtualHost&gt;
-    </pre>
+&lt;/VirtualHost&gt;</pre>
 
 
 
@@ -4444,15 +4395,13 @@ hostname or IP address</td></tr>
     the optional port number could not be determined otherwise.  An
     IPv6 example is shown below:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;VirtualHost [2001:db8::a00:20ff:fea7:ccea]:80&gt;
+    <pre class="prettyprint lang-config">&lt;VirtualHost [2001:db8::a00:20ff:fea7:ccea]:80&gt;
   ServerAdmin webmaster@host.example.com
   DocumentRoot /www/docs/host.example.com
   ServerName host.example.com
   ErrorLog logs/host.example.com-error_log
   TransferLog logs/host.example.com-access_log
-&lt;/VirtualHost&gt;
-    </pre>
+&lt;/VirtualHost&gt;</pre>
 
 
     <p>Each Virtual Host must correspond to a different IP address,
@@ -4534,7 +4483,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/core.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

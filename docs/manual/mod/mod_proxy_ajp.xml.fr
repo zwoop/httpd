@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1371059 -->
+<!-- English Revision : 1649003 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -170,13 +170,8 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
 <section id="basppacketstruct"><title>Structure de base des paquets</title>
     <p>Ce protocole h&eacute;rite en partie de XDR, mais il diff&egrave;re sur de
     nombreux points (pas d'alignement sur 4 bits, par exemple).</p>
-    <p>Ordre des octets : je ne suis pas s&ucirc;r du type endian des octets
-    individuels. Je suppose qu'ils sont de type little-endian, car cela
-    correspond &agrave; la sp&eacute;cification XDR, et je suppose aussi que la
-    biblioth&egrave;que sys/socket fonctionne ainsi automatiquement (du point
-    de vue du langage C). Il serait souhaitable que quelqu'un poss&egrave;dant
-    une meilleure connaissance des appels socket puisse prendre le
-    relai.</p>
+    <p>AJP13 utilise les octets selon leur ordre d'arriv&eacute;e par le r&eacute;seau
+    pour tous les types de donn&eacute;es.</p>
     <p>Le protocole comporte quatre types de donn&eacute;es : octets, bool&eacute;ens,
     entiers et cha&icirc;nes de caract&egrave;res.</p>
     <dl>
@@ -221,11 +216,12 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     Bien que ceci puisse faire croire que la taille maximale des donn&eacute;es
     est de 2^16, le code d&eacute;finit en fait ce maximum &agrave; 8K.</p>
     <table>
+       <columnspec><column width=".2"/><column width=".1"/><column width=".1"/><column width=".2"/><column width=".2"/><column width=".2"/></columnspec>    
       <tr>
-        <td colspan="6"><em>Format du paquet (Serveur->Conteneur)</em></td>
+        <th colspan="6"><em>Format du paquet (Serveur->Conteneur)</em></th>
       </tr>
       <tr>
-        <td>Octet</td>
+        <th>Octet</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -233,7 +229,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contenu</td>
+        <th>Contenu</th>
         <td>0x12</td>
         <td>0x34</td>
         <td colspan="2">Taille des donn&eacute;es (n)</td>
@@ -241,11 +237,13 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
       </tr>
     </table>
     <table>
+       <columnspec><column width=".2"/><column width=".1"/><column width=".1"/><column width=".2"/><column width=".2"/><column width=".2"/></columnspec>
       <tr>
-        <td colspan="6"><em>Format du paquet (Conteneur->Serveur)</em></td>
+        <th colspan="6"><em>Format du paquet
+	(Conteneur->Serveur)</em></th>
       </tr>
       <tr>
-        <td>Octet</td>
+        <th>Octet</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -253,7 +251,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contenu</td>
+        <th>Contenu</th>
         <td>A</td>
         <td>B</td>
         <td colspan="2">Taille des donn&eacute;es (n)</td>
@@ -268,6 +266,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
      <p>Le serveur web peut envoyer les messages suivants au conteneur
      de servlets :</p>
     <table>
+       <columnspec><column width=".2"/><column width=".3"/><column width=".5"/></columnspec>
       <tr>
         <td>Code</td>
         <td>Type de paquet</td>
@@ -312,6 +311,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     <p>Le conteneur de servlets peut envoyer les types de messages
     suivants au serveur web :</p>
     <table>
+       <columnspec><column width=".2"/><column width=".3"/><column width=".5"/></columnspec>
       <tr>
         <td>Code</td>
         <td>Type de paquet</td>
@@ -485,7 +485,7 @@ attribute_value := (string)
     octets est consid&eacute;r&eacute; comme la longueur d'une cha&icirc;ne qui est alors
     lue.</p>
     <p>Ceci ne peut fonctionner que si aucun nom d'en-t&ecirc;te ne poss&egrave;de
-    une taille sup&eacute;rieure &agrave; <code>0x9999 (==0xA000 - 1)</code>, ce qui
+    une taille sup&eacute;rieure &agrave; <code>0x9FFF (==0xA000 - 1)</code>, ce qui
     est vraisemblable, bien qu'un peu arbitraire.</p>
     <note><title>Note:</title>
     L'en-t&ecirc;te <code>content-length</code> est extr&ecirc;mement important.
@@ -624,11 +624,11 @@ AJP13_GET_BODY_CHUNK :=
   </section>
   <section><title>Fin de la r&eacute;ponse</title>
     <p>Signale la fin de ce cycle de traitement de requ&ecirc;te. Si le
-    drapeau <code>reuse</code> est &agrave; true <code>(==1)</code>, cette
+    drapeau <code>reuse</code> est &agrave; true <code>(toute valeur autre que
+    0 en langage C pur)</code>, cette
     connexion TCP peut &ecirc;tre r&eacute;utilis&eacute;e pour traiter de nouvelles
-    requ&ecirc;tes entrantes. Si <code>reuse</code> est &agrave; false (toute autre
-    valeur que 1 dans le v&eacute;ritable code C), la connexion sera
-    ferm&eacute;e.</p>
+    requ&ecirc;tes entrantes. Si <code>reuse</code> est &agrave; false
+    (==0), la connexion sera ferm&eacute;e.</p>
   </section>
   <section><title>R&eacute;ception d'un tron&ccedil;on de corps</title>
     <p>Le conteneur r&eacute;clame la suite des donn&eacute;es de la requ&ecirc;te (dans le

@@ -87,7 +87,6 @@ static APR_OPTIONAL_FN_TYPE(ap_ssi_get_tag_and_value) *cgid_pfn_gtv;
 static APR_OPTIONAL_FN_TYPE(ap_ssi_parse_string) *cgid_pfn_ps;
 
 static apr_pool_t *pcgi = NULL;
-static int total_modules = 0;
 static pid_t daemon_pid;
 static int daemon_should_exit = 0;
 static server_rec *root_server = NULL;
@@ -97,6 +96,10 @@ static struct sockaddr_un *server_addr;
 static apr_socklen_t server_addr_len;
 static pid_t parent_pid;
 static ap_unix_identity_t empty_ugid = { (uid_t)-1, (gid_t)-1, -1 };
+
+typedef struct { 
+    apr_interval_time_t timeout;
+} cgid_dirconf;
 
 /* The APR other-child API doesn't tell us how the daemon exited
  * (SIGSEGV vs. exit(1)).  The other-child maintenance function
@@ -896,7 +899,6 @@ static int cgid_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp,
 {
     apr_proc_t *procnew = NULL;
     const char *userdata_key = "cgid_init";
-    module **m;
     int ret = OK;
     void *data;
 
@@ -918,9 +920,6 @@ static int cgid_init(apr_pool_t *p, apr_pool_t *plog, apr_pool_t *ptemp,
 
     if (ap_state_query(AP_SQ_MAIN_STATE) != AP_SQ_MS_CREATE_PRE_CONFIG) {
         char *tmp_sockname;
-        total_modules = 0;
-        for (m = ap_preloaded_modules; *m != NULL; m++)
-            total_modules++;
 
         parent_pid = getpid();
         tmp_sockname = ap_runtime_dir_relative(p, sockname);
@@ -973,7 +972,14 @@ static void *merge_cgid_config(apr_pool_t *p, void *basev, void *overridesv)
     return overrides->logname ? overrides : base;
 }
 
+static void *create_cgid_dirconf(apr_pool_t *p, char *dummy)
+{
+    cgid_dirconf *c = (cgid_dirconf *) apr_pcalloc(p, sizeof(cgid_dirconf));
+    return c;
+}
+
 static const char *set_scriptlog(cmd_parms *cmd, void *dummy, const char *arg)
+
 {
     server_rec *s = cmd->server;
     cgid_server_conf *conf = ap_get_module_config(s->module_config,
@@ -1026,7 +1032,16 @@ static const char *set_script_socket(cmd_parms *cmd, void *dummy, const char *ar
 
     return NULL;
 }
+static const char *set_script_timeout(cmd_parms *cmd, void *dummy, const char *arg)
+{
+    cgid_dirconf *dc = dummy;
 
+    if (ap_timeout_parameter_parse(arg, &dc->timeout, "s") != APR_SUCCESS) { 
+        return "CGIDScriptTimeout has wrong format";
+    }
+ 
+    return NULL;
+}
 static const command_rec cgid_cmds[] =
 {
     AP_INIT_TAKE1("ScriptLog", set_scriptlog, NULL, RSRC_CONF,
@@ -1038,6 +1053,10 @@ static const command_rec cgid_cmds[] =
     AP_INIT_TAKE1("ScriptSock", set_script_socket, NULL, RSRC_CONF,
                   "the name of the socket to use for communication with "
                   "the cgi daemon."),
+    AP_INIT_TAKE1("CGIDScriptTimeout", set_script_timeout, NULL, RSRC_CONF | ACCESS_CONF,
+                  "The amount of time to wait between successful reads from "
+                  "the CGI script, in seconds."),
+                  
     {NULL}
 };
 
@@ -1361,12 +1380,16 @@ static int cgid_handler(request_rec *r)
     apr_file_t *tempsock;
     struct cleanup_script_info *info;
     apr_status_t rv;
+    cgid_dirconf *dc;
 
     if (strcmp(r->handler, CGI_MAGIC_TYPE) && strcmp(r->handler, "cgi-script")) {
         return DECLINED;
     }
 
     conf = ap_get_module_config(r->server->module_config, &cgid_module);
+    dc = ap_get_module_config(r->per_dir_config, &cgid_module);
+
+    
     is_included = !strcmp(r->protocol, "INCLUDED");
 
     if ((argv0 = strrchr(r->filename, '/')) != NULL) {
@@ -1446,6 +1469,12 @@ static int cgid_handler(request_rec *r)
      */
 
     apr_os_pipe_put_ex(&tempsock, &sd, 1, r->pool);
+    if (dc->timeout > 0) { 
+        apr_file_pipe_timeout_set(tempsock, dc->timeout);
+    }
+    else { 
+        apr_file_pipe_timeout_set(tempsock, r->server->timeout);
+    }
     apr_pool_cleanup_kill(r->pool, (void *)((long)sd), close_unix_socket);
 
     /* Transfer any put/post args, CERN style...
@@ -1522,6 +1551,10 @@ static int cgid_handler(request_rec *r)
             if (rv != APR_SUCCESS) {
                 /* silly script stopped reading, soak up remaining message */
                 child_stopped_reading = 1;
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r,  APLOGNO(02651)
+                              "Error writing request body to script %s", 
+                              r->filename);
+
             }
         }
         apr_brigade_cleanup(bb);
@@ -1615,7 +1648,13 @@ static int cgid_handler(request_rec *r)
             return HTTP_MOVED_TEMPORARILY;
         }
 
-        ap_pass_brigade(r->output_filters, bb);
+        rv = ap_pass_brigade(r->output_filters, bb);
+        if (rv != APR_SUCCESS) { 
+            /* APLOG_ERR because the core output filter message is at error,
+             * but doesn't know it's passing CGI output 
+             */
+            ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02550) "Failed to flush CGI output to client");
+        }
     }
 
     if (nph) {
@@ -1746,6 +1785,8 @@ static int include_cmd(include_ctx_t *ctx, ap_filter_t *f,
     request_rec *r = f->r;
     cgid_server_conf *conf = ap_get_module_config(r->server->module_config,
                                                   &cgid_module);
+    cgid_dirconf *dc = ap_get_module_config(r->per_dir_config, &cgid_module);
+
     struct cleanup_script_info *info;
 
     add_ssi_vars(r);
@@ -1775,6 +1816,13 @@ static int include_cmd(include_ctx_t *ctx, ap_filter_t *f,
      * get rid of the cleanup we registered when we created the socket.
      */
     apr_os_pipe_put_ex(&tempsock, &sd, 1, r->pool);
+    if (dc->timeout > 0) {
+        apr_file_pipe_timeout_set(tempsock, dc->timeout);
+    }
+    else {
+        apr_file_pipe_timeout_set(tempsock, r->server->timeout);
+    }
+
     apr_pool_cleanup_kill(r->pool, (void *)((long)sd), close_unix_socket);
 
     APR_BRIGADE_INSERT_TAIL(bb, apr_bucket_pipe_create(tempsock,
@@ -1880,7 +1928,7 @@ static void register_hook(apr_pool_t *p)
 
 AP_DECLARE_MODULE(cgid) = {
     STANDARD20_MODULE_STUFF,
-    NULL, /* dir config creater */
+    create_cgid_dirconf, /* dir config creater */
     NULL, /* dir merger --- default is to override */
     create_cgid_config, /* server config */
     merge_cgid_config, /* merge server config */

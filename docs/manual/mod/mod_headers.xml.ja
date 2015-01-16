@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.ja.xsl"?>
-<!-- English Revision: 151408:1540313 (outdated) -->
+<!-- English Revision: 151408:1643445 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -38,7 +38,7 @@
 
 <section id="order"><title>処理の順番</title>
 
-    <p><module>mod_header</module> のディレクティブはサーバ設定のほぼどこにでも
+    <p><module>mod_headers</module> のディレクティブはサーバ設定のほぼどこにでも
     書くことができ、影響する範囲を<a
     href="../sections.html">設定用セクション</a>で囲むことで限定する
     ことができます。</p>

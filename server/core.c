@@ -209,6 +209,7 @@ static void *merge_core_dir_configs(apr_pool_t *a, void *basev, void *newv)
     conf->d_is_fnmatch = new->d_is_fnmatch;
     conf->d_components = new->d_components;
     conf->r = new->r;
+    conf->refs = new->refs;
     conf->condition = new->condition;
 
     if (new->opts & OPT_UNSET) {
@@ -518,6 +519,10 @@ static void *merge_core_server_configs(apr_pool_t *p, void *basev, void *virtv)
 
     if (virt->error_log_req)
         conf->error_log_req = virt->error_log_req;
+
+    conf->merge_trailers = (virt->merge_trailers != AP_MERGE_TRAILERS_UNSET)
+                           ? virt->merge_trailers
+                           : base->merge_trailers;
 
     return conf;
 }
@@ -1266,6 +1271,7 @@ AP_DECLARE(const char *) ap_resolve_env(apr_pool_t *p, const char * word)
 static int reset_config_defines(void *dummy)
 {
     ap_server_config_defines = saved_server_config_defines;
+    saved_server_config_defines = NULL;
     server_config_defined_vars = NULL;
     return OK;
 }
@@ -2158,6 +2164,12 @@ static const char *dirsection(cmd_parms *cmd, void *mconfig, const char *arg)
     conf->r = r;
     conf->d = cmd->path;
     conf->d_is_fnmatch = (apr_fnmatch_test(conf->d) != 0);
+    conf->d_is_directory = 1;
+
+    if (r) {
+        conf->refs = apr_array_make(cmd->pool, 8, sizeof(char *));
+        ap_regname(r, conf->refs, AP_REG_MATCH, 1);
+    }
 
     /* Make this explicit - the "/" root has 0 elements, that is, we
      * will always merge it, and it will always sort and merge first.
@@ -2234,6 +2246,11 @@ static const char *urlsection(cmd_parms *cmd, void *mconfig, const char *arg)
     conf->d = apr_pstrdup(cmd->pool, cmd->path);     /* No mangling, please */
     conf->d_is_fnmatch = apr_fnmatch_test(conf->d) != 0;
     conf->r = r;
+
+    if (r) {
+        conf->refs = apr_array_make(cmd->pool, 8, sizeof(char *));
+        ap_regname(r, conf->refs, AP_REG_MATCH, 1);
+    }
 
     ap_add_per_url_conf(cmd->server, new_url_conf);
 
@@ -2316,6 +2333,11 @@ static const char *filesection(cmd_parms *cmd, void *mconfig, const char *arg)
     conf->d = cmd->path;
     conf->d_is_fnmatch = apr_fnmatch_test(conf->d) != 0;
     conf->r = r;
+
+    if (r) {
+        conf->refs = apr_array_make(cmd->pool, 8, sizeof(char *));
+        ap_regname(r, conf->refs, AP_REG_MATCH, 1);
+    }
 
     ap_add_file_conf(cmd->pool, (core_dir_config *)mconfig, new_file_conf);
 
@@ -3115,7 +3137,7 @@ enum server_token_type {
     SrvTk_MINIMAL,       /* eg: Apache/2.0.41 */
     SrvTk_OS,            /* eg: Apache/2.0.41 (UNIX) */
     SrvTk_FULL,          /* eg: Apache/2.0.41 (UNIX) PHP/4.2.2 FooBar/1.2b */
-    SrvTk_PRODUCT_ONLY  /* eg: Apache */
+    SrvTk_PRODUCT_ONLY   /* eg: Apache */
 };
 static enum server_token_type ap_server_tokens = SrvTk_FULL;
 
@@ -3206,7 +3228,7 @@ static void set_banner(apr_pool_t *pconf)
 }
 
 static const char *set_serv_tokens(cmd_parms *cmd, void *dummy,
-                                   const char *arg1, const char *arg2)
+                                   const char *arg)
 {
     const char *err = ap_check_cmd_context(cmd, GLOBAL_ONLY);
 
@@ -3214,26 +3236,26 @@ static const char *set_serv_tokens(cmd_parms *cmd, void *dummy,
         return err;
     }
 
-    if (!strcasecmp(arg1, "OS")) {
+    if (!strcasecmp(arg, "OS")) {
         ap_server_tokens = SrvTk_OS;
     }
-    else if (!strcasecmp(arg1, "Min") || !strcasecmp(arg1, "Minimal")) {
+    else if (!strcasecmp(arg, "Min") || !strcasecmp(arg, "Minimal")) {
         ap_server_tokens = SrvTk_MINIMAL;
     }
-    else if (!strcasecmp(arg1, "Major")) {
+    else if (!strcasecmp(arg, "Major")) {
         ap_server_tokens = SrvTk_MAJOR;
     }
-    else if (!strcasecmp(arg1, "Minor") ) {
+    else if (!strcasecmp(arg, "Minor") ) {
         ap_server_tokens = SrvTk_MINOR;
     }
-    else if (!strcasecmp(arg1, "Prod") || !strcasecmp(arg1, "ProductOnly")) {
+    else if (!strcasecmp(arg, "Prod") || !strcasecmp(arg, "ProductOnly")) {
         ap_server_tokens = SrvTk_PRODUCT_ONLY;
     }
-    else if (!strcasecmp(arg1, "Full")) {
+    else if (!strcasecmp(arg, "Full")) {
         ap_server_tokens = SrvTk_FULL;
     }
     else {
-        return "ServerTokens takes 1 argument, 'Prod', 'Major', 'Minor', 'Min', 'OS', or 'Full'";
+        return "ServerTokens takes 1 argument: 'Prod(uctOnly)', 'Major', 'Minor', 'Min(imal)', 'OS', or 'Full'";
     }
 
     return NULL;
@@ -3866,6 +3888,16 @@ AP_DECLARE(void) ap_register_errorlog_handler(apr_pool_t *p, char *tag,
 }
 
 
+static const char *set_merge_trailers(cmd_parms *cmd, void *dummy, int arg)
+{
+    core_server_config *conf = ap_get_module_config(cmd->server->module_config,
+                                                    &core_module);
+    conf->merge_trailers = (arg ? AP_MERGE_TRAILERS_ENABLE :
+            AP_MERGE_TRAILERS_DISABLE);
+
+    return NULL;
+}
+
 /* Note --- ErrorDocument will now work from .htaccess files.
  * The AllowOverride of Fileinfo allows webmasters to turn it off
  */
@@ -4006,9 +4038,9 @@ AP_INIT_ITERATE("LogLevel", set_loglevel, NULL, RSRC_CONF|ACCESS_CONF,
   "Level of verbosity in error logging"),
 AP_INIT_TAKE1("NameVirtualHost", ap_set_name_virtual_host, NULL, RSRC_CONF,
   "A numeric IP address:port, or the name of a host"),
-AP_INIT_TAKE12("ServerTokens", set_serv_tokens, NULL, RSRC_CONF,
+AP_INIT_TAKE1("ServerTokens", set_serv_tokens, NULL, RSRC_CONF,
   "Determine tokens displayed in the Server: header - Min(imal), "
-  "Major, Minor, Prod, OS or Full"),
+  "Major, Minor, Prod(uctOnly), OS, or Full"),
 AP_INIT_TAKE1("LimitRequestLine", set_limit_req_line, NULL, RSRC_CONF,
   "Limit on maximum size of an HTTP request line"),
 AP_INIT_TAKE1("LimitRequestFieldsize", set_limit_req_fieldsize, NULL,
@@ -4113,6 +4145,8 @@ AP_INIT_TAKE1("EnableExceptionHook", ap_mpm_set_exception_hook, NULL, RSRC_CONF,
 #endif
 AP_INIT_TAKE1("TraceEnable", set_trace_enable, NULL, RSRC_CONF,
               "'on' (default), 'off' or 'extended' to trace request body content"),
+AP_INIT_FLAG("MergeTrailers", set_merge_trailers, NULL, RSRC_CONF,
+              "merge request trailers into request headers or not"),
 { NULL }
 };
 
@@ -4194,7 +4228,6 @@ static int core_map_to_storage(request_rec *r)
 
 
 static int do_nothing(request_rec *r) { return OK; }
-
 
 static int core_override_type(request_rec *r)
 {

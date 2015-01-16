@@ -31,7 +31,7 @@ for HTTP Basic authentication.</description>
 <compatibility>Available in version 2.1 and later</compatibility>
 
 <summary>
-    <p>This module provides authentication front-ends such as
+    <p>This module allows authentication front-ends such as
     <module>mod_auth_basic</module> to authenticate users through
     an ldap directory.</p>
 
@@ -323,6 +323,9 @@ for HTTP Basic authentication.</description>
     <code>ldap-filter</code>.  Other authorization types may also be
     used but may require that additional authorization modules be loaded.</p>
 
+    <p>Since v2.4.8, <a href="../expr.html">expressions</a> are supported
+    within the LDAP require directives.</p>
+
 <section id="requser"><title>Require ldap-user</title>
 
     <p>The <code>Require ldap-user</code> directive specifies what
@@ -411,11 +414,11 @@ uniqueMember: cn=Elliot Rhodes, o=Example
 </pre></example>
 
     <p>The following directives would allow access for Bob Ellis, Tom Jackson,
-    Barbara Jensen, Fred User, Allan Jefferson, and Paul Tilley but would not
+    Barbara Jenson, Fred User, Allan Jefferson, and Paul Tilley but would not
     allow access for Jim Swenson, or Elliot Rhodes (since they are at a
     sub-group depth of 2):</p>
 <highlight language="config">
-Require ldap-group cn=Employees, o-Example
+Require ldap-group cn=Employees, o=Example
 AuthLDAPMaxSubGroupDepth 1
 </highlight>
 
@@ -540,6 +543,16 @@ Require valid-user
 <highlight language="config">
 AuthLDAPURL ldap://ldap.example.com/o=Example?uid
 Require ldap-group cn=Administrators, o=Example
+</highlight>
+      </li>
+
+      <li>
+        Grant access to anybody in the group whose name matches the
+        hostname of the virtual host. In this example an
+        <a href="../expr.html">expression</a> is used to build the filter.
+<highlight language="config">
+AuthLDAPURL ldap://ldap.example.com/o=Example?uid
+Require ldap-group cn=%{SERVER_NAME}, o=Example
 </highlight>
       </li>
 
@@ -903,6 +916,7 @@ to perform a DN lookup</description>
 <contextlist><context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>AuthConfig</override>
+<compatibility><em>exec:</em> was added in 2.4.5.</compatibility>
 
 <usage>
     <p>A bind password to use in conjunction with the bind DN. Note
@@ -915,7 +929,7 @@ to perform a DN lookup</description>
     <p>If the value begins with exec: the resulting command will be
     executed and the first line returned to standard output by the
     program will be used as the password.</p>
-<example><pre>
+<highlight language="config">
 #Password used as-is
 AuthLDAPBindPassword secret
 
@@ -924,7 +938,7 @@ AuthLDAPBindPassword exec:/path/to/program
 
 #Run /path/to/otherProgram and provide arguments
 AuthLDAPBindPassword "exec:/path/to/otherProgram argument1"
-</pre></example>
+</highlight>
 
 </usage>
 </directivesynopsis>
@@ -1311,7 +1325,9 @@ You can of course use search parameters on each of these.</p>
         will search for all objects in the tree. Filters are
         limited to approximately 8000 characters (the definition of
         <code>MAX_STRING_LEN</code> in the Apache source code). This
-        should be more than sufficient for any application.</dd>
+        should be more than sufficient for any application. In 2.4.10 and later,
+        The word "none" may be used to not use any filter, which may be 
+        required by some primitive LDAP servers.</dd>
 </dl>
 
     <p>When doing searches, the attribute, filter and username passed

@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_proxy_ajp - Serveur Apache HTTP</title>
+<title>mod_proxy_ajp - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -76,20 +76,16 @@ d'environnement</a></li>
     Son utilisation est similaire à celle d'un mandataire inverse HTTP,
     mais s'appuie sur le prefixe <code>ajp://</code> :</p>
 
-    <div class="example"><h3>Mandataire inverse simple</h3><pre class="prettyprint lang-config">
-    ProxyPass /app ajp://backend.example.com:8009/app
-    </pre>
+    <div class="example"><h3>Mandataire inverse simple</h3><pre class="prettyprint lang-config">ProxyPass /app ajp://backend.example.com:8009/app</pre>
 </div>
 
     <p>On peut aussi configurer un répartiteur de charge :</p>
-    <div class="example"><h3>Mandataire inverse avec répartiteur de charge</h3><pre class="prettyprint lang-config">
-&lt;Proxy balancer://cluster&gt;
+    <div class="example"><h3>Mandataire inverse avec répartiteur de charge</h3><pre class="prettyprint lang-config">&lt;Proxy balancer://cluster&gt;
     BalancerMember ajp://app1.example.com:8009 loadfactor=1
     BalancerMember ajp://app2.example.com:8009 loadfactor=2
     ProxySet lbmethod=bytraffic
 &lt;/Proxy&gt;
-ProxyPass /app balancer://cluster/app
-      </pre>
+ProxyPass /app balancer://cluster/app</pre>
 </div>
 
     <p>Notez qu'en général, la directive <code class="directive"><a href="../mod/mod_proxy.html#proxypassreverse">ProxyPassReverse</a></code> n'est pas
@@ -104,10 +100,8 @@ ProxyPass /app balancer://cluster/app
     en-tête redirect peut être réécrit relativement à l'URL de l'hôte
     original (et non du serveur d'arrière-plan <code>ajp://</code> URL)
     ; par exemple :</p>
-    <div class="example"><h3>Réécriture d'un chemin mandaté</h3><pre class="prettyprint lang-config">
-ProxyPass /apps/foo ajp://backend.example.com:8009/foo
-ProxyPassReverse /apps/foo http://www.example.com/foo
-    </pre>
+    <div class="example"><h3>Réécriture d'un chemin mandaté</h3><pre class="prettyprint lang-config">ProxyPass /apps/foo ajp://backend.example.com:8009/foo
+ProxyPassReverse /apps/foo http://www.example.com/foo</pre>
 </div>
     <p>Il est cependant préférable en général de déployer l'application
     sur le serveur d'arrière-plan avec le même chemin que sur le
@@ -181,13 +175,8 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
 <h2><a name="basppacketstruct" id="basppacketstruct">Structure de base des paquets</a></h2>
     <p>Ce protocole hérite en partie de XDR, mais il diffère sur de
     nombreux points (pas d'alignement sur 4 bits, par exemple).</p>
-    <p>Ordre des octets : je ne suis pas sûr du type endian des octets
-    individuels. Je suppose qu'ils sont de type little-endian, car cela
-    correspond à la spécification XDR, et je suppose aussi que la
-    bibliothèque sys/socket fonctionne ainsi automatiquement (du point
-    de vue du langage C). Il serait souhaitable que quelqu'un possèdant
-    une meilleure connaissance des appels socket puisse prendre le
-    relai.</p>
+    <p>AJP13 utilise les octets selon leur ordre d'arrivée par le réseau
+    pour tous les types de données.</p>
     <p>Le protocole comporte quatre types de données : octets, booléens,
     entiers et chaînes de caractères.</p>
     <dl>
@@ -232,11 +221,12 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     Bien que ceci puisse faire croire que la taille maximale des données
     est de 2^16, le code définit en fait ce maximum à 8K.</p>
     <table>
+           
       <tr>
-        <td colspan="6"><em>Format du paquet (Serveur-&gt;Conteneur)</em></td>
+        <th colspan="6"><em>Format du paquet (Serveur-&gt;Conteneur)</em></th>
       </tr>
       <tr>
-        <td>Octet</td>
+        <th>Octet</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -244,7 +234,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contenu</td>
+        <th>Contenu</th>
         <td>0x12</td>
         <td>0x34</td>
         <td colspan="2">Taille des données (n)</td>
@@ -252,11 +242,13 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
       </tr>
     </table>
     <table>
+       
       <tr>
-        <td colspan="6"><em>Format du paquet (Conteneur-&gt;Serveur)</em></td>
+        <th colspan="6"><em>Format du paquet
+	(Conteneur-&gt;Serveur)</em></th>
       </tr>
       <tr>
-        <td>Octet</td>
+        <th>Octet</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -264,7 +256,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contenu</td>
+        <th>Contenu</th>
         <td>A</td>
         <td>B</td>
         <td colspan="2">Taille des données (n)</td>
@@ -279,6 +271,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
      <p>Le serveur web peut envoyer les messages suivants au conteneur
      de servlets :</p>
     <table>
+       
       <tr>
         <td>Code</td>
         <td>Type de paquet</td>
@@ -323,6 +316,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     <p>Le conteneur de servlets peut envoyer les types de messages
     suivants au serveur web :</p>
     <table>
+       
       <tr>
         <td>Code</td>
         <td>Type de paquet</td>
@@ -369,8 +363,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
 requête</a></h2>
     <p>Pour les messages de type <em>Faire suivre la requête</em> depuis
     le serveur vers le conteneur :</p>
-    <div class="example"><pre>
-AJP13_FORWARD_REQUEST :=
+    <div class="example"><pre>AJP13_FORWARD_REQUEST :=
     prefix_code      (byte) 0x02 = JK_AJP13_FORWARD_REQUEST
     method           (byte)
     protocol         (string)
@@ -383,27 +376,21 @@ AJP13_FORWARD_REQUEST :=
     num_headers      (integer)
     request_headers *(req_header_name req_header_value)
     attributes      *(attribut_name attribute_value)
-    request_terminator (byte) OxFF
-    </pre></div>
+    request_terminator (byte) OxFF</pre></div>
     <p>Les <code>request_headers</code> possèdent la structure suivante
     :
-    </p><div class="example"><pre>
-req_header_name :=
+    </p><div class="example"><pre>req_header_name :=
     sc_req_header_name | (string)  [voir ci-dessous pour la manière dont
     ceci est interprété]
 
 sc_req_header_name := 0xA0xx (integer)
 
-req_header_value := (string)
-</pre></div>
+req_header_value := (string)</pre></div>
     <p>Les <code>attributes</code> sont optionnels et possèdent la
     structure suivante :</p>
-    <div class="example"><pre>
-attribute_name := sc_a_name | (sc_a_req_attribute string)
+    <div class="example"><pre>attribute_name := sc_a_name | (sc_a_req_attribute string)
 
-attribute_value := (string)
-
-    </pre></div>
+attribute_value := (string)</pre></div>
     <p>Un des en-têtes les plus importants est
     <code>content-length</code>, car il indique si le conteneur doit ou
     non attendre un autre paquet immédiatement.</p>
@@ -497,7 +484,7 @@ attribute_value := (string)
     octets est considéré comme la longueur d'une chaîne qui est alors
     lue.</p>
     <p>Ceci ne peut fonctionner que si aucun nom d'en-tête ne possède
-    une taille supérieure à <code>0x9999 (==0xA000 - 1)</code>, ce qui
+    une taille supérieure à <code>0x9FFF (==0xA000 - 1)</code>, ce qui
     est vraisemblable, bien qu'un peu arbitraire.</p>
     <div class="note"><h3>Note:</h3>
     L'en-tête <code>content-length</code> est extrêmement important.
@@ -572,8 +559,7 @@ attribute_value := (string)
 réponse</a></h2>
     <p>Pour les messages que le conteneur peut renvoyer au
     serveur.</p>
-    <div class="example"><pre>
-AJP13_SEND_BODY_CHUNK :=
+    <div class="example"><pre>AJP13_SEND_BODY_CHUNK :=
   prefix_code   3
   chunk_length  (integer)
   chunk        *(byte)
@@ -602,8 +588,7 @@ AJP13_END_RESPONSE :=
 
 AJP13_GET_BODY_CHUNK :=
   prefix_code       6
-  requested_length  (integer)
-    </pre></div>
+  requested_length  (integer)</pre></div>
   <h3>Détails:</h3>
   <h3>Envoi d'un tronçon de corps</h3>
     <p>Le tronçon se compose essentiellement de données binaires et est
@@ -636,11 +621,11 @@ AJP13_GET_BODY_CHUNK :=
   
   <h3>Fin de la réponse</h3>
     <p>Signale la fin de ce cycle de traitement de requête. Si le
-    drapeau <code>reuse</code> est à true <code>(==1)</code>, cette
+    drapeau <code>reuse</code> est à true <code>(toute valeur autre que
+    0 en langage C pur)</code>, cette
     connexion TCP peut être réutilisée pour traiter de nouvelles
-    requêtes entrantes. Si <code>reuse</code> est à false (toute autre
-    valeur que 1 dans le véritable code C), la connexion sera
-    fermée.</p>
+    requêtes entrantes. Si <code>reuse</code> est à false
+    (==0), la connexion sera fermée.</p>
   
   <h3>Réception d'un tronçon de corps</h3>
     <p>Le conteneur réclame la suite des données de la requête (dans le
@@ -681,7 +666,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_ajp.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1421892 -->
+<!-- English Revision: 1586470 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -156,7 +156,19 @@ r&eacute;pertoires.
     <directive>DirectoryIndex</directive> qui est s&eacute;lectionn&eacute;e et
     renvoy&eacute;e de mani&egrave;re transparente au client. La directive
     <directive>DirectoryIndexRedirect</directive> permet de rediriger le
-    client vers une ressource externe.</p>
+    client via une redirection de type 3xx.</p>
+
+    <p>Les arguments accept&eacute;s sont :</p>
+    <ul>
+     <li><code>on</code> : envoie une redirection 302 vers l'index choisi.</li>
+     <li><code>off</code> : n'envoie aucune redirection. Il s'agit du comportement historique de mod_dir.</li>
+     <li><code>permanent</code> : envoie une redirection 301 (permanent) vers l'index choisi.</li>
+     <li><code>temp</code> : ceci est &eacute;quivalent &agrave; <code>on</code></li>
+     <li><code>seeother</code> : envoie une redirection 303 (&eacute;galement appel&eacute;e "See Other") vers l'index choisi.</li>
+     <li><var>3xx-code</var> : envoie une redirection accompagn&eacute;e du code 3xx choisi.</li>
+    </ul>
+
+
 
     <example><title>Exemple</title>
     <highlight language="config">
@@ -243,8 +255,8 @@ host</context>
 <name>FallbackResource</name>
 <description>D&eacute;finit une URL par d&eacute;faut pour les requ&ecirc;tes qui ne ciblent
 aucun fichier</description>
-<syntax>FallbackResource disabled <var>url-locale</var></syntax>
-<default>Aucune - httpd renvoie un code d'erreur 404 (Not Found)</default>
+<syntax>FallbackResource disabled | <var>url-locale</var></syntax>
+<default>disabled - httpd renvoie un code d'erreur 404 (Not Found)</default>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context></contextlist>
 <override>Indexes</override>
@@ -294,5 +306,35 @@ de la version 2.4.4 du serveur HTTP Apache.</compatibility>
 </usage>
 </directivesynopsis>
 
+<directivesynopsis>
+<name>DirectoryCheckHandler</name>
+<description>D&eacute;finit la r&eacute;ponse de ce module lorsqu'un autre
+gestionnaire est utilis&eacute;</description>
+<syntax>DirectoryCheckHandler On|Off</syntax>
+<default>DirectoryCheckHandler Off</default>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context></contextlist>
+<override>Indexes</override>
+<compatibility>Disponible depuis la version 2.4.8 du serveur HTTP
+Apache. Les versions ant&eacute;rieures &agrave; 2.4 se comportaient implicitement
+comme si "DirectoryCheckHandler ON" avait &eacute;t&eacute; sp&eacute;cifi&eacute;.</compatibility>
+<usage>
+    <p>La directive <directive>DirectoryCheckHandler</directive> permet
+    de faire en sorte que <module>mod_dir</module> recherche un index
+    de r&eacute;pertoire ou ajoute des slashes de fin lorsqu'un autre
+    gestionnaire &agrave; &eacute;t&eacute; d&eacute;fini pour l'URL consid&eacute;r&eacute;e. Les gestionnaires
+    peuvent &ecirc;tre d&eacute;finis &agrave; via des directives telles que
+    <directive module="core">SetHandler</directive> ou par d'autres
+    modules tels que <module>mod_rewrite</module> au cours des
+    substitutions de niveau répertoire.</p>
+
+    <p>Dans les versions ant&eacute;rieures &agrave; 2.4, ce module ne modifiait pas
+    son comportement si un autre gestionnaire avait &eacute;t&eacute; d&eacute;fini pour
+    l'URL consid&eacute;r&eacute;e. Ceci permettait de servir des index de r&eacute;pertoires
+    m&ecirc;me si une directive <directive>SetHandler</directive> avait &eacute;t&eacute;
+    d&eacute;finie pour un r&eacute;pertoire entier, mais pouvait aussi &ecirc;tre &agrave;
+    l'origine de conflits avec d'autres modules.</p> 
+</usage>
+</directivesynopsis>
 
 </modulesynopsis>

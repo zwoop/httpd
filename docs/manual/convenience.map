@@ -99,6 +99,8 @@ authncacheprovidefor	mod/mod_authn_socache.html#authncacheprovidefor
 authncachesocache	mod/mod_authn_socache.html#authncachesocache
 authncachetimeout	mod/mod_authn_socache.html#authncachetimeout
 authnprovideralias	mod/mod_authn_core.html#authnprovideralias
+authnzfcgicheckauthnprovider	mod/mod_authnz_fcgi.html#authnzfcgicheckauthnprovider
+authnzfcgidefineprovider	mod/mod_authnz_fcgi.html#authnzfcgidefineprovider
 authtype	mod/mod_authn_core.html#authtype
 authuserfile	mod/mod_authn_file.html#authuserfile
 authzdbdlogintoreferer	mod/mod_authz_dbd.html#authzdbdlogintoreferer
@@ -152,6 +154,7 @@ cachestaleonerror	mod/mod_cache.html#cachestaleonerror
 cachestoreexpired	mod/mod_cache.html#cachestoreexpired
 cachestorenostore	mod/mod_cache.html#cachestorenostore
 cachestoreprivate	mod/mod_cache.html#cachestoreprivate
+cgidscripttimeout	mod/mod_cgid.html#cgidscripttimeout
 cgimapextension	mod/core.html#cgimapextension
 charsetdefault	mod/mod_charset_lite.html#charsetdefault
 charsetoptions	mod/mod_charset_lite.html#charsetoptions
@@ -189,10 +192,14 @@ define	mod/core.html#define
 deflatebuffersize	mod/mod_deflate.html#deflatebuffersize
 deflatecompressionlevel	mod/mod_deflate.html#deflatecompressionlevel
 deflatefilternote	mod/mod_deflate.html#deflatefilternote
+deflateinflatelimitrequestbody	mod/mod_deflate.html#deflateinflatelimitrequestbody
+deflateinflateratioburst	mod/mod_deflate.html#deflateinflateratioburst
+deflateinflateratiolimit	mod/mod_deflate.html#deflateinflateratiolimit
 deflatememlevel	mod/mod_deflate.html#deflatememlevel
 deflatewindowsize	mod/mod_deflate.html#deflatewindowsize
 deny	mod/mod_access_compat.html#deny
 directory	mod/core.html#directory
+directorycheckhandler	mod/mod_dir.html#directorycheckhandler
 directoryindex	mod/mod_dir.html#directoryindex
 directoryindexredirect	mod/mod_dir.html#directoryindexredirect
 directorymatch	mod/core.html#directorymatch
@@ -210,7 +217,7 @@ error	mod/core.html#error
 errordocument	mod/core.html#errordocument
 errorlog	mod/core.html#errorlog
 errorlogformat	mod/core.html#errorlogformat
-example	mod/mod_example.html#example
+example	mod/mod_example_hooks.html#example
 expiresactive	mod/mod_expires.html#expiresactive
 expiresbytype	mod/mod_expires.html#expiresbytype
 expiresdefault	mod/mod_expires.html#expiresdefault
@@ -334,6 +341,7 @@ maxrequestworkers	mod/mpm_common.html#maxrequestworkers
 maxspareservers	mod/prefork.html#maxspareservers
 maxsparethreads	mod/mpm_common.html#maxsparethreads
 maxthreads	mod/mpm_netware.html#maxthreads
+mergetrailers	mod/core.html#mergetrailers
 metadir	mod/mod_cern_meta.html#metadir
 metafiles	mod/mod_cern_meta.html#metafiles
 metasuffix	mod/mod_cern_meta.html#metasuffix
@@ -518,6 +526,8 @@ sslocspoverrideresponder	mod/mod_ssl.html#sslocspoverrideresponder
 sslocsprespondertimeout	mod/mod_ssl.html#sslocsprespondertimeout
 sslocspresponsemaxage	mod/mod_ssl.html#sslocspresponsemaxage
 sslocspresponsetimeskew	mod/mod_ssl.html#sslocspresponsetimeskew
+sslocspuserequestnonce	mod/mod_ssl.html#sslocspuserequestnonce
+sslopensslconfcmd	mod/mod_ssl.html#sslopensslconfcmd
 ssloptions	mod/mod_ssl.html#ssloptions
 sslpassphrasedialog	mod/mod_ssl.html#sslpassphrasedialog
 sslprotocol	mod/mod_ssl.html#sslprotocol
@@ -563,6 +573,7 @@ sslverifydepth	mod/mod_ssl.html#sslverifydepth
 startservers	mod/mpm_common.html#startservers
 startthreads	mod/mpm_common.html#startthreads
 substitute	mod/mod_substitute.html#substitute
+substitutemaxlinelength	mod/mod_substitute.html#substitutemaxlinelength
 suexec	mod/mod_unixd.html#suexec
 suexecusergroup	mod/mod_suexec.html#suexecusergroup
 threadlimit	mod/mpm_common.html#threadlimit

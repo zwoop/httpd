@@ -73,7 +73,9 @@ static apr_array_header_t *expr_peer_ext_list_fn(ap_expr_eval_ctx_t *ctx,
 static const char *expr_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
 {
     char *var = (char *)data;
-    return ssl_var_lookup_ssl(ctx->p, ctx->c, ctx->r, var);
+    SSLConnRec *sslconn = myConnConfig(ctx->c);
+
+    return sslconn ? ssl_var_lookup_ssl(ctx->p, ctx->c, ctx->r, var) : NULL;
 }
 
 static int ssl_expr_lookup(ap_expr_lookup_parms *parms)
@@ -261,7 +263,7 @@ char *ssl_var_lookup(apr_pool_t *p, server_rec *s, conn_rec *c, request_rec *r, 
         else if (strcEQ(var, "SERVER_SOFTWARE"))
             result = ap_get_server_banner();
         else if (strcEQ(var, "API_VERSION")) {
-            result = apr_itoa(p, MODULE_MAGIC_NUMBER);
+            result = apr_itoa(p, MODULE_MAGIC_NUMBER_MAJOR);
             resdup = FALSE;
         }
         else if (strcEQ(var, "TIME_YEAR")) {

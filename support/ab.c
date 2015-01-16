@@ -220,7 +220,7 @@ typedef enum {
     STATE_READ
 } connect_state_e;
 
-#define CBUFFSIZE (2048)
+#define CBUFFSIZE (8192)
 
 struct connection {
     apr_pool_t *ctx;
@@ -266,14 +266,14 @@ struct data {
 
 int verbosity = 0;      /* no verbosity by default */
 int recverrok = 0;      /* ok to proceed after socket receive errors */
-enum {NO_METH = 0, GET, HEAD, PUT, POST} method = NO_METH;
-const char *method_str[] = {"bug", "GET", "HEAD", "PUT", "POST"};
+enum {NO_METH = 0, GET, HEAD, PUT, POST, CUSTOM_METHOD} method = NO_METH;
+const char *method_str[] = {"bug", "GET", "HEAD", "PUT", "POST", ""};
 int send_body = 0;      /* non-zero if sending body with request */
 int requests = 1;       /* Number of requests to make */
 int heartbeatres = 100; /* How often do we say we're alive */
 int concurrency = 1;    /* Number of multiple requests to make */
 int percentile = 1;     /* Show percentile served */
-int nolength = 0;		/* Accept variable document length */
+int nolength = 0;       /* Accept variable document length */
 int confidence = 1;     /* Show confidence estimator and warnings */
 int tlimit = 0;         /* time limit in secs */
 int keepalive = 0;      /* try and do keepalive connections */
@@ -340,7 +340,7 @@ BIO *bio_out,*bio_err;
 apr_time_t start, lasttime, stoptime;
 
 /* global request (and its length) */
-char _request[2048];
+char _request[8192];
 char *request = _request;
 apr_size_t reqlen;
 
@@ -390,6 +390,48 @@ static void apr_err(const char *s, apr_status_t rv)
     if (done)
         printf("Total of %d requests completed\n" , done);
     exit(rv);
+}
+
+static void *xmalloc(size_t size)
+{
+    void *ret = malloc(size);
+    if (ret == NULL) {
+        fprintf(stderr, "Could not allocate memory (%"
+                APR_SIZE_T_FMT" bytes)\n", size);
+        exit(1);
+    }
+    return ret;
+}
+
+static void *xcalloc(size_t num, size_t size)
+{
+    void *ret = calloc(num, size);
+    if (ret == NULL) {
+        fprintf(stderr, "Could not allocate memory (%"
+                APR_SIZE_T_FMT" bytes)\n", size*num);
+        exit(1);
+    }
+    return ret;
+}
+
+static char *xstrdup(const char *s)
+{
+    char *ret = strdup(s);
+    if (ret == NULL) {
+        fprintf(stderr, "Could not allocate memory (%"
+                APR_SIZE_T_FMT " bytes)\n", strlen(s));
+        exit(1);
+    }
+    return ret;
+}
+
+/* pool abort function */
+static int abort_on_oom(int retcode)
+{
+    fprintf(stderr, "Could not allocate memory\n");
+    exit(1);
+    /* not reached */
+    return retcode;
 }
 
 static void set_polled_events(struct connection *c, apr_int16_t new_reqevents)
@@ -625,7 +667,7 @@ static void ssl_proceed_handshake(struct connection *c)
                 else
                     pk_bits = 0;  /* Anon DH */
 
-                ssl_info = malloc(128);
+                ssl_info = xmalloc(128);
                 apr_snprintf(ssl_info, 128, "%s,%s,%d,%d",
                              SSL_get_version(c->ssl),
                              SSL_CIPHER_get_name(ci),
@@ -1473,12 +1515,14 @@ static void read_connection(struct connection * c)
                  * this is first time, extract some interesting info
                  */
                 char *p, *q;
+                size_t len = 0;
                 p = strstr(c->cbuff, "Server:");
                 q = servername;
                 if (p) {
                     p += 8;
-                    while (*p > 32)
-                    *q++ = *p++;
+                    /* -1 to not overwrite last '\0' byte */
+                    while (*p > 32 && len++ < sizeof(servername) - 1)
+                        *q++ = *p++;
                 }
                 *q = 0;
             }
@@ -1608,16 +1652,13 @@ static void test(void)
     fflush(stdout);
     }
 
-    con = calloc(concurrency, sizeof(struct connection));
+    con = xcalloc(concurrency, sizeof(struct connection));
 
     /*
      * XXX: a way to calculate the stats without requiring O(requests) memory
      * XXX: would be nice.
      */
-    stats = calloc(requests, sizeof(struct data));
-    if (stats == NULL || con == NULL) {
-        err("Cannot allocate memory for result statistics");
-    }
+    stats = xcalloc(requests, sizeof(struct data));
 
     if ((status = apr_pollset_create(&readbits, concurrency, cntxt,
                                      APR_POLLSET_NOCOPY)) != APR_SUCCESS) {
@@ -1689,11 +1730,7 @@ static void test(void)
      * Combine headers and (optional) post file into one continuous buffer
      */
     if (send_body) {
-        char *buff = malloc(postlen + reqlen + 1);
-        if (!buff) {
-            fprintf(stderr, "error creating request buffer: out of memory\n");
-            return;
-        }
+        char *buff = xmalloc(postlen + reqlen + 1);
         strcpy(buff, request);
         memcpy(buff + reqlen, postdata, postlen);
         request = buff;
@@ -1914,6 +1951,7 @@ static void usage(const char *progname)
     fprintf(stderr, "    -g filename     Output collected data to gnuplot format file.\n");
     fprintf(stderr, "    -e filename     Output CSV file with percentages served\n");
     fprintf(stderr, "    -r              Don't exit on socket receive errors.\n");
+    fprintf(stderr, "    -m method       Method name\n");
     fprintf(stderr, "    -h              Display usage information (this message)\n");
 #ifdef USE_SSL
 
@@ -2031,11 +2069,7 @@ static apr_status_t open_postfile(const char *pfile)
         return rv;
     }
     postlen = (apr_size_t)finfo.size;
-    postdata = malloc(postlen);
-    if (!postdata) {
-        fprintf(stderr, "ab: Could not allocate POST data buffer\n");
-        return APR_ENOMEM;
-    }
+    postdata = xmalloc(postlen);
     rv = apr_file_read_full(postfd, postdata, postlen, NULL);
     if (rv != APR_SUCCESS) {
         fprintf(stderr, "ab: Could not read POST data file: %s\n",
@@ -2073,6 +2107,7 @@ int main(int argc, const char * const argv[])
     apr_app_initialize(&argc, &argv, NULL);
     atexit(apr_terminate);
     apr_pool_create(&cntxt, NULL);
+    apr_pool_abort_set(abort_on_oom, cntxt);
 
 #ifdef NOT_ASCII
     status = apr_xlate_open(&to_ascii, "ISO-8859-1", APR_DEFAULT_CHARSET, cntxt);
@@ -2095,7 +2130,7 @@ int main(int argc, const char * const argv[])
     myhost = NULL; /* 0.0.0.0 or :: */
 
     apr_getopt_init(&opt, cntxt, argc, argv);
-    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:lrkVhwix:y:z:C:H:P:A:g:X:de:SqB:"
+    while ((status = apr_getopt(opt, "n:c:t:s:b:T:p:u:v:lrkVhwix:y:z:C:H:P:A:g:X:de:SqB:m:"
 #ifdef USE_SSL
             "Z:f:"
 #endif
@@ -2125,13 +2160,13 @@ int main(int argc, const char * const argv[])
                 method = HEAD;
                 break;
             case 'g':
-                gnuplot = strdup(opt_arg);
+                gnuplot = xstrdup(opt_arg);
                 break;
             case 'd':
                 percentile = 0;
                 break;
             case 'e':
-                csvperc = strdup(opt_arg);
+                csvperc = xstrdup(opt_arg);
                 break;
             case 'S':
                 confidence = 0;
@@ -2267,6 +2302,10 @@ int main(int argc, const char * const argv[])
 #ifdef USE_SSL
             case 'Z':
                 ssl_cipher = strdup(opt_arg);
+                break;
+            case 'm':
+                method = CUSTOM_METHOD;
+                method_str[CUSTOM_METHOD] = strdup(opt_arg);
                 break;
             case 'f':
                 if (strncasecmp(opt_arg, "ALL", 3) == 0) {

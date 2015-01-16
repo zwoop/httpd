@@ -396,8 +396,10 @@ DAV_DECLARE(const char *) dav_xml_get_cdata(const apr_xml_elem *elem, apr_pool_t
 
     if (strip_white) {
         /* trim leading whitespace */
-        while (apr_isspace(*cdata))     /* assume: return false for '\0' */
+        while (apr_isspace(*cdata)) {     /* assume: return false for '\0' */
             ++cdata;
+            --len;
+        }
 
         /* trim trailing whitespace */
         while (len-- > 0 && apr_isspace(cdata[len]))
@@ -1751,7 +1753,7 @@ DAV_DECLARE(dav_error *) dav_get_locktoken_list(request_rec *r,
     }
 
     while (if_header != NULL) {
-        if_state = if_header->state;        /* Begining of the if_state linked list */
+        if_state = if_header->state;        /* Beginning of the if_state linked list */
         while (if_state != NULL)        {
             if (if_state->condition == DAV_IF_COND_NORMAL
                 && if_state->type == dav_if_opaquelock) {

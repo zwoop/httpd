@@ -171,6 +171,25 @@ ProxyVia On
     </example>
     </section> <!-- /examples -->
 
+    <section id="handler"><title>Access via Handler</title>
+
+      <p>You can also force a request to be handled as a reverse-proxy
+        request, by creating a suitable Handler pass-through. The example
+        configuration below will pass all requests for PHP scripts to the
+        specified FastCGI server using reverse proxy:
+      </p>
+
+      <example><title>Reverse Proxy PHP scripts</title>
+      <highlight language="config">
+&lt;FilesMatch \.php$&gt;
+    SetHandler  "proxy:unix:/path/to/app.sock|fcgi://localhost/"
+&lt;/FilesMatch&gt;
+      </highlight>
+      </example>
+
+      <p>This feature is available in Apache HTTP Server 2.4.10 and later.</p>
+
+    </section> <!-- /handler -->
 
     <section id="workers"><title>Workers</title>
       <p>The proxy manages the configuration of origin servers and their
@@ -431,6 +450,11 @@ ProxyPass /examples http://backend.example.com/examples timeout=10
     module="mod_proxy">ProxyVia</directive> directives, which control
     other request headers.</p>
 
+    <p>Note:  If you need to specify custom request headers to be
+    added to the forwarded request, use the 
+    <directive module="mod_headers">RequestHeader</directive>
+    directive.</p>
+
    </section> <!--/x-headers -->
 
 
@@ -465,6 +489,20 @@ ProxyPass /examples http://backend.example.com/examples timeout=10
   SetOutputFilter INCLUDES
 &lt;/Proxy&gt;
     </highlight>
+
+    <note><title>Differences from the Location configuration section</title>
+      <p>A backend URL matches the configuration section if it begins with the 
+      the <var>wildcard-url</var> string, even if the last path segment in the
+      directive only matches a prefix of the backend URL.  For example, 
+      &lt;Proxy http://example.com/foo&gt; matches all of 
+      http://example.com/foo, http://example.com/foo/bar, and 
+      http://example.com/foobar.  The matching of the final URL differs
+      from the behavior of the <directive type="section" module="core"
+      >Location</directive> section, which for purposes of this note 
+      treats the final path component as if it ended in a slash.</p>
+      <p>For more control over the matching, see <directive type="section"
+      >ProxyMatch</directive>.</p>
+    </note>
 
 </usage>
 <seealso><directive type="section" module="mod_proxy">ProxyMatch</directive></seealso>
@@ -514,6 +552,19 @@ proxied resources</description>
     identical to the <directive module="mod_proxy"
     type="section">Proxy</directive> directive, except it matches URLs
     using <glossary ref="regex">regular expressions</glossary>.</p>
+
+    <p>From 2.4.8 onwards, named groups and backreferences are captured and
+    written to the environment with the corresponding name prefixed with
+    "MATCH_" and in upper case. This allows elements of URLs to be referenced
+    from within <a href="../expr.html">expressions</a> and modules like
+    <module>mod_rewrite</module>. In order to prevent confusion, numbered
+    (unnamed) backreferences are ignored. Use named groups instead.</p>
+
+<highlight language="config">
+&lt;ProxyMatch ^http://(?&lt;sitename&gt;[^/]+)&gt;
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/ProxyMatch&gt;
+</highlight>
 </usage>
 <seealso><directive type="section" module="mod_proxy">Proxy</directive></seealso>
 </directivesynopsis>
@@ -656,8 +707,7 @@ expressions</description>
     <syntax>BalancerPersist On|Off</syntax>
     <default>BalancerPersist Off</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
-    <compatibility>BalancerPersist is only available in Apache HTTP Server 2.4.4 and later.
-        and later.</compatibility>
+    <compatibility>BalancerPersist is only available in Apache HTTP Server 2.4.4 and later.</compatibility>
     <usage>
         <p>This directive will cause the shared memory storage associated
         with the balancers and balancer members to be persisted across
@@ -672,7 +722,7 @@ expressions</description>
     <syntax>ProxyPassInherit On|Off</syntax>
     <default>ProxyPassInherit On</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
-    <compatibility>ProxyPassInherit is only available in Apache HTTP Server 2.5.0 and later.
+    <compatibility>ProxyPassInherit is only available in Apache HTTP Server 2.4.5 and later.
         and later.</compatibility>
     <usage>
         <p>This directive will cause the current server/vhost to "inherit"
@@ -691,8 +741,7 @@ expressions</description>
     <syntax>BalancerInherit On|Off</syntax>
     <default>BalancerInherit On</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
-    <compatibility>BalancerInherit is only available in Apache HTTP Server 2.5.0
-        and later.</compatibility>
+    <compatibility>BalancerInherit is only available in Apache HTTP Server 2.4.5 and later.</compatibility>
     <usage>
         <p>This directive will cause the current server/vhost to "inherit" ProxyPass
             Balancers and Workers defined in the main server. This can cause issues and
@@ -716,19 +765,19 @@ expressions</description>
             within a <code>&lt;Proxy <var>balancer://</var>...&gt;</code> container
             directive, and can take any of the key value pair parameters available to
             <directive module="mod_proxy">ProxyPass</directive> directives.</p>
-        <p>One additional parameter is available only to <directive
-            module="mod_proxy">BalancerMember</directive> directives:
+        <p>One additional parameter is available only to <directive>BalancerMember</directive> directives:
             <var>loadfactor</var>. This is the member load factor - a number between 1
             (default) and 100, which defines the weighted load to be applied to the
             member in question.</p>
-        <p>The balancerurl is only needed when not in <code>&lt;Proxy <var>balancer://</var>...&gt;</code>
+        <p>The <var>balancerurl</var> is only needed when not in
+            <code>&lt;Proxy <var>balancer://</var>...&gt;</code>
             container directive. It corresponds to the url of a balancer defined in
             <directive module="mod_proxy">ProxyPass</directive> directive.</p>
         <p>The path component of the balancer URL in any
             <code>&lt;Proxy <var>balancer://</var>...&gt;</code> container directive
             is ignored.</p>
         <p>Trailing slashes should typically be removed from the URL of a
-            <code>BalancerMember</code>.</p>
+            <directive>BalancerMember</directive>.</p>
     </usage>
 </directivesynopsis>
 
@@ -804,11 +853,19 @@ expressions</description>
 
     <note><strong>Note: </strong>This directive cannot be used within a 
     <code>&lt;Directory&gt;</code> context.</note>
-    
+
     <note type="warning">The <directive
     module="mod_proxy">ProxyRequests</directive> directive should
     usually be set <strong>off</strong> when using
     <directive>ProxyPass</directive>.</note>
+
+    <p>Support for using a Unix Domain Socket is available by using a target
+    which prepends <code>unix:/path/lis.sock|</code>. For example, to proxy
+    HTTP and target the UDS at /home/www/socket you would use
+    <code>unix:/home/www.socket|http://localhost/whatever/</code>.</p>
+
+    <note><strong>Note:</strong> The path associated with the <code>unix:</code>
+    URL is <directive>DefaultRuntimeDir</directive> aware.</note>
 
     <p>Suppose the local server has address <code>http://example.com/</code>;
     then</p>
@@ -960,6 +1017,12 @@ ProxyPass /mirror/foo http://backend.example.com
     drop connections or when backends themselves may be under round-
     robin DNS. To disable connection pooling reuse,
     set this property value to <code>On</code>.
+    </td></tr>
+    <tr><td>enablereuse</td>
+        <td>On</td>
+        <td>This is the inverse of 'disablereuse' above, provided as a
+        convenience for scheme handlers that require opt-in for connection
+        reuse (such as <module>mod_proxy_fcgi</module>).  2.4.11 and later only.
     </td></tr>
     <tr><td>flushpackets</td>
         <td>off</td>
@@ -1119,7 +1182,8 @@ ProxyPass /mirror/foo http://backend.example.com
         and it depends on the backend application server that support sessions.
         If the backend application server uses different name for cookies
         and url encoded id (like servlet containers) use | to to separate them.
-        The first part is for the cookie the second for the path.
+        The first part is for the cookie the second for the path.<br />
+        Available in Apache HTTP Server 2.4.4 and later.
     </td></tr>
     <tr><td>stickysessionsep</td>
         <td>"."</td>
@@ -1150,7 +1214,7 @@ ProxyPass /mirror/foo http://backend.example.com
         <td>Off</td>
         <td>If set, an IO read timeout after a request is sent to the backend will
         force the worker into error state. Worker recovery behaves the same as other
-        worker errors.
+        worker errors.<br />
         Available in Apache HTTP Server 2.4.5 and later.
     </td></tr>
     <tr><td>nonce</td>
@@ -1177,7 +1241,8 @@ ProxyPass /mirror/foo http://backend.example.com
         in error state. There might be cases where an already overloaded backend
         can get into deeper trouble if the recovery of all workers is enforced
         without considering the retry parameter of each worker. In this case
-        set to <code>Off</code>.
+        set to <code>Off</code>.<br />
+        Available in Apache HTTP Server 2.4.2 and later.
     </td></tr>
 
     </table>
@@ -1235,8 +1300,7 @@ ProxyPass / balancer://hotcluster/
     <directive module="mod_rewrite">RewriteRule</directive> directive with the
     <code>[P]</code> flag.</p>
 
-    <p>The optional <var>interpolate</var> keyword (available in
-    httpd 2.2.9 and later), in combination with
+    <p>The optional <var>interpolate</var> keyword, in combination with
     <directive>ProxyPassInterpolateEnv</directive> causes the ProxyPass
     to interpolate environment variables, using the syntax
     <var>${VARNAME}</var>.  Note that many of the standard CGI-derived
@@ -1285,7 +1349,7 @@ ProxyPassReverse  /mirror/foo/ https://backend.example.com/
     then</p>
 
     <highlight language="config">
-      ProxyPassMatch ^(/.*\.gif)$ http://backend.example.com$1
+      ProxyPassMatch ^/(.*\.gif)$ http://backend.example.com/$1
     </highlight>
 
     <p>will cause a local request for
@@ -1316,6 +1380,13 @@ ProxyPassReverse  /mirror/foo/ https://backend.example.com/
     <p>If you require a more flexible reverse-proxy configuration, see the
     <directive module="mod_rewrite">RewriteRule</directive> directive with the
     <code>[P]</code> flag.</p>
+
+    <note>
+      <title>Default Substitution</title>
+      <p>When the URL parameter doesn't use any backreferences into the regular
+      expression, the original URL will be appended to the URL parameter.
+      </p>
+    </note>
 
     <note type="warning">
       <title>Security Warning</title>
@@ -1386,8 +1457,7 @@ ProxyPassReverseCookiePath  /  /mirror/foo/
     because it doesn't depend on a corresponding <directive module="mod_proxy"
     >ProxyPass</directive> directive.</p>
 
-    <p>The optional <var>interpolate</var> keyword (available in
-    httpd 2.2.9 and later), used together with
+    <p>The optional <var>interpolate</var> keyword, used together with
     <directive>ProxyPassInterpolateEnv</directive>, enables interpolation
     of environment variables specified using the format <var>${VARNAME}</var>.
     Note that interpolation is not supported within the scheme portion of a

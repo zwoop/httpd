@@ -422,6 +422,21 @@
  * 20120211.25 (2.4.7-dev) Add conn_sense_e
  * 20120211.26 (2.4.7-dev) Add util_fcgi.h, FastCGI protocol support
  * 20120211.27 (2.4.7-dev) Add ap_podx_restart_t and ap_mpm_podx_*
+ * 20120211.28 (2.4.7-dev) Add ap_regname
+ * 20120211.29 (2.4.7-dev) Add uds_path to proxy_conn_rec
+ * 20120211.30 (2.4.7-dev) REWRITE_REDIRECT_HANDLER_NAME in mod_rewrite.h
+ * 20120211.31 (2.4.7-dev) Add ap_proxy_port_of_scheme()
+ * 20120211.32 (2.4.10-dev) Add SSL reusable SNI to mod_proxy.h's proxy_conn_rec
+ * 20120211.33 (2.4.10-dev) Add suspend_connection and resume_connection hooks
+ * 20120211.34 (2.4.10-dev) AP_DEFAULT_HANDLER_NAME/AP_IS_DEFAULT_HANDLER_NAME
+ * 20120211.35 (2.4.10-dev) Add "r", "must_rebind", and last_backend_conn  
+                            to util_ldap_connection_t
+ * 20120211.36 (2.4.10-dev) Add ap_copy_scoreboard_worker()
+ * 20120211.37 (2.4.11-dev) Add r->trailers_{in,out}
+ * 20120211.38 (2.4.11-dev) Added ap_shutdown_conn().
+ * 20120211.39 (2.4.11-dev) Add ap_proxy_connect_uds().
+ * 20120211.40 (2.4.11-dev) Add ap_log_data(), ap_log_rdata(), etc.
+ * 20120211.41 (2.4.11-dev) Add ap_proxy_de_socketfy to mod_proxy.h
  */
 
 #define MODULE_MAGIC_COOKIE 0x41503234UL /* "AP24" */
@@ -429,7 +444,7 @@
 #ifndef MODULE_MAGIC_NUMBER_MAJOR
 #define MODULE_MAGIC_NUMBER_MAJOR 20120211
 #endif
-#define MODULE_MAGIC_NUMBER_MINOR 27                   /* 0...n */
+#define MODULE_MAGIC_NUMBER_MINOR 41                   /* 0...n */
 
 /**
  * Determine if the server's current MODULE_MAGIC_NUMBER is at least a

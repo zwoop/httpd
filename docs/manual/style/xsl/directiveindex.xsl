@@ -52,6 +52,8 @@
             </xsl:call-template>
         </xsl:variable>
 
+        <xsl:call-template name="retired" />
+
         <div id="preamble">
             <h1>
                 <xsl:value-of select="title" />
@@ -102,6 +104,8 @@
                 [$letter = translate(substring(normalize-space(name), 1, 1),
                                      $lowercase, $uppercase)]">
 <xsl:sort select="name" />
+<xsl:sort select="../name" /> <!-- in case of duplicate directives -->
+
     <li>
         <a href="{../name}.html#{translate(name, $uppercase, $lowercase)}">
             <xsl:if test="position() = 1">

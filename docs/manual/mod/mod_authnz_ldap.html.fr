@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_authnz_ldap - Serveur Apache HTTP</title>
+<title>mod_authnz_ldap - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -382,6 +382,9 @@ Directory</a></li>
     disponibles, sous réserve du chargement de modules d'autorisation
     supplémentaires.</p>
 
+    <p>Depuis la version 2.4.8, les directives require LDAP supportent
+    les <a href="../expr.html">expressions</a>.</p>
+
 <h3><a name="requser" id="requser">Require ldap-user</a></h3>
 
     <p>La directive <code>Require ldap-user</code> permet de spécifier
@@ -401,11 +404,9 @@ Directory</a></li>
     <code>cn</code> sera utilisé pour les recherches), on pourra
     utiliser les directives Require suivantes pour restreindre l'accès
     :</p>
-<pre class="prettyprint lang-config">
-Require ldap-user "Barbara Jenson"
+<pre class="prettyprint lang-config">Require ldap-user "Barbara Jenson"
 Require ldap-user "Fred User"
-Require ldap-user "Joe Manager"
-</pre>
+Require ldap-user "Joe Manager"</pre>
 
 
     <p>De par la manière dont <code class="module"><a href="../mod/mod_authnz_ldap.html">mod_authnz_ldap</a></code> traite
@@ -430,12 +431,10 @@ Require ldap-user "Joe Manager"
     DN du groupe LDAP. Note : n'entourez pas le nom du groupe avec des
     guillemets. Par exemple, supposons que l'entrée suivante existe dans
     l'annuaire LDAP :</p>
-<div class="example"><pre>
-dn: cn=Administrators, o=Example
+<div class="example"><pre>dn: cn=Administrators, o=Example
 objectClass: groupOfUniqueNames
 uniqueMember: cn=Barbara Jenson, o=Example
-uniqueMember: cn=Fred User, o=Example
-</pre></div>
+uniqueMember: cn=Fred User, o=Example</pre></div>
 
     <p>La directive suivante autoriserait alors l'accès à Fred et
     Barbara :</p>
@@ -446,8 +445,7 @@ uniqueMember: cn=Fred User, o=Example
     groupe LDAP spécifié si la directive <code class="directive"><a href="#authldapmaxsubgroupdepth">AuthLDAPMaxSubGroupDepth</a></code> a été
     définie à une valeur supérieure à 0. Par exemple, supposons que les
     entrées suivantes existent dans l'annuaire LDAP :</p>
-<div class="example"><pre>
-dn: cn=Employees, o=Example
+<div class="example"><pre>dn: cn=Employees, o=Example
 objectClass: groupOfUniqueNames
 uniqueMember: cn=Managers, o=Example
 uniqueMember: cn=Administrators, o=Example
@@ -472,18 +470,15 @@ uniqueMember: cn=Temporary Employees, o=Example
 dn: cn=Temporary Employees, o=Example
 objectClass: groupOfUniqueNames
 uniqueMember: cn=Jim Swenson, o=Example
-uniqueMember: cn=Elliot Rhodes, o=Example
-</pre></div>
+uniqueMember: cn=Elliot Rhodes, o=Example</pre></div>
 
     <p>Les directives suivantes autoriseraient alors l'accès à Bob
-    Ellis, Tom Jackson, Barbara Jensen, Fred User, Allan Jefferson, et
+    Ellis, Tom Jackson, Barbara Jenson, Fred User, Allan Jefferson, et
     Paul Tilley, mais l'interdiraient à Jim Swenson, ou Elliot Rhodes
     (car ils sont situés dans un sous-groupe de niveau de profondeur 2)
     :</p>
-<pre class="prettyprint lang-config">
-Require ldap-group cn=Employees, o-Example
-AuthLDAPMaxSubGroupDepth 1
-</pre>
+<pre class="prettyprint lang-config">Require ldap-group cn=Employees, o=Example
+AuthLDAPMaxSubGroupDepth 1</pre>
 
 
     <p>Le comportement de cette directive est modifié par les directives
@@ -582,10 +577,8 @@ AuthLDAPMaxSubGroupDepth 1
         Accorde l'autorisation d'accès à tout utilisateur présent dans
 	l'annuaire LDAP, en utilisant son UID pour effectuer la
 	recherche :
-<pre class="prettyprint lang-config">
-AuthLDAPURL "ldap://ldap1.example.com:389/ou=People, o=Example?uid?sub?(objectClass=*)"
-Require valid-user
-</pre>
+<pre class="prettyprint lang-config">AuthLDAPURL "ldap://ldap1.example.com:389/ou=People, o=Example?uid?sub?(objectClass=*)"
+Require valid-user</pre>
 
       </li>
 
@@ -594,8 +587,7 @@ Require valid-user
 	dont les valeurs par défaut conviennent sont omis. Notez aussi
 	la présence d'un annuaire LDAP redondant :
 <pre class="prettyprint lang-config">AuthLDAPURL "ldap://ldap1.example.com ldap2.example.com/ou=People, o=Example"
-Require valid-user
-</pre>
+Require valid-user</pre>
 
       </li>
 
@@ -609,10 +601,8 @@ Require valid-user
 	approche n'est pas recommandée : il est préférable de choisir un
 	attribut de votre annuaire dont l'unicité soit garantie, comme
 	<code>uid</code>.
-<pre class="prettyprint lang-config">
-AuthLDAPURL "ldap://ldap.example.com/ou=People, o=Example?cn"
-Require valid-user
-</pre>
+<pre class="prettyprint lang-config">AuthLDAPURL "ldap://ldap.example.com/ou=People, o=Example?cn"
+Require valid-user</pre>
 
       </li>
 
@@ -620,10 +610,18 @@ Require valid-user
         Accorde l'autorisation d'accès à tout utilisateur appartenant au
 	groupe Administrateurs. Les utilisateurs doivent s'authentifier
 	en utilisant leur UID :
-<pre class="prettyprint lang-config">
-AuthLDAPURL ldap://ldap.example.com/o=Example?uid
-Require ldap-group cn=Administrators, o=Example
-</pre>
+<pre class="prettyprint lang-config">AuthLDAPURL ldap://ldap.example.com/o=Example?uid
+Require ldap-group cn=Administrators, o=Example</pre>
+
+      </li>
+
+      <li>
+      Accorde l'accès à tout utilisateur appartenant au groupe dont le
+      nom correspond au nom d'hôte du serveur virtuel. Dans cet exemple,
+      on utilise une <a href="../expr.html">expression</a> pour
+      construire le filtre.
+<pre class="prettyprint lang-config">AuthLDAPURL ldap://ldap.example.com/o=Example?uid
+Require ldap-group cn=%{SERVER_NAME}, o=Example</pre>
 
       </li>
 
@@ -633,10 +631,8 @@ Require ldap-group cn=Administrators, o=Example
 	attribut LDAP <code>qpagePagerID</code>. Seuls ces utilisateurs
 	(authentifiés via leur UID) se verront accorder l'autorisation
 	d'accès :
-<pre class="prettyprint lang-config">
-AuthLDAPURL ldap://ldap.example.com/o=Example?uid??(qpagePagerID=*)
-Require valid-user
-</pre>
+<pre class="prettyprint lang-config">AuthLDAPURL ldap://ldap.example.com/o=Example?uid??(qpagePagerID=*)
+Require valid-user</pre>
 
       </li>
 
@@ -650,10 +646,8 @@ Require valid-user
 	tout utilisateur disposant d'un bippeur ainsi qu'à Joe Manager
 	qui ne possède pas de bippeur, mais doit tout de même pouvoir
 	accéder à la ressource :</p>
-<pre class="prettyprint lang-config">
-AuthLDAPURL ldap://ldap.example.com/o=Example?uid??(|(qpagePagerID=*)(uid=jmanager))
-Require valid-user
-</pre>
+<pre class="prettyprint lang-config">AuthLDAPURL ldap://ldap.example.com/o=Example?uid??(|(qpagePagerID=*)(uid=jmanager))
+Require valid-user</pre>
 
 
         <p>Ce dernier exemple peut sembler confus au premier abord ; en
@@ -757,11 +751,9 @@ Directory</a></h2>
     l'attribut <em>userPrincipalName</em>, avec une base de recherche
     vide, comme suit :</p>
 
-<pre class="prettyprint lang-config">
-AuthLDAPBindDN apache@example.com
+<pre class="prettyprint lang-config">AuthLDAPBindDN apache@example.com
 AuthLDAPBindPassword password
-AuthLDAPURL ldap://10.0.0.1:3268/?userPrincipalName?sub
-</pre>
+AuthLDAPURL ldap://10.0.0.1:3268/?userPrincipalName?sub</pre>
 
 
     <p>Les utilisateurs devront s'authentifier en entrant leur UPN, de
@@ -786,11 +778,9 @@ AuthLDAPURL ldap://10.0.0.1:3268/?userPrincipalName?sub
     l'authentification LDAP consiste à ajouter les directives suivantes
     à <em>chaque</em> fichier <code>.htaccess</code> qui sera créé dans
     le site web :</p>
-<pre class="prettyprint lang-config">
-AuthLDAPURL       "the url"
+<pre class="prettyprint lang-config">AuthLDAPURL       "the url"
 AuthGroupFile     mygroupfile
-Require group     mygroupfile
-</pre>
+Require group     mygroupfile</pre>
 
 
 <h3><a name="howitworks" id="howitworks">Comment ça marche</a></h3>
@@ -945,6 +935,8 @@ connexion</td></tr>
 <tr><th><a href="directive-dict.html#Override">AllowOverride:</a></th><td>AuthConfig</td></tr>
 <tr><th><a href="directive-dict.html#Status">Statut:</a></th><td>Extension</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_authnz_ldap</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilité:</a></th><td><em>exec:</em> est disponible depuis la version 2.4.5 du
+serveur HTTP Apache.</td></tr>
 </table>
     <p>Cette directive permet de spécifier un mot de passe à utiliser en
     conjonction avec le DN de connexion. Notez que ce mot de passe
@@ -957,16 +949,15 @@ connexion</td></tr>
     <p>Si la valeur spécifiée débute par "exec:", la commande qui suit sera
     exécutée, et la première ligne renvoyée par la commande sur la
     sortie standard sera utilisée comme mot de passe.</p>
-<div class="example"><pre>
-# Mot de passe spécifié directement
+<pre class="prettyprint lang-config"># Mot de passe spécifié directement
 AuthLDAPBindPassword secret
 
 # Exécution de /path/to/program pour obtenir le mot de passe
 AuthLDAPBindPassword exec:/path/to/program
 
 # Exécution de /path/to/otherProgram avec un argument pour obtenir le mot de passe
-AuthLDAPBindPassword "exec:/path/to/otherProgram argument1"
-</pre></div>
+AuthLDAPBindPassword "exec:/path/to/otherProgram argument1"</pre>
+
 
 
 </div>
@@ -1202,9 +1193,9 @@ distant utilisé tel quel)</code></td></tr>
      utiliser de nom d'utilisateur dédié via la directive <code class="directive"><a href="#authldapbinddn">AuthLDAPBindDN</a></code>.
      </p>
 
-    <pre class="prettyprint lang-config"> AuthLDAPInitialBindPattern (.+) $1@example.com </pre>
+    <pre class="prettyprint lang-config">AuthLDAPInitialBindPattern (.+) $1@example.com</pre>
 
-    <pre class="prettyprint lang-config"> AuthLDAPInitialBindPattern (.+) cn=$1,dc=example,dc=com</pre>
+    <pre class="prettyprint lang-config">AuthLDAPInitialBindPattern (.+) cn=$1,dc=example,dc=com</pre>
 
 
     <div class="note"><h3>Non disponible dans la cas d'une autorisation seule</h3>
@@ -1506,7 +1497,10 @@ spécifiés.</p>
 	taille des filtres est limitée à environ 8000 caractères (valeur
 	de la macro <code>MAX_STRING_LEN</code> dans le code source
 	d'Apache), ce qui s'avère plus que suffisant pour la plupart des
-	applications.</dd>
+	applications. Depuis la version 2.4.10, il est possible
+	d'utiliser le paramètre "none" pour spécifier qu'aucun filtre
+	n'est activé ; ce paramètre est obligatoire avec certains
+	serveurs LDAP primitifs.</dd>
 </dl>
 
     <p>Pour une recherche, les attribut, filtre et nom d'utilisateur
@@ -1566,7 +1560,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_authnz_ldap.
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

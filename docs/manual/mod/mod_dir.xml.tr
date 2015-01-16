@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.tr.xsl"?>
-<!-- English Revision: 1421892 -->
+<!-- English Revision: 1586470 -->
 <!-- =====================================================
  Translated by: Nilgün Belma Bugüner <nilgun belgeler.gen.tr>
    Reviewed by: Orhan Berent <berent belgeler.gen.tr>
@@ -149,9 +149,24 @@ DirectoryIndex index.html index.txt  /cgi-bin/index.pl
       <directive>DirectoryIndexRedirect</directive> ise harici bir
       yönlendirmeye sebep olur.</p>
 
+    <p>Bunlardan biri kullanılabilir:</p>
+    <ul>
+     <li><code>on</code>: Dizin listesi kaynağına bir 302 yönlendirmesi
+     yapılır.</li>
+     <li><code>off</code>: Bir yönlendirme yapılmaz. mod_dir için eski davranış
+     böyleydi.</li>
+     <li><code>permanent</code>: Dizin listesi kaynağına bir 301 (kalıcı)
+     yönlendirmesi yapılır.</li>
+     <li><code>temp</code>: Bu <code>on</code> ile aynı etkiye sahiptir.</li>
+     <li><code>seeother</code>: Dizin listesi kaynağına bir 303 yönlendirmesi
+     ("diğerine bak" olarak da bilinir)yapılır.</li>
+     <li><var>3xx-code</var>: 3xx kodu ile seçilen yönlendirme yapılır.</li>
+    </ul>
+
+    <example><title>Örnek</title>
     <highlight language="config">
 DirectoryIndexRedirect on
-    </highlight>
+    </highlight></example>
 
     <p><code>http://example.com/docs/</code> için yapılan bir istek, <code
       >http://example.com/docs/index.html</code> (mevcutsa) adresine geçici bir
@@ -223,7 +238,7 @@ DirectoryIndexRedirect on
 <description>Bir dosya ile eşleşmeyen istekler için öntanımlı URL tanımlar
 </description>
 <syntax>FallbackResource disabled | <var>yerel-url</var></syntax>
-<default>None - httpd 404 döndürecektir (Yok)</default>
+<default>disabled - httpd 404 döndürecektir (Yok)</default>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context></contextlist>
 <override>Indexes</override>
@@ -269,4 +284,34 @@ FallbackResource /index.php
 
 </usage>
 </directivesynopsis>
+<directivesynopsis>
+<name>DirectoryCheckHandler</name>
+<description>Başka bir eylemci yapılandırılmışsa bu modülün nasıl yanıt
+  vereceğini belirler</description>
+<syntax>DirectoryCheckHandler On|Off</syntax>
+<default>DirectoryCheckHandler Off</default>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context></contextlist>
+<override>Indexes</override>
+<compatibility>2.4.8 ve sonrasında kullanılabilmektedir. 2.4 öncesi sürümler
+  örtük olarak "DirectoryCheckHandler ON" belirtilmiş gibi
+  davranır.</compatibility>
+<usage>
+    <p><directive>DirectoryCheckHandler</directive> yönergesi, geçerli URL için
+    başka bir eylemcinin yapılandırılmış olması durumunda,
+    <module>mod_dir</module> modülünün index dosyaları için dizine mi
+    bakacağını yoksa URL'nin sonuna bölü çizgisi mi ekleyeceğini belirler.
+    Eylemciler <directive module="core">SetHandler</directive> gibi
+    yönergelerle atanabileceği gibi dizin işlemleri sırasında
+    <module>mod_rewrite</module> gibi modüller tarafından da atanabilir.
+    </p>
+
+    <p>2.4 öncesi sürümlerde, bir URL için başka bir eylemcinin yapılandılmış
+    olması durumunda bu modül herhangi bir eylemde bulunmaz ve sonuç olarak,
+    tüm dizin için bir <directive>SetHandler</directive> belirtildiği durumda
+    index dosyalarının sunulmasının yanında  <directive>mod_rewrite</directive>
+    gibi modüller de ayrıca bazı çelişkili sonuçlar oluşturabilir.</p>
+</usage>
+</directivesynopsis>
+
 </modulesynopsis>

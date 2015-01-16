@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='ISO-8859-1' ?>
 <!DOCTYPE manualpage SYSTEM "../style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1344676:1500043 (outdated) -->
+<!-- English Revision: 1647230 -->
 <!-- French translation by alain B, review by Vincent Deffontaines
 	updated by Lucien GENTIS -->
 
@@ -89,8 +89,15 @@ virtuel basé sur le nom approprié</title>
     cette même paire adresse IP/port, Apache va ensuite comparer les
     valeurs des directives <directive module="core"
     >ServerName</directive> et <directive
-    module="core">ServerAlias</directive> avec le nom de serveur
+    >module="core">ServerAlias</directive> avec le nom de serveur
     présent dans la requête.</p>
+
+    <p>Si vous ne définissez pas de directive <directive
+    module="core">ServerName</directive> pour un serveur virtuel à base
+    de nom, le serveur utilisera par défaut le nom de domaine
+    entièrement qualifié (FQDN) déduit du nom d'hôte système. Cette
+    configuration sans nom de serveur explicite peut conduire à des
+    erreurs de choix du serveur virtuel à utiliser et est déconseillée.</p>
 
     <section id="defaultvhost"><title>Le serveur virtuel à base de nom
     par défaut pour une paire adresse IP/port</title>
@@ -148,7 +155,7 @@ virtuel basé sur le nom approprié</title>
 	spécifiques (et non par défaut).</p>
     </note>
 
-    <note><title>Hérirage du nom de serveur</title>
+    <note><title>Héritage du nom de serveur</title>
        <p>Il est toujours préférable de définir une directive <directive
        module="core">ServerName</directive> au niveau de chaque serveur
        virtuel à base de nom. Si un serveur virtuel ne définit pas

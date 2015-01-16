@@ -33,6 +33,7 @@
 <!--                                                                      -->
 
 <!-- Injected variables:                                                  -->
+<!--   $is-retired      - (boolean) Is this httpd version retired?        -->
 <!--   $is-chm          - (boolean) target is for CHM generation or not   -->
 <!--   $is-zip          - (boolean) target is for ZIP generation or not   -->
 <!--   $message         - (node-set) localized common text snippets       -->
@@ -66,10 +67,12 @@
 
 <!-- load utility snippets -->
 <xsl:include href="util/modtrans.xsl" />
+<xsl:include href="util/pretrim.xsl" />
 
 <!-- make sure, we set relative anchors only, if we're actually -->
 <!-- transforming a modulefile (see <directive> template)       -->
 <xsl:variable name="in-modulesynopsis" select="boolean(/modulesynopsis)" />
+<xsl:variable name="upgrade" select="boolean(/*/@upgrade)" />
 
 <!-- when referencing to a directory, we may need to complete the path -->
 <!-- with the index file (for offline applications like *.chm files)   -->
@@ -139,6 +142,8 @@
 
         <xsl:text> </xsl:text>
         <xsl:value-of select="normalize-space($message[@id='apachetitle'])"/>
+        <xsl:text> </xsl:text>
+        <xsl:value-of select="normalize-space($message[@id='version'])"/> 
     </title>&lf;
 
     <!-- chm files get a slightly different stylesheet -->
@@ -171,10 +176,22 @@
            rel="stylesheet"
            href="{$path}/style/css/manual-print.css"/>
     <link href="{$path}/style/css/prettify.css" type="text/css" rel="stylesheet" />&lf;
-    <script type="text/javascript" src="{$path}/style/scripts/prettify.js">&lf;</script>&lf;
+    <script type="text/javascript" src="{$path}/style/scripts/prettify.min.js">&lf;</script>&lf;
     <!-- chm files do not need a favicon -->
     <xsl:if test="not($is-chm or $is-zip)">&lf;
         <link rel="shortcut icon" href="{$path}/images/favicon.ico" />
+        <xsl:if test="$is-retired">
+            <xsl:choose>
+            <xsl:when test="$upgrade">
+                <xsl:if test="not(/*/@upgrade = '')">
+                    <link rel="canonical" href="http://httpd.apache.org/docs/current{concat($metafile/path, /*/@upgrade, '.html')}"/>
+                </xsl:if>
+            </xsl:when>
+            <xsl:otherwise>
+                <link rel="canonical" href="http://httpd.apache.org/docs/current{concat($metafile/path, $metafile/basename, '.html')}"/>
+            </xsl:otherwise>
+            </xsl:choose>
+        </xsl:if>
     </xsl:if>
 </head>
 </xsl:template>
@@ -270,6 +287,92 @@
 
 
 <!-- ==================================================================== -->
+<!-- retired                                                              -->
+<!-- ==================================================================== -->
+<xsl:template name="retired">
+<xsl:if test="$is-retired">
+    <xsl:variable name="base">
+        <xsl:choose>
+        <xsl:when test="$upgrade">
+            <xsl:if test="not(/*/@upgrade = '')">
+                <xsl:value-of select="/*/@upgrade" />
+            </xsl:if>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of
+                select="$metafile/basename" />
+        </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="future">
+        <xsl:choose>
+        <xsl:when test="$base = 'index'">
+            <xsl:value-of select="$metafile/path" />
+        </xsl:when>
+        <xsl:when test="$base = ''">
+            <!-- nothing -->
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="concat($metafile/path, $base, '.html')" />
+        </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+
+    <div class="retired">
+        <h4><xsl:value-of select="$message[@id='retired.headline']" /></h4>
+        <xsl:apply-templates select="$message[@id='retired.description']" />
+        <ul>
+            <li><a href="http://httpd.apache.org/docs/current/">
+                <xsl:value-of select="$message[@id='retired.current']" /></a>
+            </li>
+        </ul>
+        <xsl:if test="not($future = '')">
+            <p><xsl:apply-templates select="$message[@id='retired.document']" mode="retired" /></p>
+        </xsl:if>
+    </div>
+</xsl:if>
+</xsl:template>
+<!-- /retired -->
+
+<xsl:template match="message">
+    <xsl:apply-templates />
+</xsl:template>
+
+<xsl:template match="link" mode="retired">
+<xsl:variable name="base">
+    <xsl:choose>
+    <xsl:when test="$upgrade">
+        <xsl:if test="not(/*/@upgrade = '')">
+            <xsl:value-of select="/*/@upgrade" />
+        </xsl:if>
+    </xsl:when>
+    <xsl:otherwise>
+        <xsl:value-of
+            select="$metafile/basename" />
+    </xsl:otherwise>
+    </xsl:choose>
+</xsl:variable>
+<xsl:variable name="future">
+    <xsl:choose>
+    <xsl:when test="$base = 'index'">
+        <xsl:value-of select="$metafile/path" />
+    </xsl:when>
+    <xsl:when test="$base = ''">
+        <!-- nothing -->
+    </xsl:when>
+    <xsl:otherwise>
+        <xsl:value-of select="concat($metafile/path, $base, '.html')" />
+    </xsl:otherwise>
+    </xsl:choose>
+</xsl:variable>
+
+<a href="http://httpd.apache.org/docs/current{$future}">
+    <xsl:apply-templates />
+</a>
+</xsl:template>
+
+
+<!-- ==================================================================== -->
 <!-- out of date                                                          -->
 <!-- ==================================================================== -->
 <xsl:template name="outofdate">
@@ -318,7 +421,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/]]></xsl:text>&httpd.doc
 </xsl:choose>
 <div id="footer">&lf;
     <p class="apache">
-        <xsl:text>Copyright 2013 The Apache Software Foundation.</xsl:text><br />
+        <xsl:text>Copyright 2015 The Apache Software Foundation.</xsl:text><br />
         <xsl:if test="normalize-space($message[@id='before-license'])">
             <xsl:value-of select="$message[@id='before-license']"/>
             <xsl:text> </xsl:text>
@@ -504,13 +607,85 @@ if (typeof(prettyPrint) !== 'undefined') {
 <!-- /section/section/section/section -->
 
 
+
+<!-- ==================================================================== -->
+<!-- Render trimmed pre/highlight-text                                    -->
+<!-- ==================================================================== -->
+<xsl:template name="pre">
+<xsl:choose>
+<!-- Simple case: only one text node -->
+<xsl:when test="node()[position() = 1 and self::text()] and count(node()) = 1">
+    <xsl:call-template name="pre-ltrim-one">
+        <xsl:with-param name="string">
+            <xsl:call-template name="pre-rtrim">
+                <xsl:with-param name="string">
+                    <xsl:call-template name="pre-ltrim">
+                        <xsl:with-param name="string"
+                            select="node()[position() = 1 and self::text()]" />
+                    </xsl:call-template>
+                </xsl:with-param>
+            </xsl:call-template>
+        </xsl:with-param>
+    </xsl:call-template>
+</xsl:when>
+
+<!-- multiple nodes -->
+<xsl:otherwise>
+    <xsl:variable name="from">
+        <xsl:choose>
+        <xsl:when test="node()[position() = 1 and self::text()]">
+            <xsl:value-of select="2" />
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="1" />
+        </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="to">
+        <xsl:choose>
+        <xsl:when test="node()[position() = last() and self::text()]">
+            <xsl:value-of select="count(node()) - 1" />
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:value-of select="count(node())" />
+        </xsl:otherwise>
+        </xsl:choose>
+    </xsl:variable>
+
+    <xsl:if test="$from = 2">
+        <xsl:choose>
+        <xsl:when test="text()[contains(., '&#x0a;')]">
+            <xsl:call-template name="pre-ltrim">
+                <xsl:with-param name="string"
+                    select="node()[position() = 1 and self::text()]" />
+            </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>
+            <xsl:variable name="tmp" select="node()[position() = 1 and self::text()]" />
+            <xsl:value-of select="substring($tmp, string-length(substring-before($tmp, substring(normalize-space($tmp), 1, 1))) + 1, string-length($tmp))" />
+        </xsl:otherwise>
+        </xsl:choose>
+    </xsl:if>
+
+    <xsl:apply-templates select="node()[position() &gt;= $from and position() &lt;= $to]" />
+
+    <xsl:if test="$to &lt; count(node())">
+        <xsl:call-template name="pre-rtrim">
+            <xsl:with-param name="string"
+                select="node()[position() = last() and self::text()]" />
+        </xsl:call-template>
+    </xsl:if>
+</xsl:otherwise>
+</xsl:choose>
+</xsl:template>
+
+
 <!-- ==================================================================== -->
 <!-- Process source code highlighting                                     -->
 <!-- ==================================================================== -->
 <xsl:template match="highlight">
 <pre class="prettyprint lang-{@language}">
-    <!-- highlight body -->
-    <xsl:apply-templates />
+    <xsl:call-template name="pre" />
 </pre>&lf; <!-- /.highlight -->
 </xsl:template>
 <!-- /higlight -->
@@ -712,11 +887,21 @@ if (typeof(prettyPrint) !== 'undefined') {
 <code class="directive">
     <xsl:choose>
     <xsl:when test="@module">
-        <xsl:variable name="lowerdirective"
-            select="translate(., $uppercase, $lowercase)" />
+        <xsl:variable name="lowerdirective">
+            <xsl:choose>
+            <xsl:when test="@name">
+                <xsl:value-of select="normalize-space(translate(@name,
+                                        $uppercase, $lowercase))" />
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:value-of select="normalize-space(translate(.,
+                                        $uppercase, $lowercase))" />
+            </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
 
         <xsl:choose>
-        <xsl:when test="$in-modulesynopsis and @module = /modulesynopsis/name">
+        <xsl:when test="$in-modulesynopsis and normalize-space(@module) = /modulesynopsis/name">
             <a href="#{$lowerdirective}">
                 <xsl:if test="@type='section'">&lt;</xsl:if>
                 <xsl:value-of select="."/>
@@ -724,7 +909,7 @@ if (typeof(prettyPrint) !== 'undefined') {
             </a>
         </xsl:when>
         <xsl:otherwise>
-            <a href="{$path}/mod/{@module}.html#{$lowerdirective}">
+            <a href="{$path}/mod/{normalize-space(@module)}.html#{$lowerdirective}">
                 <xsl:if test="@type='section'">&lt;</xsl:if>
                 <xsl:value-of select="."/>
                 <xsl:if test="@type='section'">&gt;</xsl:if>
@@ -750,9 +935,16 @@ if (typeof(prettyPrint) !== 'undefined') {
 <!-- ==================================================================== -->
 <xsl:template match="module" name="module">
 <code class="module">
-    <a href="{$path}/mod/{.}.html">
+    <xsl:choose>
+    <xsl:when test="@outdated = 'true'">
         <xsl:value-of select="."/>
-    </a>
+    </xsl:when>
+    <xsl:otherwise>
+        <a href="{$path}/mod/{normalize-space(.)}.html">
+            <xsl:value-of select="."/>
+        </a>
+    </xsl:otherwise>
+    </xsl:choose>
 </code>
 </xsl:template>
 <!-- /module -->
@@ -1086,7 +1278,7 @@ if (typeof(prettyPrint) !== 'undefined') {
 <xsl:template match="dd"><dd><xsl:apply-templates select="*|@*|text()" /></dd></xsl:template>
 <xsl:template match="em"><em><xsl:apply-templates select="*|@*|text()" /></em></xsl:template>
 <xsl:template match="strong"><strong><xsl:apply-templates select="*|@*|text()" /></strong></xsl:template>
-<xsl:template match="pre"><pre><xsl:apply-templates select="*|@*|text()" /></pre></xsl:template>
+<xsl:template match="pre"><pre><xsl:call-template name="pre" /></pre></xsl:template>
 <xsl:template match="code"><code><xsl:apply-templates select="*|@*|text()" /></code></xsl:template>
 <xsl:template match="var"><var><xsl:apply-templates select="*|@*|text()" /></var></xsl:template>
 <xsl:template match="dfn"><dfn><xsl:apply-templates select="*|@*|text()" /></dfn></xsl:template>

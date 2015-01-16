@@ -25,17 +25,16 @@
   <title>Expressions in Apache HTTP Server</title>
 
   <summary>
-    <p>Historically, there are several syntax variants for expressions used to express
-        a condition in the different modules of the Apache HTTP Server.
-        There is some ongoing effort to only use a single variant, called <em>ap_expr</em>,
-        for all configuration directives.
-        This document describes the <em>ap_expr</em> expression parser.
+    <p>Historically, there are several syntax variants for expressions
+    used to express a condition in the different modules of the Apache
+    HTTP Server.  There is some ongoing effort to only use a single
+    variant, called <em>ap_expr</em>, for all configuration directives.
+    This document describes the <em>ap_expr</em> expression parser.
     </p>
     <p>The <em>ap_expr</em> expression is intended to replace most other
-        expression variants in HTTPD. For example, the deprecated
-        <directive module="mod_ssl">SSLRequire</directive> expressions can be
-        replaced by <a href="mod/mod_authz_core.html#reqexpr">Require expr</a>.
-    </p>
+    expression variants in HTTPD. For example, the deprecated <directive
+    module="mod_ssl">SSLRequire</directive> expressions can be replaced
+    by <a href="mod/mod_authz_core.html#reqexpr">Require expr</a>.  </p>
   </summary>
 
 <seealso><directive module="core" type="section">If</directive></seealso>
@@ -51,18 +50,31 @@
 <seealso><directive module="mod_headers">RequestHeader</directive></seealso>
 <seealso><directive module="mod_filter">FilterProvider</directive></seealso>
 <seealso><a href="mod/mod_authz_core.html#reqexpr">Require expr</a></seealso>
+<seealso><a href="mod/mod_authnz_ldap.html#requser">Require ldap-user</a></seealso>
+<seealso><a href="mod/mod_authnz_ldap.html#reqgroup">Require ldap-group</a></seealso>
+<seealso><a href="mod/mod_authnz_ldap.html#reqdn">Require ldap-dn</a></seealso>
+<seealso><a href="mod/mod_authnz_ldap.html#reqattribute">Require ldap-attribute</a></seealso>
+<seealso><a href="mod/mod_authnz_ldap.html#reqfilter">Require ldap-filter</a></seealso>
+<seealso><a href="mod/mod_authz_dbd.html#reqgroup">Require dbd-group</a></seealso>
+<seealso><a href="mod/mod_authz_dbm.html#reqgroup">Require dbm-group</a></seealso>
+<seealso><a href="mod/mod_authz_groupfile.html#reqgroup">Require group</a></seealso>
+<seealso><a href="mod/mod_authz_host.html#reqhost">Require host</a></seealso>
 <seealso><directive module="mod_ssl">SSLRequire</directive></seealso>
 <seealso><directive module="mod_log_debug">LogMessage</directive></seealso>
 <seealso><module>mod_include</module></seealso>
 
   <section id="grammar">
     <title>Grammar in Backus-Naur Form notation</title>
-      <p><a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form">Backus-Naur Form</a> (BNF) is a notation
-      technique for context-free grammars, often used to describe the syntax of languages used in computing.
+      <p><a
+      href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form">Backus-Naur
+      Form</a> (BNF) is a notation technique for context-free grammars,
+      often used to describe the syntax of languages used in computing.
       In most cases, expressions are used to express boolean values.
-      For these, the starting point in the BNF is <code>expr</code>. However, a few directives
-      like <directive module="mod_log_debug">LogMessage</directive> accept expressions
-      that evaluate to a string value. For those, the starting point in the BNF is <code>string</code>.
+      For these, the starting point in the BNF is <code>expr</code>.
+      However, a few directives like <directive
+      module="mod_log_debug">LogMessage</directive> accept expressions
+      that evaluate to a string value. For those, the starting point in
+      the BNF is <code>string</code>.
       </p>
 <blockquote>
 <pre>
@@ -155,6 +167,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 
     <tr><th>Name</th></tr>
     <tr><td><code>HTTP_ACCEPT</code></td></tr>
+    <tr><td><code>HTTP_COOKIE</code></td></tr>
     <tr><td><code>HTTP_FORWARDED</code></td></tr>
     <tr><td><code>HTTP_HOST</code></td></tr>
     <tr><td><code>HTTP_PROXY_CONNECTION</code></td></tr>
@@ -177,7 +190,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>REQUEST_URI</code></td>
         <td>The path part of the request's URI</td></tr>
     <tr><td><code>DOCUMENT_URI</code></td>
-        <td>Same as REQUEST_URI</td></tr>
+        <td>Same as <code>REQUEST_URI</code></td></tr>
     <tr><td><code>REQUEST_FILENAME</code></td>
         <td>The full local filesystem path to the file or script matching the
             request, if this has already been determined by the server at the
@@ -211,7 +224,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>REMOTE_HOST</code></td>
         <td>The host name of the remote host</td></tr>
     <tr><td><code>REMOTE_USER</code></td>
-        <td>The name of the authenticated user (if any)</td></tr>
+        <td>The name of the authenticated user, if any (not available during <directive>&lt;If &gt;</directive>)</td></tr>
     <tr><td><code>REMOTE_IDENT</code></td>
         <td>The user name set by <module>mod_ident</module></td></tr>
     <tr><td><code>SERVER_NAME</code></td>
@@ -229,10 +242,11 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>The <directive module="core">DocumentRoot</directive> of
             the current vhost</td></tr>
     <tr><td><code>AUTH_TYPE</code></td>
-        <td>The configured <directive module="mod_authn_core">AuthType</directive>
-            (e.g. "<code>basic</code>")</td></tr>
+        <td>The configured <directive
+        module="mod_authn_core">AuthType</directive> (e.g.
+        "<code>basic</code>")</td></tr>
     <tr><td><code>CONTENT_TYPE</code></td>
-        <td>The content type of the response</td></tr>
+        <td>The content type of the response (not available during <directive>&lt;If &gt;</directive>)</td></tr>
     <tr><td><code>HANDLER</code></td>
         <td>The name of the <a href="handler.html">handler</a> creating
             the response</td></tr>
@@ -243,7 +257,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>"<code>on</code>" if the connection uses IPv6,
             "<code>off</code>" otherwise</td></tr>
     <tr><td><code>REQUEST_STATUS</code></td>
-        <td>The HTTP error status of the request</td></tr>
+        <td>The HTTP error status of the request (not available during <directive>&lt;If &gt;</directive>)</td></tr>
     <tr><td><code>REQUEST_LOG_ID</code></td>
         <td>The error log id of the request (see
             <directive module="core">ErrorLogFormat</directive>)</td></tr>
@@ -253,6 +267,10 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>CONN_REMOTE_ADDR</code></td>
         <td>The peer IP address of the connection (see the
             <module>mod_remoteip</module> module)</td></tr>
+    <tr><td><code>CONTEXT_PREFIX</code></td>
+        <td></td></tr>
+    <tr><td><code>CONTEXT_DOCUMENT_ROOT</code></td>
+        <td></td></tr>
 
     </table>
 
@@ -279,14 +297,16 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>The day of the week (starting with <code>0</code>
             for Sunday)</td></tr>
     <tr><td><code>TIME</code></td>
-        <td>The date and time in the format <code>20101231235959</code></td></tr>
+        <td>The date and time in the format
+        <code>20101231235959</code></td></tr>
     <tr><td><code>SERVER_SOFTWARE</code></td>
         <td>The server version string</td></tr>
     <tr><td><code>API_VERSION</code></td>
         <td>The date of the API version (module magic number)</td></tr>
     </table>
 
-    <p>Some modules register additional variables, see e.g. <module>mod_ssl</module>.</p>
+    <p>Some modules register additional variables, see e.g.
+    <module>mod_ssl</module>.</p>
 
 </section>
 
@@ -418,7 +438,8 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
             "<code>false</code>", or "<code>no</code>" (case insensitive).
             True otherwise.</td><td></td></tr>
     <tr><td><code>-R</code></td>
-        <td>Same as "<code>%{REMOTE_ADDR} -ipmatch ...</code>", but more efficient
+        <td>Same as "<code>%{REMOTE_ADDR} -ipmatch ...</code>", but more
+        efficient
         </td><td></td></tr>
     </table>
 
@@ -434,7 +455,7 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     Modules may register additional functions.</p>
 
     <table border="1" style="zebra">
-    <columnspec><column width=".2"/><column width=".8"/></columnspec>
+    <columnspec><column width=".2"/><column width=".4"/><column width=".4"/></columnspec>
 
     <tr><th>Name</th><th>Description</th><th>Restricted</th></tr>
     <tr><td><code>req</code>, <code>http</code></td>
@@ -446,7 +467,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>resp</code></td>
         <td>Get HTTP response header</td><td></td></tr>
     <tr><td><code>reqenv</code></td>
-        <td>Lookup request environment variable (as a shortcut, <code>v</code> can be used too to access variables).</td><td></td></tr>
+        <td>Lookup request environment variable (as a shortcut,
+        <code>v</code> can be used too to access
+        variables).</td><td></td></tr>
     <tr><td><code>osenv</code></td>
         <td>Lookup operating system environment variable</td><td></td></tr>
     <tr><td><code>note</code></td>
@@ -475,7 +498,8 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
         <td>Hash the string using SHA1, then encode the hash with hexadecimal
             encoding</td><td></td></tr>
     <tr><td><code>file</code></td>
-        <td>Read contents from a file</td><td>yes</td></tr>
+        <td>Read contents from a file (including line endings, when present)
+        </td><td>yes</td></tr>
     <tr><td><code>filesize</code></td>
         <td>Return size of a file (or 0 if file does not exist or is not
             regular file)</td><td>yes</td></tr>
@@ -491,11 +515,11 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     the expression. The <code>req_novary</code> function can be used to
     prevent names from being added to the Vary header.</p>
 
-    <p>In addition to string-valued functions, there are also list-valued functions which
-    take one string as argument and return a wordlist, i.e. a list of strings. The wordlist
-    can be used with the special <code>-in</code> operator.
-    Functions names are not case sensitive.
-    Modules may register additional functions.</p>
+    <p>In addition to string-valued functions, there are also
+    list-valued functions which take one string as argument and return a
+    wordlist, i.e. a list of strings. The wordlist can be used with the
+    special <code>-in</code> operator.  Functions names are not case
+    sensitive.  Modules may register additional functions.</p>
 
     <p>There are no built-in list-valued functions. <module>mod_ssl</module>
     provides <code>PeerExtList</code>.  See the description of
@@ -508,7 +532,8 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 <section id="examples">
     
 	<title>Example expressions</title>
-	<p>The following examples show how expressions might be used to evaluate requests:</p>
+    <p>The following examples show how expressions might be used to
+    evaluate requests:</p>
 	<!-- This section should probably be extended with more, useful examples -->
 	<highlight language="config">
 # Compare the host name to example.com and redirect to www.example.com if it matches
@@ -523,8 +548,38 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 
 # Only allow access to this content during business hours
 &lt;Directory "/foo/bar/business"&gt;
-    Require expr "%{TIME_HOUR} -gt 9 &amp;&amp; %{TIME_HOUR} -lt 17"
+    Require expr %{TIME_HOUR} -gt 9 &amp;&amp; %{TIME_HOUR} -lt 17
 &lt;/Directory&gt;	
+
+# Check a HTTP header for a list of values
+&lt;If "%{HTTP:X-example-header} in { 'foo', 'bar', 'baz' }"&gt;
+    Header set matched true
+&lt;/If&gt;
+
+# Check an environment variable for a regular expression, negated.
+&lt;If "! reqenv('REDIRECT_FOO') =~ /bar/"&gt;
+    Header set matched true
+&lt;/If&gt;
+
+# Check result of URI mapping by running in Directory context with -f
+&lt;Directory /var/www&gt;
+    AddEncoding x-gzip gz
+&lt;If "-f '%{REQUEST_FILENAME}.unzipme' &amp;&amp; ! %{HTTP:Accept-Encoding} =~ /gzip/"&gt;
+      SetOutputFilter INFLATE
+&lt;/If&gt;
+&lt;/Directory&gt;
+
+# Function examples in boolean context
+&lt;If "md5('foo') == 'acbd18db4cc2f85cedef654fccc4a4d8'"&gt;
+  Header set checksum-matched true
+&lt;/If&gt;
+&lt;If "md5('foo') == replace('md5:XXXd18db4cc2f85cedef654fccc4a4d8', 'md5:XXX', 'acb')&gt;
+  Header set checksum-matched-2 true
+&lt;/If&gt;
+
+# Function example in string context
+Header set foo-checksum "expr=%{md5:foo}"
+
 	</highlight>
 </section>
 
@@ -537,10 +592,11 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><th>Name</th><th>Alternative</th> <th>Description</th></tr>
     <tr><td><code>-in</code></td>
         <td><code>in</code></td>
-        <td>string contained in string list</td></tr>
+        <td>string contained in wordlist</td></tr>
     <tr><td><code>/regexp/</code></td>
         <td><code>m#regexp#</code></td>
-        <td>Regular expression (the second form allows different delimiters than /)</td></tr>
+        <td>Regular expression (the second form allows different
+        delimiters than /)</td></tr>
     <tr><td><code>/regexp/i</code></td>
         <td><code>m#regexp#i</code></td>
         <td>Case insensitive regular expression</td></tr>

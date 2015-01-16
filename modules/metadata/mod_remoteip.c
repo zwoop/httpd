@@ -37,11 +37,11 @@ typedef struct {
 } remoteip_proxymatch_t;
 
 typedef struct {
-    /** The header to retrieve a proxy-via ip list */
+    /** The header to retrieve a proxy-via IP list */
     const char *header_name;
     /** A header to record the proxied IP's
      * (removed as the physical connection and
-     * from the proxy-via ip header value list)
+     * from the proxy-via IP header value list)
      */
     const char *proxies_header_name;
     /** A list of trusted proxies, ideally configured
@@ -53,9 +53,9 @@ typedef struct {
 typedef struct {
     apr_sockaddr_t *useragent_addr;
     char *useragent_ip;
-    /** The list of proxy ip's ignored as remote ip's */
+    /** The list of proxy IP's ignored as remote IP's */
     const char *proxy_ips;
-    /** The remaining list of untrusted proxied remote ip's */
+    /** The remaining list of untrusted proxied remote IP's */
     const char *proxied_remote;
 } remoteip_req_t;
 
@@ -198,7 +198,7 @@ static const char *proxylist_read(cmd_parms *cmd, void *cfg,
     while (!(ap_cfg_getline(lbuf, MAX_STRING_LEN, cfp))) {
         args = lbuf;
         while (*(arg = ap_getword_conf(cmd->temp_pool, &args)) != '\0') {
-            if (*arg == '#' || *arg == '\0') {
+            if (*arg == '#') {
                 break;
             }
             errmsg = proxies_set(cmd, cfg, arg);
@@ -246,14 +246,14 @@ static int remoteip_modify_request(request_rec *r)
 
     while (remote) {
 
-        /* verify c->client_addr is trusted if there is a trusted proxy list
+        /* verify user agent IP against the trusted proxy list
          */
         if (config->proxymatch_ip) {
             int i;
             remoteip_proxymatch_t *match;
             match = (remoteip_proxymatch_t *)config->proxymatch_ip->elts;
             for (i = 0; i < config->proxymatch_ip->nelts; ++i) {
-                if (apr_ipsubnet_test(match[i].ip, c->client_addr)) {
+                if (apr_ipsubnet_test(match[i].ip, temp_sa)) {
                     internal = match[i].internal;
                     break;
                 }
@@ -290,7 +290,7 @@ static int remoteip_modify_request(request_rec *r)
             break;
         }
 
-        /* We map as IPv4 rather than IPv6 for equivilant host names
+        /* We map as IPv4 rather than IPv6 for equivalent host names
          * or IPV4OVERIPV6
          */
         rv = apr_sockaddr_info_get(&temp_sa,  parse_remote,
@@ -309,7 +309,6 @@ static int remoteip_modify_request(request_rec *r)
                 remote = parse_remote;
             }
             break;
-
         }
 
         addrbyte = (unsigned char *) &temp_sa->sa.sin.sin_addr;
@@ -353,16 +352,17 @@ static int remoteip_modify_request(request_rec *r)
         /* save away our results */
         if (!req) {
             req = (remoteip_req_t *) apr_palloc(r->pool, sizeof(remoteip_req_t));
+            req->useragent_ip = r->useragent_ip;
         }
 
         /* Set useragent_ip string */
         if (!internal) {
             if (proxy_ips) {
                 proxy_ips = apr_pstrcat(r->pool, proxy_ips, ", ",
-                                        c->client_ip, NULL);
+                                        req->useragent_ip, NULL);
             }
             else {
-                proxy_ips = c->client_ip;
+                proxy_ips = req->useragent_ip;
             }
         }
 

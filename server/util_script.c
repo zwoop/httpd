@@ -543,7 +543,8 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
             }
             if (maybeASCII > maybeEBCDIC) {
                 ap_log_error(SCRIPT_LOG_MARK, APLOG_ERR, 0, r->server,
-                             "CGI Interface Error: Script headers apparently ASCII: (CGI = %s)",
+                             APLOGNO(02660) "CGI Interface Error: "
+                             "Script headers apparently ASCII: (CGI = %s)",
                              r->filename);
                 inbytes_left = outbytes_left = cp - w;
                 apr_xlate_conv_buffer(ap_hdrs_from_ascii,
@@ -704,8 +705,7 @@ static int getsfunc_BRIGADE(char *buf, int len, void *arg)
             apr_bucket_split(e, src - bucket_data);
         }
         next = APR_BUCKET_NEXT(e);
-        APR_BUCKET_REMOVE(e);
-        apr_bucket_destroy(e);
+        apr_bucket_delete(e);
         e = next;
     }
     *dst = 0;

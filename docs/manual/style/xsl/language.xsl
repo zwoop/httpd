@@ -34,6 +34,7 @@
 
 <xsl:param name="type" />
 <xsl:param name="langs" />
+<xsl:param name="retired" />
 
 <!-- ==================================================================== -->
 <!-- /                                                                    -->
@@ -365,7 +366,7 @@ Some targets have additional requirements:
   - the HTML Help compiler in PATH (or modify this build file). The
     compiler (hhc.exe) is part of the HTML Help Workshop which is freely
     available and can be downloaded from
-    http://msdn.microsoft.com/library/en-us/htmlhelp/html/hwMicrosoftHTMLHelpDownloads.asp
+    http://msdn.microsoft.com/en-us/library/windows/desktop/ms669985%28v=vs.85%29.aspx
   - The appropriate locale (e.g. Japanese) before invoking hhc.exe. Otherwise
     the compiler is not able to build the fulltext search index correctly and
     the TOC may be garbled, too. In particular:
@@ -548,6 +549,21 @@ Some targets have additional requirements:
             <xsl:attribute name="select">
                 <xsl:choose>
                 <xsl:when test="$type = 'zip'">
+                    <xsl:text>true()</xsl:text>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text>false()</xsl:text>
+                </xsl:otherwise>
+                </xsl:choose>
+            </xsl:attribute>
+        </xsl:element>
+        &lf;
+
+        <xsl:element name="xsl:variable">
+            <xsl:attribute name="name">is-retired</xsl:attribute>
+            <xsl:attribute name="select">
+                <xsl:choose>
+                <xsl:when test="$retired = 'yes'">
                     <xsl:text>true()</xsl:text>
                 </xsl:when>
                 <xsl:otherwise>

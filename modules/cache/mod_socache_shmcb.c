@@ -30,7 +30,14 @@
 
 #include "ap_socache.h"
 
-#define SHMCB_MAX_SIZE (64 * 1024 * 1024)
+/* XXX Unfortunately, there are still many unsigned ints in use here, so we
+ * XXX cannot allow more than UINT_MAX. Since some of the ints are exposed in
+ * XXX public interfaces, a simple search and replace is not enough.
+ * XXX It should be possible to extend that so that the total cache size can
+ * XXX be APR_SIZE_MAX and only the object size needs to be smaller than
+ * XXX UINT_MAX.
+ */
+#define SHMCB_MAX_SIZE (UINT_MAX<APR_SIZE_MAX ? UINT_MAX : APR_SIZE_MAX)
 
 #define DEFAULT_SHMCB_PREFIX "socache-shmcb-"
 
@@ -861,6 +868,7 @@ static int shmcb_subcache_retrieve(server_rec *s, SHMCBHeader *header,
             else {
                 /* Already stale, quietly remove and treat as not-found */
                 idx->removed = 1;
+                header->stat_expiries++;
                 ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(00850)
                              "shmcb_subcache_retrieve discarding expired entry");
                 return -1;
@@ -984,6 +992,7 @@ static apr_status_t shmcb_subcache_iterate(ap_socache_instance_t *instance,
             else {
                 /* Already stale, quietly remove and treat as not-found */
                 idx->removed = 1;
+                header->stat_expiries++;
                 ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, s, APLOGNO(00856)
                              "shmcb_subcache_iterate discarding expired entry");
             }

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1334008 -->
+<!-- English Revision : 1587031 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -57,6 +57,56 @@ d'Apache</compatibility>
 <seealso><directive module="mod_dbd">DBDriver</directive></seealso>
 <seealso><directive module="mod_dbd">DBDParams</directive></seealso>
 
+<section id="requiredirectives"><title>Les directives Require</title>
+
+    <p>Les directives <directive
+    module="mod_authz_core">Require</directive> d'Apache permettent,
+    au cours de la phase d'autorisation, de s'assurer qu'un utilisateur
+    est bien autoris&eacute; &agrave; acc&eacute;der &agrave; une ressource. mod_authz_dbd ajoute
+    les types d'autorisation <code>dbd-group</code>,
+    <code>dbd-login</code> et <code>dbd-logout</code>.</p>
+
+    <p>A partir de la version 2.4.8, les directives require DBD
+    supportent les <a href="../expr.html">expressions</a>.</p>
+
+<section id="reqgroup"><title>Require dbd-group</title>
+
+    <p>Cette directive permet de sp&eacute;cifier &agrave; quel groupe un utilisateur
+    doit appartenir pour obtenir l'autorisation d'acc&egrave;s.</p>
+
+    <highlight language="config">
+      Require dbd-group team
+      AuthzDBDQuery "SELECT group FROM authz WHERE user = %s"
+    </highlight>
+
+</section>
+
+<section id="reqlogin"><title>Require dbd-login</title>
+
+    <p>Cette directive permet de sp&eacute;cifier une requ&ecirc;te &agrave; ex&eacute;cuter pour
+    indiquer que l'utilisateur s'est authentifi&eacute;.</p>
+
+    <highlight language="config">
+      Require dbd-login
+      AuthzDBDQuery "UPDATE authn SET login = 'true' WHERE user = %s"
+    </highlight>
+
+</section>
+
+<section id="reqlogout"><title>Require dbd-logout</title>
+
+    <p>Cette directive permet de sp&eacute;cifier une requ&ecirc;te &agrave; ex&eacute;cuter pour
+    indiquer que l'utilisateur s'est d&eacute;connect&eacute;.</p>
+
+    <highlight language="config">
+      Require dbd-logout
+      AuthzDBDQuery "UPDATE authn SET login = 'false' WHERE user = %s"
+    </highlight>
+
+</section>
+
+</section>
+
 <section id="login">
 <title>Reconnaissance d'identit&eacute; s'appuyant sur une base de donn&eacute;es</title>
 <p>
@@ -66,7 +116,7 @@ sessions utilisateur c&ocirc;t&eacute; serveur gr&acirc;ce &agrave; sa fonctionn
 en s'appuyant sur une base de donn&eacute;es. En particulier, il peut mettre &agrave;
 jour le statut de session de l'utilisateur dans la base de donn&eacute;es
 chaque fois que celui-ci visite certaines URLs (sous r&eacute;serve bien
-entendu que l'utilisateur fournissent les informations de connexion
+entendu que l'utilisateur fournisse les informations de connexion
 n&eacute;cessaires).</p>
 <p>Pour cela, il faut definir deux directives <directive
 module="mod_authz_core">Require</directive> sp&eacute;ciales : <code>Require
@@ -80,8 +130,9 @@ leur utilisation, voir l'exemple de configuration ci-dessous.</p>
 session c&ocirc;t&eacute; client fonctionnant de concert avec les fonctionnalit&eacute;s de
 connexion/d&eacute;connexion des utilisateurs c&ocirc;t&eacute; serveur offertes par ce module, en
 d&eacute;finissant ou en annulant par exemple un cookie HTTP ou un jeton
-similaire lorsqu'un utilisateur se connecte ou se d&eacute;connecte. Pour
-supporter une telle int&eacute;gration, <module>mod_authz_dbd</module> exporte
+similaire lorsqu'un utilisateur se connecte ou se d&eacute;connecte.</p>
+
+<p>Pour supporter une telle int&eacute;gration, <module>mod_authz_dbd</module> exporte
 un programme &agrave; d&eacute;clenchement optionnel (hook) qui sera lanc&eacute; chaque fois
 que le statut d'un utilisateur sera mis &agrave; jour dans la base de donn&eacute;es.
 D'autres modules de gestion de session pourront alors utiliser ce
@@ -150,7 +201,8 @@ DBDExptime 300
 
 <directivesynopsis>
 <name>AuthzDBDQuery</name>
-<description>D&eacute;finit la requ&ecirc;te SQL pour l'op&eacute;ration requise</description>
+<description>D&eacute;finit la requ&ecirc;te SQL pour l'op&eacute;ration
+requise</description>
 <syntax>AuthzDBDQuery <var>requ&ecirc;te</var></syntax>
 <contextlist><context>directory</context></contextlist>
 

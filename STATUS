@@ -19,6 +19,8 @@ Consult the following STATUS files for information on related projects:
   * http://svn.apache.org/repos/asf/apr/apr/trunk/STATUS
   * http://svn.apache.org/repos/asf/apr/apr/branches/1.4.x/STATUS
   * http://svn.apache.org/repos/asf/apr/apr-util/branches/1.4.x/STATUS
+  * http://svn.apache.org/repos/asf/apr/apr/branches/1.5.x/STATUS
+  * http://svn.apache.org/repos/asf/apr/apr-util/branches/1.5.x/STATUS
 
 Patches considered for backport are noted in their branches' STATUS:
 
@@ -32,7 +34,11 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.7   : Tagged on November 19, 2013.
+    2.4.11  : Tagged on January 15, 2015.
+    2.4.10  : Tagged on July 15, 2014. Released July 21, 2014
+    2.4.9   : Tagged on March 13, 2014. Released on March 17, 2014
+    2.4.8   : Tagged on March 11, 2014. Not released.
+    2.4.7   : Tagged on November 19, 2013. Released on Nov 25, 2013
     2.4.6   : Tagged on July 15, 2013. Released July, 22, 2013
     2.4.5   : Tagged on July 11, 2013, not released.
     2.4.4   : Tagged on February 18, 2013. Released Feb 25, 2013
@@ -94,83 +100,125 @@ CURRENT RELEASE NOTES:
 RELEASE SHOWSTOPPERS:
 
 
+
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
-
 
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  * mod_socache_shmcb.c: Remove arbitrary restriction on shared memory size
-    previously limited to 64MB.
-    trunk patch: http://svn.apache.org/r1493921
-                 http://svn.apache.org/r1493925
-    2.4.x patch: trunk patch works modulo CHANGES
-    +1: minfrin, jim
-    sf notes: I think a number of variables need to be changed from int to
-              apr_size_t, including subcache_size, subcache_data_offset,
-              subcache_data_size, total, cache_total. 
-              AIUI, especially cache_total starts to go wrong if the cache
-              gets larger than 4GB (UINT_MAX). Maybe set the limit at
-              MIN(APR_SIZE_MAX,UINT_MAX) until this is fixed?
-    minfrin: Surely we should just fix these unsigned ints? Not sure what value
-             there would be in trying to bake in an arbitrary limit in the mean
-             time when we can just fix the underlying problem instead.
-        jim: Agree w/ minfrin
-    sf:      This would require someone to do the work. Until someone has the 
-             necessary free cycles, I propose to include
-             http://svn.apache.org/r1515162
+   * mpm_winnt service.c: Normalize all error and status messages, clean up
+     source formatting, and accept utf-8 service names/descriptions for i18n.
+     trunk patches: http://svn.apache.org/r1611165
+                    http://svn.apache.org/r1611169
+                    http://svn.apache.org/r1611244
+     2.4.x patches: trunk works
+     +1: wrowe, gsmith
 
-  * ab: Check if malloc succeeded
-    PR54344
-    trunk: http://svn.apache.org/viewvc?view=revision&revision=1488492
-    2.4.x: trunk patch works
-    +1: jailletc36, jim
-    trawick: what happens if malloc() fails?  same msg error over and over?
-             (doubtful it gets better for more than a very short while, until
-             the leak or fragmentation overtakes temporary freeing of memory)
-             is the state of that connection messed up from leaving
-             ssl_proceed_handshake() early?
-    sf: I also think that aborting on oom with a clean error message would
-        be better.
-        I would add http://svn.apache.org/viewvc?view=revision&revision=1542533
+   * mod_systemd: New module, for integration with systemd on Linux.
+     trunk patch: http://svn.apache.org/r1393976
+                  http://svn.apache.org/r1393997
+                  http://svn.apache.org/r1484554
+                  http://svn.apache.org/r1528032
+                  http://svn.apache.org/r1528034
+                  http://svn.apache.org/r1614821
+                  http://svn.apache.org/r1618579
+                  http://svn.apache.org/r1618588
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
+     +1: jkaluza
 
-  * mod_auth_form: Make sure the optional functions are loaded even when
-    the AuthFormProvider isn't specified.
-    trunk patch: https://svn.apache.org/r1531672
-    2.4.x patch: trunk patch works, modulo CHANGES
-    +1: minfrin, jim
-    -0 covener: does that mean just loading mod_auth_form w/o mod_request 
-                and mod_filter now causes a post-config failure?
-    minfrin: It does, however it would only affect configs where mod_auth_form
-             has been loaded but not used, as any attempt to use mod_auth_form
-             without mod_request and mod_session present would cause the very
-             same failure. Would a warning in the release notes be good enough?
+   * core: Add support for systemd socket activation.
+     trunk patch: http://svn.apache.org/r1511033
+                  http://svn.apache.org/r1608686
+                  http://svn.apache.org/r1608694
+                  http://svn.apache.org/r1608703
+                  http://svn.apache.org/r1608721
+                  http://svn.apache.org/r1608744
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-socket-activation.patch
+     +1: jkaluza
 
-  * mod_proxy: support Unix domain sockets
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1451633
-                 https://svn.apache.org/viewvc?view=revision&revision=1451905
-                 https://svn.apache.org/viewvc?view=revision&revision=1451921
-                 https://svn.apache.org/viewvc?view=revision&revision=1452259
-                 https://svn.apache.org/viewvc?view=revision&revision=1453981
-                 https://svn.apache.org/viewvc?view=revision&revision=1501913
-                 https://svn.apache.org/viewvc?view=revision&revision=1513508
-                 https://svn.apache.org/viewvc?view=revision&revision=1531340
-                 https://svn.apache.org/viewvc?view=revision&revision=1531370
-                 https://svn.apache.org/viewvc?view=revision&revision=1531962
-                 https://svn.apache.org/viewvc?view=revision&revision=1533065
-                 https://svn.apache.org/viewvc?view=revision&revision=1540052
-    2.4.x patch: http://people.apache.org/~jim/patches/uds-2.4.patch
-    +1: jim
-    +/-0: druggeri: I think we should hold until we can work out the performance difference
-                    between old and new versions of the patches.
+   * mod_buffer: Forward flushed input data immediately and avoid (unlikely)
+                 access to freed memory.
+     trunk patch: http://svn.apache.org/r1632742
+                  http://svn.apache.org/r1634836 (CHANGES entry)
+     2.4.x patches: trunk works (modulo CHANGES).
+     +1: ylavic
 
-  * mod_proxy: Use consistent canon formats for http, ajp and fcgi (if provided
-    port is the default port, don't add to canon URI).
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1542562
-    2.4.x patch: http://people.apache.org/~jim/patches/proxy-port-scheme.patch
-    +1: jim
+   * mod_proxy: Add ap_proxy_define_match_worker() and use it for ProxyPassMatch
+     and ProxyMatch section to distinguish between normal workers and workers
+     with regex substitutions in the name. Implement handling of such workers
+     in ap_proxy_get_worker(). Fixes the bug when regex workers were not
+     matched and used for request. PR 43513.
+     trunk patch: http://svn.apache.org/r1609680
+                  http://svn.apache.org/r1641381
+     2.4.x patch: trunk works
+     +1: jkaluza, ylavic
+
+   * mod_rewrite: use the context info API to alleviate the need to specify
+                  a RewriteBase in some situations
+     trunk patch: http://svn.apache.org/r1642484
+     2.4.x patch: trunk works
+     +1 covener, jim
+
+   * mod_proxy_ajp: Fix client connection errors handling and logged status
+                    when it occurs.  PR 56823.
+     trunk patch: http://svn.apache.org/r1643537
+                  http://svn.apache.org/r1643543
+     2.4.x patch: trunk works (module CHANGES)
+     +1: ylavic
+
+   * mod_ssl: Fix renegotiation failures redirected to an ErrorDocument.
+              PR 57334.
+     trunk patch: http://svn.apache.org/r1644498
+     2.4.x patch: trunk works (module CHANGES)
+     +1: ylavic
+
+   * core: Add ap_errorlog_provider to make ErrorLog logging modular. This
+           backport keeps syslog logging as part of httpd core and only adds
+           API to allow other modules to be used for error logging.
+     trunk patch: http://svn.apache.org/r1525597
+                  http://svn.apache.org/r1525664
+                  http://svn.apache.org/r1525845
+                  http://svn.apache.org/r1527003
+                  http://svn.apache.org/r1527005
+                  http://svn.apache.org/r1532344
+                  http://svn.apache.org/r1539988
+                  http://svn.apache.org/r1541029
+                  http://svn.apache.org/r1543979
+                  http://svn.apache.org/r1544156
+                  http://svn.apache.org/r1626978
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-errorlog_provider.patch
+     +1: jkaluza
+
+   * mod_journald: Add new module mod_journald to log error logs into journald.
+                   This patch needs changes done in mod_systemd patch (already
+                   proposed for 2.4.x).
+     trunk patch: http://svn.apache.org/r1610339
+                  http://svn.apache.org/r1621806
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+     +1: jkaluza
+
+   * MPMs: Support SO_REUSEPORT to create multiple duplicated listener
+           records for scalability (full log in 2.4.x patch).
+     trunk patch: http://svn.apache.org/r1599531
+                  http://svn.apache.org/r1599593
+                  http://svn.apache.org/r1599601
+                  http://svn.apache.org/r1599603
+                  http://svn.apache.org/r1601558
+                  http://svn.apache.org/r1629909
+                  http://svn.apache.org/r1629918
+                  http://svn.apache.org/r1629990
+                  http://svn.apache.org/r1635521
+                  http://svn.apache.org/r1635859
+                  http://svn.apache.org/r1640145
+                  http://svn.apache.org/r1640161
+                  http://svn.apache.org/r1640184
+                  http://svn.apache.org/r1640763
+                  http://svn.apache.org/r1643179
+     2.4.x patch: http://people.apache.org/~ylavic/httpd-2.4.x-ap_listeners_buckets.patch
+     +1: ylavic
+
 
 OTHER PROPOSALS
 
@@ -181,18 +229,6 @@ OTHER PROPOSALS
 
 PATCHES/ISSUES THAT ARE BEING WORKED
 
-  * protocol: draft-ietf-httpbis-p1-messaging-23 fixes regarding interactions
-              between TE and content-length in the same req/resp.
-    trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1524192
-                 https://svn.apache.org/viewvc?view=revision&revision=1524770
-                 https://svn.apache.org/viewvc?view=revision&revision=1527925
-                 https://svn.apache.org/viewvc?view=revision&revision=1541270
-                 https://svn.apache.org/viewvc?view=revision&revision=1541368
-    2.4.x patch (plus CHANGES entry above):
-      http://people.apache.org/~wrowe/httpd-2.4-r1524192-r1524770-TE-CL-v2.patch
-    +1:
-    [wrowe asks] Where is verification of (!keepalive)?  Do we know the
-                 connection will be closed anytime in the near future?
 
 PATCHES/ISSUES THAT ARE STALLED
 
@@ -229,33 +265,6 @@ PATCHES/ISSUES THAT ARE STALLED
      sf says: Needs r1345599, too.
               And wrowe's comment about the 2.2 patch is also valid for 2.4:
               http://svn.apache.org/viewvc?view=revision&revision=1354823
-
-   * mod_ssl: Add RFC 5878 support. This allows support of mechansisms
-              such as Certificate Transparency. Note that new
-              mechanisms are supported without software updates.
-     trunk patch: http://svn.apache.org/viewvc?view=revision&revision=1352596
-     2.4.x patch: http://people.apache.org/~ben/httpd-2.4-rfc5878.patch
-     +1: ben, druggeri
-     -1: kbrand
-     druggeri note: Needs docs for new directive
-     kbrand: depends on an unreleased OpenSSL version (1.0.2), and
-             RFC 5878 is of "Category: Experimental".
-             The API in the OpenSSL implementation from May 2012
-             (http://cvs.openssl.org/chngview?cn=22601) only covers the
-             privately-defined TLSEXT_AUTHZDATAFORMAT_audit_proof, there's
-             no support for x509_attr_cert (section 3.3.1 in RFC 5878) or
-             saml_assertion (3.3.2). SSL_CTX_use_authz_file doesn't have
-             any docs in OpenSSL, either, and there's no "openssl foo ..."
-             command or similar to create/manage such files.
-             Additionally, httpd-2.4-rfc5878.patch includes a build-system
-             change which is unrelated to this feature.
-             Note: as of 2013-04-15, r1352596 has been reverted in trunk
-             (with r1468131), for the reasons explained in the message with id
-             <515FED7C.5010009@velox.ch> sent to the dev list on 2013-04-06.
-     ben: not correct that it depends on OpenSSL 1.0.2, it builds with
-          any version. Also, if you read my note to dev@ you will see
-          why it is not premature.
-     minfrin: once this gets docs, +1.
 
    * Makefile.win: Added copying of .vbs / .wsf CGIs to Windows install target.
                    Moved fixing of shebang to separate target so that it is

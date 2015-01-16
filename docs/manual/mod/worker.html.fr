@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>worker - Serveur Apache HTTP</title>
+<title>worker - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -108,7 +108,7 @@ qu'utilise le serveur HTTP Apache</a></li>
     <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code>. Le nombre
     maximum de processus enfants actifs est défini par la valeur de la
     directive <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code>
-    divisée par la valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#&#10;    threadsperchild">
+    divisée par la valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">
     ThreadsPerChild</a></code>.</p>
 
     <p>Deux directives permettent de fixer des limites absolues pour le
@@ -118,7 +118,7 @@ qu'utilise le serveur HTTP Apache</a></li>
     La valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#serverlimit">ServerLimit</a></code> constitue une limite
     absolue pour le nombre de processus enfants actifs, et doit être
     supérieure ou égale à la valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code> divisée par la valeur de
-    la directive <code class="directive"><a href="../mod/mpm_common.html#&#10;    threadsperchild">
+    la directive <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">
     ThreadsPerChild</a></code>. La valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#threadlimit">ThreadLimit</a></code> constitue une limite
     absolue pour le nombre de threads par processus enfant, et doit être
     supérieure ou égale à la valeur de la directive <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">ThreadsPerChild</a></code>.</p>
@@ -132,31 +132,29 @@ qu'utilise le serveur HTTP Apache</a></li>
     processus enfants individuels de la manière suivante :</p>
 
     <ul>
-      <li>définir la valeur de <code class="directive"><a href="../mod/mpm_common.html#&#10;      maxconnectionsperchild">
+      <li>définir la valeur de <code class="directive"><a href="../mod/mpm_common.html#maxconnectionsperchild">
       MaxConnectionsPerChild</a></code> à zéro</li>
 
-      <li>Définir la valeur de <code class="directive"><a href="../mod/mpm_common.html#&#10;      maxsparethreads">
+      <li>Définir la valeur de <code class="directive"><a href="../mod/mpm_common.html#maxsparethreads">
       MaxSpareThreads</a></code> à la même valeur que <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code></li>
     </ul>
 
     <p>Voici un exemple typique de configuration du contrôle
     processus-thread pour le MPM <code class="module"><a href="../mod/worker.html">worker</a></code> :</p>
 
-    <pre class="prettyprint lang-config">
-ServerLimit         16
+    <pre class="prettyprint lang-config">ServerLimit         16
 StartServers         2
 MaxRequestWorkers  150
 MinSpareThreads     25
 MaxSpareThreads     75
-ThreadsPerChild     25
-    </pre>
+ThreadsPerChild     25</pre>
 
 
     <p>Alors que le processus parent est en général démarré en tant que
     <code>root</code> sous Unix afin de se mettre en écoute du port 80,
     les processus enfants et les threads sont lancés par le serveur sous un
     utilisateur avec privilèges restreints. On peut utiliser les
-    directives <code class="directive"><a href="../mod/mpm_unixd.html#user">User</a></code> et <code class="directive"><a href="../mod/mpm_unixd.html#group">Group</a></code> pour définir les privilèges
+    directives <code class="directive"><a href="../mod/mod_unixd.html#user">User</a></code> et <code class="directive"><a href="../mod/mod_unixd.html#group">Group</a></code> pour définir les privilèges
     des processus enfants. Les processus enfants doivent pouvoir être en
     mesure de lire tous les contenus destinés à être servis, mais
     doivent avoir des privilèges aussi bas que possible. De plus, ces
@@ -203,7 +201,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/worker.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

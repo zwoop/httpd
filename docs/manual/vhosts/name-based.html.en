@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Name-based Virtual Host Support - Apache HTTP Server</title>
+<title>Name-based Virtual Host Support - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -75,10 +75,16 @@
     <p>When a request arrives, the server will find the best (most specific) matching
     <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> argument based on
     the IP address and port used by the request.  If there is more than one virtual host
-    containing this best-match address and port combination,  Apache will further
-    compare the <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> and <code class="directive"><a href="../mod/core.html#serveralias">ServerAlias</a></code>  directives to the server name
+    containing this best-match address and port combination, Apache will further
+    compare the <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> and <code class="directive"><a href="../mod/core.html#serveralias">ServerAlias</a></code> directives to the server name
     present in the request.</p>
 
+    <p>If you omit the <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> 
+    directive from any name-based virtual host, the server will default
+    to a fully qualified domain name (FQDN) derived from the system hostname.
+    This implicitly set server name can lead to counter-intuitive virtual host
+    matching and is discouraged.</p>
+ 
     <h3><a name="defaultvhost" id="defaultvhost">The default name-based vhost for an IP and port combination </a></h3>
     <p> If no matching ServerName or ServerAlias is found in the set of
     virtual hosts containing the most specific matching IP address and port
@@ -118,7 +124,7 @@
        inherited from the base server configuration.  If no server name was 
        specified globally, one is detected at startup through reverse DNS resolution
        of the first listening address.  In either case, this inherited server name
-       will influenced name-based virtual host resolution, so it is best to always
+       will influence name-based virtual host resolution, so it is best to always
        explicitly list a  <code class="directive"><a href="../mod/core.html#servername">ServerName</a></code> in every
        name-based virtual host.</p>
     </div>
@@ -128,8 +134,7 @@
     <code>other.example.com</code>, which points at the same IP address.
     Then you simply add the following to <code>httpd.conf</code>:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;VirtualHost *:80&gt;
+    <pre class="prettyprint lang-config">&lt;VirtualHost *:80&gt;
     # This first-listed virtual host is also the default for *:80
     ServerName www.example.com
     ServerAlias example.com 
@@ -139,8 +144,7 @@
 &lt;VirtualHost *:80&gt;
     ServerName other.example.com
     DocumentRoot /www/otherdomain
-&lt;/VirtualHost&gt;
-    </pre>
+&lt;/VirtualHost&gt;</pre>
 
 
     <p>You can alternatively specify an explicit IP address in place of the
@@ -155,9 +159,7 @@
     the listed names are other names which people can use to see that same
     web site:</p>
 
-    <pre class="prettyprint lang-config">
-        ServerAlias example.com *.example.com
-    </pre>
+    <pre class="prettyprint lang-config">ServerAlias example.com *.example.com</pre>
 
 
     <p>then requests for all hosts in the <code>example.com</code> domain will
@@ -211,7 +213,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/vhosts/name-based.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

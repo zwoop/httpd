@@ -1139,11 +1139,12 @@ static const char *get_canned_error_string(int status,
                                   "error-notes",
                                   "</p>\n"));
     case HTTP_FORBIDDEN:
-        return(apr_pstrcat(p,
-                           "<p>You don't have permission to access ",
-                           ap_escape_html(r->pool, r->uri),
-                           "\non this server.</p>\n",
-                           NULL));
+        s1 = apr_pstrcat(p,
+                         "<p>You don't have permission to access ",
+                         ap_escape_html(r->pool, r->uri),
+                         "\non this server.<br />\n",
+                         NULL);
+        return(add_optional_notes(r, s1, "error-notes", "</p>\n"));
     case HTTP_NOT_FOUND:
         return(apr_pstrcat(p,
                            "<p>The requested URL ",
@@ -1607,8 +1608,8 @@ AP_DECLARE(void) ap_method_list_add(ap_method_list_t *l, const char *method)
      * bitmask.
      */
     methnum = ap_method_number_of(method);
-    l->method_mask |= (AP_METHOD_BIT << methnum);
     if (methnum != M_INVALID) {
+        l->method_mask |= (AP_METHOD_BIT << methnum);
         return;
     }
     /*
@@ -1640,15 +1641,15 @@ AP_DECLARE(void) ap_method_list_remove(ap_method_list_t *l,
      * by a module, use the bitmask.
      */
     methnum = ap_method_number_of(method);
-    l->method_mask |= ~(AP_METHOD_BIT << methnum);
     if (methnum != M_INVALID) {
+        l->method_mask &= ~(AP_METHOD_BIT << methnum);
         return;
     }
     /*
      * Otherwise, see if the method name is in the array of string names.
      */
     if (l->method_list->nelts != 0) {
-        register int i, j, k;
+        int i, j, k;
         methods = (char **)l->method_list->elts;
         for (i = 0; i < l->method_list->nelts; ) {
             if (strcmp(method, methods[i]) == 0) {

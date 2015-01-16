@@ -149,11 +149,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
 <section id="basppacketstruct"><title>Basic Packet Structure</title>
     <p>There is a bit of an XDR heritage to this protocol, but it differs
     in lots of ways (no 4 byte alignment, for example).</p>
-    <p>Byte order: I am not clear about the endian-ness of the individual
-    bytes.  I'm guessing the bytes are little-endian, because that's what
-    XDR specifies, and I'm guessing that sys/socket library is magically
-    making that so (on the C side).  If anyone with a better knowledge of
-    socket calls can step in, that would be great.</p>
+    <p>AJP13 uses network byte order for all data types.</p>
     <p>There are four data types in the protocol: bytes, booleans,
     integers and strings.</p>
     <dl>
@@ -194,11 +190,12 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     suggest that the maximum payload could be as large as 2^16, in fact, the
     code sets the maximum to be 8K.</p>
     <table>
+       <columnspec><column width=".2"/><column width=".1"/><column width=".1"/><column width=".2"/><column width=".2"/><column width=".2"/></columnspec>
       <tr>
-        <td colspan="6"><em>Packet Format (Server->Container)</em></td>
+        <th colspan="6"><em>Packet Format (Server->Container)</em></th>
       </tr>
       <tr>
-        <td>Byte</td>
+        <th>Byte</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -206,7 +203,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contents</td>
+        <th>Contents</th>
         <td>0x12</td>
         <td>0x34</td>
         <td colspan="2">Data Length (n)</td>
@@ -214,11 +211,12 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
       </tr>
     </table>
     <table>
+       <columnspec><column width=".2"/><column width=".1"/><column width=".1"/><column width=".2"/><column width=".2"/><column width=".2"/></columnspec>
       <tr>
-        <td colspan="6"><em>Packet Format (Container->Server)</em></td>
+        <th colspan="6"><em>Packet Format (Container->Server)</em></th>
       </tr>
       <tr>
-        <td>Byte</td>
+        <th>Byte</th>
         <td>0</td>
         <td>1</td>
         <td>2</td>
@@ -226,7 +224,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
         <td>4...(n+3)</td>
       </tr>
       <tr>
-        <td>Contents</td>
+        <th>Contents</th>
         <td>A</td>
         <td>B</td>
         <td colspan="2">Data Length (n)</td>
@@ -241,6 +239,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
      <p>The web server can send the following messages to the servlet
      container:</p>
     <table>
+       <columnspec><column width=".2"/><column width=".3"/><column width=".5"/></columnspec>
       <tr>
         <td>Code</td>
         <td>Type of Packet</td>
@@ -282,6 +281,7 @@ ProxyPassReverse /apps/foo http://www.example.com/foo
     <p>The servlet container can send the following types of messages to the
     webserver:</p>
     <table>
+       <columnspec><column width=".2"/><column width=".3"/><column width=".5"/></columnspec>
       <tr>
         <td>Code</td>
         <td>Type of Packet</td>
@@ -445,7 +445,7 @@ attribute_value := (string)
     header names.  If the first byte is not <code>0xA0</code>, it assumes that
     the two-byte integer is the length of a string, which is then read in.</p>
     <p>This works on the assumption that no header names will have length
-    greater than <code>0x9999 (==0xA000 - 1)</code>, which is perfectly
+    greater than <code>0x9FFF (==0xA000 - 1)</code>, which is perfectly
     reasonable, though somewhat arbitrary.</p>
     <note><title>Note:</title>
     The <code>content-length</code> header is extremely
@@ -570,9 +570,9 @@ AJP13_GET_BODY_CHUNK :=
   </section>
   <section><title>End Response</title>
     <p>Signals the end of this request-handling cycle.  If the
-    <code>reuse</code> flag is true <code>(==1)</code>, this TCP connection can
-    now be used to handle new incoming requests.  If <code>reuse</code> is false
-    (anything other than 1 in the actual C code), the connection should
+    <code>reuse</code> flag is true <code>(anything other than 0 in the actual
+    C code)</code>, this TCP connection can now be used to handle new incoming
+    requests.  If <code>reuse</code> is false (==0), the connection should
     be closed.</p>
   </section>
   <section><title>Get Body Chunk</title>

@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_setenvif - Apache HTTP Server</title>
+<title>mod_setenvif - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -50,10 +50,19 @@ on characteristics of the request</td></tr>
     such as this example, which sets <code>netscape</code> if the
     browser is mozilla but not MSIE.</p>
 
-<pre class="prettyprint lang-config">
-BrowserMatch ^Mozilla netscape
-BrowserMatch MSIE !netscape
-</pre>
+<pre class="prettyprint lang-config">BrowserMatch ^Mozilla netscape
+BrowserMatch MSIE !netscape</pre>
+
+
+   <p>When the server looks up a path via an internal 
+   <a class="glossarylink" href="../glossary.html#subrequest" title="see glossary">subrequest</a> such as looking 
+   for a <code class="directive"><a href="../mod/mod_dir.html#directoryindex">DirectoryIndex</a></code> 
+   or generating a directory listing with <code class="module"><a href="../mod/mod_autoindex.html">mod_autoindex</a></code>,
+   per-request environment variables are <em>not</em> inherited in the 
+   subrequest. Additionally, 
+   <code class="directive"><a href="#setenvif">SetEnvIf</a></code> directives
+   are not separately evaluated in the subrequest due to the API phases
+   <code class="module"><a href="../mod/mod_setenvif.html">mod_setenvif</a></code> takes action in.</p>
 
 </div>
 <div id="quickview"><h3 class="directives">Directives</h3>
@@ -86,18 +95,14 @@ BrowserMatch MSIE !netscape
   sets environment variables conditional on the
   <code>User-Agent</code> HTTP request header.  The following two
   lines have the same effect:</p>
-<pre class="prettyprint lang-config">
-BrowserMatchNoCase Robot is_a_robot
-SetEnvIfNoCase User-Agent Robot is_a_robot
-</pre>
+<pre class="prettyprint lang-config">BrowserMatchNoCase Robot is_a_robot
+SetEnvIfNoCase User-Agent Robot is_a_robot</pre>
 
 
     <p>Some additional examples:</p>
-<pre class="prettyprint lang-config">
-BrowserMatch ^Mozilla forms jpeg=yes browser=netscape
+<pre class="prettyprint lang-config">BrowserMatch ^Mozilla forms jpeg=yes browser=netscape
 BrowserMatch "^Mozilla/[2-3]" tables agif frames javascript
-BrowserMatch MSIE !javascript
-</pre>
+BrowserMatch MSIE !javascript</pre>
 
 
 </div>
@@ -118,20 +123,16 @@ respect to case</td></tr>
     semantically identical to the <code class="directive"><a href="#browsermatch">BrowserMatch</a></code> directive.
     However, it provides for case-insensitive matching. For
     example:</p>
-<pre class="prettyprint lang-config">
-BrowserMatchNoCase mac platform=macintosh
-BrowserMatchNoCase win platform=windows
-</pre>
+<pre class="prettyprint lang-config">BrowserMatchNoCase mac platform=macintosh
+BrowserMatchNoCase win platform=windows</pre>
 
 
     <p>The <code class="directive">BrowserMatch</code> and
     <code class="directive">BrowserMatchNoCase</code> directives are special cases of
     the <code class="directive"><a href="#setenvif">SetEnvIf</a></code> and <code class="directive"><a href="#setenvifnocase">SetEnvIfNoCase</a></code>
     directives. The following two lines have the same effect:</p>
-<pre class="prettyprint lang-config">
-BrowserMatchNoCase Robot is_a_robot
-SetEnvIfNoCase User-Agent Robot is_a_robot
-</pre>
+<pre class="prettyprint lang-config">BrowserMatchNoCase Robot is_a_robot
+SetEnvIfNoCase User-Agent Robot is_a_robot</pre>
 
 
 </div>
@@ -226,8 +227,7 @@ of</p>
     <var>value</var> and replace them by parenthesized subexpressions
     of <var>regex</var>.</p>
 
-<pre class="prettyprint lang-config">
-SetEnvIf Request_URI "\.gif$" object_is_image=gif
+<pre class="prettyprint lang-config">SetEnvIf Request_URI "\.gif$" object_is_image=gif
 SetEnvIf Request_URI "\.jpg$" object_is_image=jpg
 SetEnvIf Request_URI "\.xbm$" object_is_image=xbm
     
@@ -235,8 +235,7 @@ SetEnvIf Referer www\.mydomain\.example\.com intra_site_referral
     
 SetEnvIf object_is_image xbm XBIT_PROCESSING=1
     
-SetEnvIf ^TS  ^[a-z]  HAVE_TS
-</pre>
+SetEnvIf ^TS  ^[a-z]  HAVE_TS</pre>
 
 
     <p>The first three will set the environment variable
@@ -270,13 +269,11 @@ for additional examples.
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_setenvif</td></tr>
 </table>
     <p>The <code class="directive">SetEnvIfExpr</code> directive defines
-    environment variables based on an <code class="directive">&lt;If&gt;</code>
+    environment variables based on an <code class="directive"><a href="../mod/core.html#if">&lt;If&gt;</a></code>
     <code>ap_expr</code>. These expressions will be evaluated at runtime,
     and applied <em>env-variable</em> in the same fashion as <code class="directive">SetEnvIf</code>.</p>
 
-<pre class="prettyprint lang-config">
-    SetEnvIfExpr "tolower(req('X-Sendfile')) == 'd:\images\very_big.iso')" iso_delivered
-</pre>
+<pre class="prettyprint lang-config">SetEnvIfExpr "tolower(req('X-Sendfile')) == 'd:\images\very_big.iso')" iso_delivered</pre>
 
 
     <p>This would set the environment variable <code>iso_delivered</code>
@@ -285,16 +282,14 @@ for additional examples.
     <p>A more useful example would be to set the variable rfc1918 if the
     remote IP address is a private address according to RFC 1918:</p>
 
-<pre class="prettyprint lang-config">
-    SetEnvIfExpr "-R '10.0.0.0/8' || -R '172.16.0.0/12' || -R '192.168.0.0/16'" rfc1918
-</pre>
+<pre class="prettyprint lang-config">SetEnvIfExpr "-R '10.0.0.0/8' || -R '172.16.0.0/12' || -R '192.168.0.0/16'" rfc1918</pre>
 
 
 <h3>See also</h3>
 <ul>
 <li><a href="../expr.html">Expressions in Apache HTTP Server</a>,
 for a complete reference and more examples.</li>
-<li><code class="directive">&lt;If&gt;</code> can be used to achieve similar
+<li><code class="directive"><a href="../mod/core.html#if">&lt;If&gt;</a></code> can be used to achieve similar
 results.</li>
 <li><code class="module"><a href="../mod/mod_filter.html">mod_filter</a></code></li>
 </ul>
@@ -317,9 +312,7 @@ without respect to case</td></tr>
     the <code class="directive"><a href="#setenvif">SetEnvIf</a></code> directive,
     and differs only in that the regular expression matching is
     performed in a case-insensitive manner. For example:</p>
-<pre class="prettyprint lang-config">
-   SetEnvIfNoCase Host Example\.Org site=example
-</pre>
+<pre class="prettyprint lang-config">SetEnvIfNoCase Host Example\.Org site=example</pre>
 
 
     <p>This will cause the <code>site</code> environment variable
@@ -354,7 +347,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_setenvif.htm
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

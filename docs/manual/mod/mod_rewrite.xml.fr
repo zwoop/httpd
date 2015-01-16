@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1469960 -->
+<!-- English Revision : 1643036 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -191,8 +191,44 @@ la version version 2.1</compatibility>
       <p>M&ecirc;me effet que l'option <code>Inherit</code> ci-dessus, mais
       les r&egrave;gles sp&eacute;cifi&eacute;es dans le niveau parent s'appliquent
       <strong>avant</strong> les r&egrave;gles sp&eacute;cifi&eacute;es dans le niveau
-      enfant. Disponible depuis la version 2.3.10 du serveur HTTP
+      enfant.<br />
+      Disponible depuis la version 2.3.10 du serveur HTTP
       Apache.</p>
+      </dd>
+
+      <dt><code>InheritDown</code></dt>
+      <dd>
+
+      <p>Si cette option est activ&eacute;e, toutes les configurations enfants
+      h&eacute;riteront de la configuration courante. Il en est de m&ecirc;me si l'on
+      sp&eacute;cifie <code>RewriteOptions Inherit</code> dans toutes les
+      configurations enfants. Voir l'option <code>Inherit</code> pour
+      plus de d&eacute;tails &agrave; propos de la mani&egrave;re dont les relations
+      parent-enfants sont trait&eacute;es.<br />
+      Cette option est disponible &agrave; partir
+      de la version 2.4.8 du serveur HTTP Apache.</p>
+      </dd>
+
+      <dt><code>InheritDownBefore</code></dt>
+      <dd>
+
+      <p>L'effet de cette option est &eacute;quivalent &agrave; celui de l'option
+      <code>InheritDown</code> ci-dessus, mais les r&egrave;gles de la
+      configuration parente s'appliquent <strong>avant</strong> toute
+      r&egrave;gle de la configuration enfant.<br />
+      Cette option est disponible &agrave; partir
+      de la version 2.4.8 du serveur HTTP Apache.</p>
+      </dd>
+
+      <dt><code>IgnoreInherit</code></dt>
+      <dd>
+
+      <p>Si cette option est activ&eacute;e, les configurations courante et
+      enfants ignoreront toute r&egrave;gle h&eacute;rit&eacute;e d'une configuration parente
+      via les options <code>InheritDown</code> ou
+      <code>InheritDownBefore</code>.<br />
+      Cette option est disponible &agrave; partir
+      de la version 2.4.8 du serveur HTTP Apache.</p>
       </dd>
 
       <dt><code>AllowNoSlash</code></dt>
@@ -208,7 +244,8 @@ la version version 2.1</compatibility>
       s'assurer que les r&egrave;gles de r&eacute;&eacute;criture ne soient plus ignor&eacute;es.
       Si on le souhaite, cette option permet de faire s'appliquer des
       r&egrave;gles de r&eacute;&eacute;criture qui correspondent &agrave; un r&eacute;pertoire sans slash
-      final au sein de fichiers .htaccess. Elle est disponible &agrave;
+      final au sein de fichiers .htaccess.<br />
+      Elle est disponible &agrave;
       partir de la version 2.4.0 du serveur HTTP Apache.</p>
       </dd>
 
@@ -220,7 +257,7 @@ la version version 2.1</compatibility>
       contexte de <code>serveur virtuel</code> ou de serveur principal,
       <module>mod_rewrite</module> ne traitera les r&egrave;gles de r&eacute;&eacute;criture
       que si l'URI de la requ&ecirc;te respecte la syntaxe d'un <a
-      href="./directive-dict.html#Syntax">chemin URL</a>. Ceci permet
+      href="directive-dict.html#Syntax">chemin URL</a>. Ceci permet
       d'&eacute;viter certains probl&egrave;mes de s&eacute;curit&eacute; o&ugrave; des r&egrave;gles
       particuli&egrave;res pourraient permettre  des d&eacute;veloppements de mod&egrave;les
       inattendus (voir <a
@@ -231,7 +268,8 @@ la version version 2.1</compatibility>
       utiliser l'option <code>AllowAnyURI</code>, afin de permettre &agrave;
       <module>mod_rewrite</module> d'appliquer le jeu de r&egrave;gles &agrave; toute
       cha&icirc;ne de requ&ecirc;te URI, sans v&eacute;rifier si cette derni&egrave;re respecte la
-      grammaire des chemins URL d&eacute;finie dans la sp&eacute;cification HTTP.</p>
+      grammaire des chemins URL d&eacute;finie dans la sp&eacute;cification HTTP.<br />
+      Disponible depuis la version 2.4.3 du serveur HTTP Apache.</p>
 
       <note type="warning">
       <title>Avertissement &agrave; propos de la s&eacute;curit&eacute;</title> 
@@ -266,8 +304,7 @@ la version version 2.1</compatibility>
 <name>RewriteMap</name>
 <description>D&eacute;finit une fonction de mise en correspondance pour la
 recherche de mots-cl&eacute;s</description>
-<syntax>RewriteMap <em>nom de la correspondance</em> <em>type de
-correspondance</em>:<em>source de la correspondance</em>
+<syntax>RewriteMap <em>nom_de_la_correspondance</em> <em>type_de_correspondance</em>:<em>source_de_la_correspondance</em>
 </syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
@@ -281,24 +318,22 @@ correspondance</em>:<em>source de la correspondance</em>
       La source utilis&eacute;e pour cette recherche peut &ecirc;tre de plusieurs
       types.</p>
 
-      <p><a id="mapfunc" name="mapfunc"><em>nom de la
-      correspondance</em></a> est le nom de la table de correspondance
+      <p><a id="mapfunc" name="mapfunc"><em>nom_de_la_correspondance</em></a>
+      est le nom de la table de correspondance
       et servira &agrave; sp&eacute;cifier une fonction de mise en correspondance
       pour les cha&icirc;nes de substitution d'une r&egrave;gle de r&eacute;&eacute;criture selon
       une des constructions suivantes :</p>
 
       <p class="indent">
-        <strong><code>${</code> <em>nom de la
-      correspondance</em> <code>:</code>
+        <strong><code>${</code> <em>nom_de_la_correspondance</em> <code>:</code>
         <em>mot-cl&eacute;</em> <code>}</code><br />
-         <code>${</code> <em>nom de la
-      correspondance</em> <code>:</code>
+         <code>${</code> <em>nom_de_la_correspondance</em> <code>:</code>
         <em>mot-cl&eacute;</em> <code>|</code> <em>valeur par d&eacute;faut</em>
         <code>}</code></strong>
       </p>
 
       <p>Lorsqu'une telle construction est rencontr&eacute;e, la table de
-      correspondance <em>Nom de la correspondance</em> est consult&eacute;e
+      correspondance <em>Nom_de_la_correspondance</em> est consult&eacute;e
       et la cl&eacute; <em>mot-cl&eacute;</em> recherch&eacute;e. Si la cl&eacute; est trouv&eacute;e, la
       construction est remplac&eacute;e par
       la <em>valeur de remplacement</em>. Si la cl&eacute; n'est pas trouv&eacute;e,
@@ -350,12 +385,12 @@ correspondance</em>:<em>source de la correspondance</em>
 
     <dt>prg</dt>
         <dd>Appelle un programme externe ou un script pour effectuer la
-	r&eacute;&eacute;criture (<a href="../rewrite/rewritemap.html#int">D&eacute;tails
+	r&eacute;&eacute;criture (<a href="../rewrite/rewritemap.html#prg">D&eacute;tails
 	...</a>).</dd>
 
     <dt>dbd or fastdbd</dt>
         <dd>Une commande SQL SELECT &agrave; ex&eacute;cuter pour rechercher la cible
-	de r&eacute;&eacute;criture (<a href="../rewrite/rewritemap.html#int">D&eacute;tails
+	de r&eacute;&eacute;criture (<a href="../rewrite/rewritemap.html#dbd">D&eacute;tails
 	...</a>).</dd>
     </dl>
 
@@ -369,7 +404,7 @@ href="../rewrite/rewritemap.html">RewriteMap HowTo</a>.</p>
 <name>RewriteBase</name>
 <description>D&eacute;finit l'URL de base pour les r&eacute;&eacute;critures au niveau
 r&eacute;pertoire</description>
-<syntax>RewriteBase <em>chemin URL</em></syntax>
+<syntax>RewriteBase <em>chemin_URL</em></syntax>
 <default>Pas de valeur par d&eacute;faut</default>
 <contextlist><context>directory</context><context>.htaccess</context>
 </contextlist>
@@ -423,7 +458,7 @@ Alias /myapp /opt/myapp-1.2.3
 la r&eacute;&eacute;criture soit effectu&eacute;e
 </description>
 <syntax> RewriteCond
-      <em>cha&icirc;ne de test</em> <em>expression de comparaison</em></syntax>
+      <em>cha&icirc;ne_de_test</em> <em>expression_de_comparaison</em></syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context></contextlist>
 <override>FileInfo</override>
@@ -483,26 +518,30 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 
             <tr>
 	      <td>
-		 HTTP_USER_AGENT<br />
-                 HTTP_REFERER<br />
+		 HTTP_ACCEPT<br />
                  HTTP_COOKIE<br />
                  HTTP_FORWARDED<br />
                  HTTP_HOST<br />
                  HTTP_PROXY_CONNECTION<br />
-                 HTTP_ACCEPT<br />
+                 HTTP_REFERER<br />
+                 HTTP_USER_AGENT<br />
               </td>
 
               <td>
-                 REMOTE_ADDR<br />
-                 REMOTE_HOST<br />
-                 REMOTE_PORT<br />
-                 REMOTE_USER<br />
-                 REMOTE_IDENT<br />
-                 REQUEST_METHOD<br />
-                 SCRIPT_FILENAME<br />
+                 AUTH_TYPE<br />
+		 CONN_REMOTE_ADDR<br />
+		 CONTEXT_PREFIX<br />
+                 CONTEXT_DOCUMENT_ROOT<br />
+                 IPV6<br />
                  PATH_INFO<br />
                  QUERY_STRING<br />
-                 AUTH_TYPE<br />
+                 REMOTE_ADDR<br />
+                 REMOTE_HOST<br />
+		 REMOTE_IDENT<br />
+                 REMOTE_PORT<br />
+                 REMOTE_USER<br />
+                 REQUEST_METHOD<br />
+                 SCRIPT_FILENAME<br />
               </td>
 
 	      <td></td>
@@ -515,9 +554,11 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
             <tr>
 	      <td>
 	         DOCUMENT_ROOT<br />
+		 SCRIPT_GROUP<br />
+                 SCRIPT_USER<br />
+                 SERVER_ADDR<br />
                  SERVER_ADMIN<br />
                  SERVER_NAME<br />
-                 SERVER_ADDR<br />
                  SERVER_PORT<br />
                  SERVER_PROTOCOL<br />
                  SERVER_SOFTWARE<br />
@@ -536,12 +577,14 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 
               <td>
                  API_VERSION<br />
-                 THE_REQUEST<br />
-                 REQUEST_URI<br />
-                 REQUEST_FILENAME<br />
-                 IS_SUBREQ<br />
+		 CONN_REMOTE_ADDR<br />
                  HTTPS<br />
-		 REQUEST_SCHEME<br />
+		 IS_SUBREQ<br />
+		 REMOTE_ADDR<br />
+                 REQUEST_FILENAME<br />
+                 REQUEST_SCHEME<br />
+                 REQUEST_URI<br />
+                 THE_REQUEST<br />
               </td>
             </tr>
           </table>
@@ -549,8 +592,10 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
                 <p>Ces variables correspondent toutes aux en-t&ecirc;tes MIME
 		HTTP de m&ecirc;mes noms, au variables C du serveur HTTP Apache, ou
 		aux champs <code>struct tm</code> du syst&egrave;me Unix. La
-		plupart d'entre elles sont document&eacute;es ailleurs dans le
-		manuel ou dans la sp&eacute;cification CGI.</p>
+		plupart d'entre elles sont document&eacute;es <a
+		href="../expr.html#vars">ici</a>, dans la
+		sp&eacute;cification CGI ou ailleurs dans le
+		manuel.</p>
 
 		<p>SERVER_NAME et SERVER_PORT d&eacute;pendent respectivement
 		des valeurs des directives <directive
@@ -561,14 +606,6 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 		sp&eacute;cifiques &agrave; mod_rewrite, ou trouve les suivantes :</p>
         <note>
                 <dl>
-                  <dt><code>IS_SUBREQ</code></dt>
-
-                  <dd>Contient le texte "true" si la requ&ecirc;te en cours
-		  de traitement est une sous-requ&ecirc;te, "false" dans le
-		  cas contraire. Une sous-requ&ecirc;te est g&eacute;n&eacute;r&eacute;e quand un
-		  module a besoin de se r&eacute;f&eacute;rer &agrave; des fichiers ou URIs
-		  addidionnels pour pouvoir mener &agrave; bien sa t&acirc;che.</dd>
-
                   <dt><code>API_VERSION</code></dt>
 
                   <dd>C'est la version de l'API des modules Apache httpd
@@ -582,21 +619,30 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 		  il s'agit de la version 19990320:10), mais int&eacute;resse
 		  principalement les auteurs de modules.</dd>
 
-                  <dt><code>THE_REQUEST</code></dt>
+                  <dt><code>CONN_REMOTE_ADDR</code></dt>
 
-                  <dd>La ligne de requ&ecirc;te HTTP compl&egrave;te envoy&eacute;e par le
-		  navigateur au serveur (par exemple, "<code>GET
-                  /index.html HTTP/1.1</code>"), &agrave; l'exclusion de tout
-		  en-t&ecirc;te ajout&eacute; par le navigateur. Cette
-		  valeur n'a pas &eacute;t&eacute; d&eacute;s&eacute;chapp&eacute;e (d&eacute;cod&eacute;e), &agrave; la
-		  diff&eacute;rence de la plupart des variables suivantes.</dd>
+		  <dd>A partir de la version 2.4.8 : l'adresse IP distante de
+		  la connexion (voir le module
+		  <module>mod_remoteip</module>).</dd>
 
-                  <dt><code>REQUEST_URI</code></dt>
+		  <dt><code>HTTPS</code></dt>
 
-                  <dd>La partie chemin de l'URI de la requ&ecirc;te, comme
-		  "/index.html". En particulier, ceci exclut la cha&icirc;ne
-		  de param&egrave;tres qui est quant &agrave; elle disponible via sa
-		  propre variable <code>QUERY_STRING</code>.</dd>
+                  <dd>Contient le texte "on" si la connexion
+		  utilise SSL/TLS, "off" dans le cas contraire
+		  (Cette variable peut &ecirc;tre utilis&eacute;e sans probl&egrave;me, que
+		  <module>mod_ssl</module> soit charg&eacute; ou non).</dd>
+
+		  <dt><code>IS_SUBREQ</code></dt>
+
+                  <dd>Contient le texte "true" si la requ&ecirc;te en cours
+		  de traitement est une sous-requ&ecirc;te, "false" dans le
+		  cas contraire. Une sous-requ&ecirc;te est g&eacute;n&eacute;r&eacute;e quand un
+		  module a besoin de se r&eacute;f&eacute;rer &agrave; des fichiers ou URIs
+		  addidionnels pour pouvoir mener &agrave; bien sa t&acirc;che.</dd>
+
+		  <dt><code>REMOTE_ADDR</code></dt>
+                  <dd>L'adresse IP de l'h&ocirc;te distant (se r&eacute;f&eacute;rer au
+		  module <module>mod_remoteip</module>).</dd>
 
                   <dt><code>REQUEST_FILENAME</code></dt>
 
@@ -613,13 +659,6 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 		  <code>REQUEST_URI</code> pour d&eacute;terminer &agrave; quel
 		  fichier correspond la requ&ecirc;te.</dd>
 
-                  <dt><code>HTTPS</code></dt>
-
-                  <dd>Contient le texte "on" si la connexion
-		  utilise SSL/TLS, "off" dans le cas contraire
-		  (Cette variable peut &ecirc;tre utilis&eacute;e sans probl&egrave;me, que
-		  <module>mod_ssl</module> soit charg&eacute; ou non.</dd>
-
 		  <dt><code>REQUEST_SCHEME</code></dt>
 
                   <dd>Contient le protocole de la requ&ecirc;te (en g&eacute;n&eacute;ral
@@ -627,13 +666,29 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 		  la directive <directive
 		  module="core">ServerName</directive>.</dd>
 
+		  <dt><code>REQUEST_URI</code></dt>
+
+		  <dd>La partie chemin de l'URI de la requ&ecirc;te, comme
+		  "/index.html". Ceci exclut en particulier la cha&icirc;ne de
+		  param&egrave;tres de la requ&ecirc;te qui est contenue dans la
+		  variable <code>QUERY_STRING</code>.</dd>
+
+                  <dt><code>THE_REQUEST</code></dt>
+
+                  <dd>La ligne de requ&ecirc;te HTTP compl&egrave;te envoy&eacute;e par le
+		  navigateur au serveur (par exemple, "<code>GET
+                  /index.html HTTP/1.1</code>"), &agrave; l'exclusion de tout
+		  en-t&ecirc;te ajout&eacute; par le navigateur. Cette
+		  valeur n'a pas &eacute;t&eacute; d&eacute;s&eacute;chapp&eacute;e (d&eacute;cod&eacute;e), &agrave; la
+		  diff&eacute;rence de la plupart des variables suivantes.</dd>
+
                 </dl>
 </note>
         </li>
       </ul>
 
-      <p>Si la <em>cha&icirc;ne de test</em> contient la valeur sp&eacute;ciale
-      <code>expr</code>, <em>expression de comparaison</em> sera trait&eacute;
+      <p>Si <em>cha&icirc;ne_de_test</em> contient la valeur sp&eacute;ciale
+      <code>expr</code>, <em>expression_de_comparaison</em> sera trait&eacute;
       en tant qu'expression rationnelle de type <a
       href="../expr.html">ap_expr</a>. Si des en-t&ecirc;tes HTTP sont
       r&eacute;f&eacute;renc&eacute;s dans l'expression rationnelle, et si le drapeau
@@ -733,22 +788,22 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
       </ol>
 
 
-      <p><em>expression de comparaison</em> est une expression
+      <p><em>expression_de_comparaison</em> est une expression
       rationnelle qui est appliqu&eacute;e &agrave; l'instance actuelle de
-      <em>cha&icirc;ne de test</em>. <em>cha&icirc;ne de test</em> est d'abord
+      <em>cha&icirc;ne_de_test</em>. <em>cha&icirc;ne_de_test</em> est d'abord
       &eacute;valu&eacute;e, puis compar&eacute;e &agrave;
-      l'<em>expression de comparaison</em>.</p>
+      l'<em>expression_de_comparaison</em>.</p>
 
-      <p><em>expression de comparaison</em> est en g&eacute;n&eacute;ral une
+      <p><em>expression_de_comparaison</em> est en g&eacute;n&eacute;ral une
       <em>expression rationnelle compatible perl</em>, mais vous
       disposez des syntaxes suppl&eacute;mentaires suivantes pour effectuer
-      d'autres tests utiles sur <em>cha&icirc;ne de test</em> :
+      d'autres tests utiles sur <em>cha&icirc;ne_de_test</em> :
       </p>
 
       <ol>
         <li>Vous pouvez pr&eacute;fixer l'expression avec un caract&egrave;re
-	'<code>!</code>' (point d'exclamation) pour indiquer une
-	expression de <strong>non</strong>-correspondance.</li>
+	'<code>!</code>' (point d'exclamation) pour inverser le r&eacute;sultat
+	de la condition, quelle que soit l'<em>expression_de_comparaison</em> utilis&eacute;e.</li>
 
         <li>Vous pouvez effectuer des comparaisons lexicographiques de
 	cha&icirc;nes	:
@@ -758,45 +813,45 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 	    lexicographique)<br />
 	    Traite l'<em>expression</em> comme une cha&icirc;ne de
 	    caract&egrave;res et la compare lexicographiquement &agrave;
-	    <em>cha&icirc;ne de test</em>. La condition est satisfaite si
-	    <em>cha&icirc;ne de test</em> est inf&eacute;rieure au sens
+	    <em>cha&icirc;ne_de_test</em>. La condition est satisfaite si
+	    <em>cha&icirc;ne_de_test</em> est inf&eacute;rieure au sens
 	    lexicographique &agrave; l'<em>expression</em>.</li>
 
             <li>'<strong>&gt;expression</strong>' (sup&eacute;rieur au sens
 	    lexicographique)<br />
 	    Traite l'<em>expression</em> comme une cha&icirc;ne de
 	    caract&egrave;res et la compare lexicographiquement &agrave;
-	    <em>cha&icirc;ne de test</em>. La condition est satisfaite si
-	    <em>cha&icirc;ne de test</em> est sup&eacute;rieure au sens
+	    <em>cha&icirc;ne_de_test</em>. La condition est satisfaite si
+	    <em>cha&icirc;ne_de_test</em> est sup&eacute;rieure au sens
 	    lexicographique &agrave; l'<em>expression</em>.</li>
 
             <li>'<strong>=expression</strong>' (&eacute;gal au sens
 	    lexicographique)<br />
 	    Traite l'<em>expression</em> comme une cha&icirc;ne de
 	    caract&egrave;res et la compare lexicographiquement &agrave;
-	    <em>cha&icirc;ne de test</em>. La condition est satisfaite si
-	    <em>cha&icirc;ne de test</em> est &eacute;gale au sens
+	    <em>cha&icirc;ne_de_test</em>. La condition est satisfaite si
+	    <em>cha&icirc;ne_de_test</em> est &eacute;gale au sens
 	    lexicographique &agrave; l'<em>expression</em> (les deux cha&icirc;nes
 	    sont exactement identiques, caract&egrave;re pour caract&egrave;re). Si
 	    <em>expression</em> est <code>""</code> (deux guillemets),
-	    <em>cha&icirc;ne de test</em> est compar&eacute;e &agrave; la cha&icirc;ne vide.</li>
+	    <em>cha&icirc;ne_de_test</em> est compar&eacute;e &agrave; la cha&icirc;ne vide.</li>
 
-	    <li>'<strong>&lt;=expression de comparaison</strong>' (inf&eacute;rieur ou &eacute;gal &agrave;
+	    <li>'<strong>&lt;=expression_de_comparaison</strong>' (inf&eacute;rieur ou &eacute;gal &agrave;
 	    au sens lexicographique)<br />
-            Consid&egrave;re l'<em>expression de comparaison</em> comme une
+            Consid&egrave;re l'<em>expression_de_comparaison</em> comme une
 	    cha&icirc;ne de caract&egrave;res et la compare au sens lexicographique &agrave;
-	    la <em>cha&icirc;ne de test</em>. Vrai si <em>cha&icirc;ne de test</em>
-	    pr&eacute;c&egrave;de lexicographiquement <em>expression de comparaison</em>, ou est
-	    &eacute;gale &agrave; <em>expression de comparaison</em> (les deux cha&icirc;nes
+	    la <em>cha&icirc;ne_de_test</em>. Vrai si <em>cha&icirc;ne_de_test</em>
+	    pr&eacute;c&egrave;de lexicographiquement <em>expression_de_comparaison</em>, ou est
+	    &eacute;gale &agrave; <em>expression_de_comparaison</em> (les deux cha&icirc;nes
 	    sont identiques, caract&egrave;re pour caract&egrave;re).</li>
 
-            <li>'<strong>&gt;=expression de comparaison</strong>'
+            <li>'<strong>&gt;=expression_de_comparaison</strong>'
 	    (sup&eacute;rieur ou &eacute;gal &agrave; au sens lexicographique)<br />
-            Consid&egrave;re l'<em>expression de comparaison</em> comme une
+            Consid&egrave;re l'<em>expression_de_comparaison</em> comme une
 	    cha&icirc;ne de caract&egrave;res et la compare au sens lexicographique &agrave;
-	    la <em>cha&icirc;ne de test</em>. Vrai si <em>cha&icirc;ne de test</em>
-	    suit lexicographiquement <em>expression de comparaison</em>, ou est
-	    &eacute;gale &agrave; <em>expression de comparaison</em> (les deux cha&icirc;nes
+	    la <em>cha&icirc;ne_de_test</em>. Vrai si <em>cha&icirc;ne_de_test</em>
+	    suit lexicographiquement <em>expression_de_comparaison</em>, ou est
+	    &eacute;gale &agrave; <em>expression_de_comparaison</em> (les deux cha&icirc;nes
 	    sont identiques, caract&egrave;re pour caract&egrave;re).</li>
         </ul></li>
 
@@ -805,43 +860,38 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
           <ul>
 
             <li>'<strong>-eq</strong>' (est num&eacute;riquement &eacute;gal &agrave;)<br />
-            La <em>cha&icirc;ne de test</em> est consid&eacute;r&eacute;e comme un entier,
-	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression de
-	    comparaison</em>. Vrai si les deux expressions sont
+            La <em>cha&icirc;ne_de_test</em> est consid&eacute;r&eacute;e comme un entier,
+	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression_de_comparaison</em>. Vrai si les deux expressions sont
 	    num&eacute;riquement &eacute;gales.</li>
 
             <li>'<strong>-ge</strong>' (est num&eacute;riquement sup&eacute;rieur ou
 	    &eacute;gal &agrave;)<br />
-            La <em>cha&icirc;ne de test</em> est consid&eacute;r&eacute;e comme un entier,
-	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression de
-	    comparaison</em>. Vrai si <em>cha&icirc;ne de test</em> est
+            La <em>cha&icirc;ne_de_test</em> est consid&eacute;r&eacute;e comme un entier,
+	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression_de_comparaison</em>. Vrai si <em>cha&icirc;ne_de_test</em> est
 	    num&eacute;riquement
-	    sup&eacute;rieure ou &eacute;gale &agrave; <em>expression de comparaison</em>.</li>
+	    sup&eacute;rieure ou &eacute;gale &agrave; <em>expression_de_comparaison</em>.</li>
 
              <li>'<strong>-gt</strong>' (est num&eacute;riquement sup&eacute;rieur &agrave;)<br />
-            La <em>cha&icirc;ne de test</em> est consid&eacute;r&eacute;e comme un entier,
-	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression de
-	    comparaison</em>. Vrai si <em>cha&icirc;ne de test</em> est
+            La <em>cha&icirc;ne_de_test</em> est consid&eacute;r&eacute;e comme un entier,
+	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression_de_comparaison</em>. Vrai si <em>cha&icirc;ne_de_test</em> est
 	    num&eacute;riquement
-	    sup&eacute;rieure &agrave; <em>expression de comparaison</em>.</li>
+	    sup&eacute;rieure &agrave; <em>expression_de_comparaison</em>.</li>
 
             <li>'<strong>-le</strong>' (est num&eacute;riquement inf&eacute;rieur ou
 	    &eacute;gal &agrave;)<br />
-            La <em>cha&icirc;ne de test</em> est consid&eacute;r&eacute;e comme un entier,
-	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression de
-	    comparaison</em>. Vrai si <em>cha&icirc;ne de test</em> est
+            La <em>cha&icirc;ne_de_test</em> est consid&eacute;r&eacute;e comme un entier,
+	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression_de_comparaison</em>. Vrai si <em>cha&icirc;ne_de_test</em> est
 	    num&eacute;riquement
-	    inf&eacute;rieure ou &eacute;gale &agrave; <em>expression de comparaison</em>.
+	    inf&eacute;rieure ou &eacute;gale &agrave; <em>expression_de_comparaison</em>.
 	    Attention &agrave; la confusion avec le drapeau <strong>-l</strong>
 	    en utilisant la variante the <strong>-L</strong> ou
 	    <strong>-h</strong>.</li>
 
              <li>'<strong>-lt</strong>' (est num&eacute;riquement inf&eacute;rieur &agrave;)<br />
-            La <em>cha&icirc;ne de test</em> est consid&eacute;r&eacute;e comme un entier,
-	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression de
-	    comparaison</em>. Vrai si <em>cha&icirc;ne de test</em> est
+            La <em>cha&icirc;ne_de_test</em> est consid&eacute;r&eacute;e comme un entier,
+	    et est compar&eacute;e num&eacute;riquement &agrave; l'<em>expression_de_comparaison</em>. Vrai si <em>cha&icirc;ne_de_test</em> est
 	    num&eacute;riquement
-	    inf&eacute;rieure &agrave; <em>expression de comparaison</em>.
+	    inf&eacute;rieure &agrave; <em>expression_de_comparaison</em>.
 	    Attention &agrave; la confusion avec le drapeau <strong>-l</strong>
 	    en utilisant la variante the <strong>-L</strong> ou
 	    <strong>-h</strong>.</li>
@@ -855,17 +905,17 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 
             <li>'<strong>-d</strong>' (est un r&eacute;pertoire -
 	    <strong>d</strong>irectory)<br />
-	    Traite <em>cha&icirc;ne de test</em> comme un chemin et v&eacute;rifie
+	    Traite <em>cha&icirc;ne_de_test</em> comme un chemin et v&eacute;rifie
 	    s'il existe ou pas, et s'il s'agit d'un r&eacute;pertoire.</li>
 
             <li>'<strong>-f</strong>' (est un
 	    <strong>f</strong>ichier r&eacute;gulier)<br />
-	    Traite <em>cha&icirc;ne de test</em> comme un chemin et v&eacute;rifie
+	    Traite <em>cha&icirc;ne_de_test</em> comme un chemin et v&eacute;rifie
 	    s'il existe ou pas, et s'il s'agit d'un fichier r&eacute;gulier.</li>
 
             <li>'<strong>-F</strong>' (test de l'existence d'un fichier
 	    via une sous-requ&ecirc;te)<br />
-	    V&eacute;rifie si <em>cha&icirc;ne de test</em> est un fichier valide,
+	    V&eacute;rifie si <em>cha&icirc;ne_de_test</em> est un fichier valide,
 	    accessible &agrave; travers tous les contr&ocirc;les d'acc&egrave;s du serveur
 	    actuellement configur&eacute;s pour ce chemin. C'est une
 	    sous-requ&ecirc;te interne qui effectue cette v&eacute;rification - &agrave;
@@ -877,7 +927,7 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
             Voir <strong>-l</strong>.</li>
 
             <li>'<strong>-l</strong>' (est un lien symbolique)<br />
-            Consid&egrave;re la <em>cha&icirc;ne de test</em> comme un chemin et
+            Consid&egrave;re la <em>cha&icirc;ne_de_test</em> comme un chemin et
 	    v&eacute;rifie son existence et si elle est un lien symbolique. On
 	    peut aussi utiliser la convention bash <strong>-L</strong>
 	    ou <strong>-h</strong> lorsqu'il y a risque de confusion
@@ -889,36 +939,38 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 
             <li>'<strong>-s</strong>' (est un fichier r&eacute;gulier d'une
 	    certaine taille)<br />
-            Consid&egrave;re la <em>cha&icirc;ne de test</em> comme un chemin et
+            Consid&egrave;re la <em>cha&icirc;ne_de_test</em> comme un chemin et
 	    v&eacute;rifie son existence et si elle est un fichier r&eacute;gulier
 	    d'une taille sup&eacute;rieure &agrave; z&eacute;ro.</li>
 
-            <li>'<strong>-U</strong>' (test de l'existence d'une
-	    <strong>U</strong>RL via une sous-requ&ecirc;te)<br />
-	    V&eacute;rifie si <em>cha&icirc;ne de test</em> est une URL valide,
+            <li><p>'<strong>-U</strong>' (test de l'existence d'une
+	    URL via une sous-requ&ecirc;te)<br />
+	    V&eacute;rifie si <em>cha&icirc;ne_de_test</em> est une URL valide,
 	    accessible &agrave; travers tous les contr&ocirc;les d'acc&egrave;s du serveur
 	    actuellement configur&eacute;s pour ce chemin. C'est une
 	    sous-requ&ecirc;te interne qui effectue cette v&eacute;rification - &agrave;
 	    utiliser avec pr&eacute;cautions car les performances du serveur
-	    peuvent s'en trouver affect&eacute;es !</li>
+	    peuvent s'en trouver affect&eacute;es !</p>
+	    <p>Ce drapeau ne renvoie <em>que</em> des informations
+	    concernant le contr&ocirc;le d'acc&egrave;s, l'authentification et
+	    l'autorisation. Il ne renvoie <em>pas</em> d'informations
+	    concernant le code d'&eacute;tat que le gestionnaire configur&eacute;
+	    (static file, CGI, proxy, etc...) aurait, quant &agrave; lui,
+	    retourn&eacute;.</p></li>
 
 	  <li>'<strong>-x</strong>' (a l'attribut d'ex&eacute;cution positionn&eacute;)<br />
-            Consid&egrave;re la <em>cha&icirc;ne de test</em> comme un chemin et
+            Consid&egrave;re la <em>cha&icirc;ne_de_test</em> comme un chemin et
 	    v&eacute;rifie son existence et si elle a son attribut d'ex&eacute;cution
 	    positionn&eacute;. Ce positionnement est d&eacute;termin&eacute; en fonction de
 	    l'OS sous-jacent.</li>
 
 	    </ul>
 
-<note><title>Note :</title>
-              Tous ces tests peuvent aussi &ecirc;tre pr&eacute;fix&eacute;s par un point
-	      d'exclamation ('!') pour inverser leur signification.
-</note>
         </li>
 
 	<li>
-           <p>Si la <em>cha&icirc;ne de test</em> contient la valeur sp&eacute;ciale
-	   <code>expr</code>, la <em>cha&icirc;ne de comparaison</em> sera
+           <p>Si la <em>cha&icirc;ne_de_test</em> contient la valeur sp&eacute;ciale
+	   <code>expr</code>, la <em>cha&icirc;ne_de_comparaison</em> sera
 	   trait&eacute;e en tant qu'expression rationnelle de type <a
 	   href="../expr.html">ap_expr</a>.</p>
 
@@ -936,7 +988,7 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
         </li>
 
 	<li>Vous pouvez aussi d&eacute;finir certains drapeaux pour
-	l'<em>expression de comparaison</em> en ajoutant ces
+	l'<em>expression_de_comparaison</em> en ajoutant ces
 	<strong><code>[</code><em>drapeaux</em><code>]</code></strong>
 	comme troisi&egrave;me argument de la directive
 	<code>RewriteCond</code>, o&ugrave; <em>drapeaux</em> est un
@@ -947,10 +999,10 @@ la r&eacute;&eacute;criture soit effectu&eacute;e
 	(<strong>n</strong>o <strong>c</strong>ase)<br />
 	Rend le test insensible &agrave; la casse - il n'est pas fait de
 	distinction entre majuscules et minuscules, &agrave; la fois dans le
-	d&eacute;veloppement de <em>cha&icirc;ne de test</em> et dans
-	<em>expression de comparaison</em>. Ce drapeau n'est pris en
-	compte que lors d'une comparaison entre <em>cha&icirc;ne de test</em>
-	et <em>expression de comparaison</em>. Il ne l'est pas pour les
+	d&eacute;veloppement de <em>cha&icirc;ne_de_test</em> et dans
+	<em>expression_de_comparaison</em>. Ce drapeau n'est pris en
+	compte que lors d'une comparaison entre <em>cha&icirc;ne_de_test</em>
+	et <em>expression_de_comparaison</em>. Il ne l'est pas pour les
 	v&eacute;rification par sous-requ&ecirc;tes ou sur le syst&egrave;me de
 	fichiers.</li>
 
@@ -992,28 +1044,18 @@ RewriteRule ...r&egrave;gles concernant tous ces h&ocirc;tes...
        pouvez utiliser ce qui suit : </p>
 
 <highlight language="config">
-RewriteCond  %{HTTP_USER_AGENT}  ^Mozilla
-RewriteRule  ^/$                 /homepage.max.html  [L]
-
-RewriteCond  %{HTTP_USER_AGENT}  ^Lynx
-RewriteRule  ^/$                 /homepage.min.html  [L]
+RewriteCond  %{HTTP_USER_AGENT}  (iPhone|Blackberry|Android)
+RewriteRule  ^/$                 /homepage.mobile.html  [L]
 
 RewriteRule  ^/$                 /homepage.std.html  [L]
 </highlight>
 
         <p>Explications : si vous utilisez un navigateur
-	(Netscape Navigator, Mozilla etc) qui s'identifie comme
-	'Mozilla', vous acc&egrave;derez &agrave; la page d'accueil max (qui
-	peut contenir des frames, ou d'autres ressources
-	particuli&egrave;res).
-	Si vous utilisez le navigateur Lynx (qui est un navigateur
-	en mode texte), vous acc&egrave;derez &agrave; une page d'accueil min
-	(qui peut &ecirc;tre une version con&ccedil;ue pour une navigation simple
-	bas&eacute;e sur le texte).
-	Si aucune de ces conditions n'est satisfaite (vous utilisez tout
-	autre navigateur, ou votre navigateur s'identifie de mani&egrave;re non
-	standard), vous acc&egrave;derez &agrave; la page d'accueil std
-	(standard).</p>
+	qui s'identifie comme un navigateur de mobile (notez que cet
+	exemple est incomplet car il existe de nombreuses autres
+	plateformes mobiles), c'est la version mobile de la page
+	d'accueil qui sera servie. Dans le cas contraire, vous verrez
+	s'afficher la page d'accueil standard.</p>
 
 </usage>
 
@@ -1113,8 +1155,11 @@ signifie que la comparaison s'effectue avec une cha&icirc;ne qui ne comporte
 <li>Bien que les r&egrave;gles de r&eacute;&eacute;criture soient permises du point de vue de
 la syntaxe dans les sections <directive type="section"
 module="core">Location</directive> et <directive type="section"
-module="core">Files</directive>, elles n'y sont pas prises en compte, et
-n'y sont &agrave; priori d'aucune utilit&eacute;.</li>
+module="core">Files</directive> (y compris leurs versions sous forme
+d'expression rationnelle), elles n'y sont pas prises en compte, et
+n'y sont &agrave; priori d'aucune utilit&eacute;. Les substitutions
+relatives sont une fonctionnalit&eacute; qui n'est, elle non-plus pas support&eacute;e
+dans ce genre de contexte.</li>
 </ul>
 </note>
 
@@ -1271,7 +1316,7 @@ substitution !
       href="../rewrite/flags.html">document &agrave; propos des drapeaux de
       r&eacute;&eacute;criture.</a></p>
 
-      <table border="1">
+      <table border="1" style="zebra">
     <tr><th>Drapeaux et syntaxe</th>
         <th>Fonction</th>
     </tr>
@@ -1303,6 +1348,15 @@ substitution !
         ...</a></em></td>
     </tr>
     <tr>
+        <td>END</td>
+        <td>Stoppe le processus de r&eacute;&eacute;criture imm&eacute;diatement et
+	n'applique plus aucune r&egrave;gle. Emp&ecirc;che aussi l'application
+	ult&eacute;rieure de r&egrave;gles de r&eacute;&eacute;criture dans les contextes de
+	r&eacute;pertoire et de fichier .htaccess (disponible &agrave; partir de la
+	version 2.3.9 du serveur HTTP Apache). <em><a
+	href="../rewrite/flags.html#flag_end">d&eacute;tails ...</a></em></td>
+    </tr>
+    <tr>    
         <td>env|E=[!]<em>VAR</em>[:<em>VAL</em>]</td>
         <td>D&eacute;finit la variable d'environnement <em>VAR</em> (&agrave; la valeur
 	<em>VAL</em> si elle est fournie). La variante !<em>VAR</em>
@@ -1331,7 +1385,7 @@ substitution !
 	plus aucune r&egrave;gle. Pr&ecirc;tez une attention particuli&egrave;re aux mises
 	en garde concernant les contextes de niveau r&eacute;pertoire et
 	.htaccess (voir aussi le drapeau END). <em><a
-        href="../rewrite/flags.html#flag_end">d&eacute;tails ...</a></em></td>
+        href="../rewrite/flags.html#flag_l">d&eacute;tails ...</a></em></td>
     </tr>
     <tr>
         <td>next|N</td>
@@ -1394,15 +1448,6 @@ substitution !
         </td>
     </tr>
     <tr>
-        <td>END</td>
-        <td>Arr&ecirc;te le processus de r&eacute;&eacute;criture imm&eacute;diatement et
-	n'applique plus aucune r&egrave;gle. Emp&ecirc;che aussi l'ex&eacute;cution
-	ult&eacute;rieure de r&egrave;gles de r&eacute;&eacute;criture dans des contextes de
-	r&eacute;pertoire et des fichiers .htaccess (disponible depuis la
-	version 2.3.9) <em><a
-	href="../rewrite/flags.html#flag_l">d&eacute;tails ...</a></em></td>
-    </tr>
-    <tr>
         <td>skip|S=<em>nombre</em></td>
         <td>Si la r&egrave;gle courante s'applique, le moteur de r&eacute;&eacute;criture
 	doit sauter les <em>nombre</em> r&egrave;gles suivantes. <em><a
@@ -1435,7 +1480,7 @@ utilis&eacute; dans la directive <directive module="mod_rewrite">RewriteRule</di
       /chemin/infochemin</code>'':</strong><br />
       </p>
 
-<table border="1">
+<table border="1" style="zebra">
 <tr>
 <th>R&egrave;gle</th>
 <th>R&eacute;sultat de la substitution</th>
@@ -1511,7 +1556,7 @@ redondant)</td>
       /chemin/chemin-local/infochemin</code>'':</strong><br />
      </p>
 
-<table border="1">
+<table border="1" style="zebra">
 
 <tr>
 <th>R&egrave;gle</th>

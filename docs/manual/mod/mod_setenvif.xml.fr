@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1479263 -->
+<!-- English Revision : 1557618 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -51,6 +51,19 @@ de caract&eacute;ristiques de la requ&ecirc;te</description>
 BrowserMatch ^Mozilla netscape
 BrowserMatch MSIE !netscape
 </highlight>
+
+   <p>Lorsque le serveur cherche un chemin via une <glossary
+   ref="subrequest">sous-requ&ecirc;te</glossary> interne (par exemple la
+   recherche d'un <directive
+   module="mod_dir">DirectoryIndex</directive>), ou lorsqu'il g&eacute;n&egrave;re un
+   listing du contenu d'un r&eacute;pertoire via le module
+   <module>mod_autoindex</module>, la sous-requ&ecirc;te n'h&eacute;rite pas des
+   variables d'environnement sp&eacute;cifiques &agrave; la requ&ecirc;te. En outre, &agrave; cause
+   des phases de l'API auxquelles <module>mod_setenvif</module> prend
+   part, les directives <directive
+   module="mod_setenvif">SetEnvIf</directive> ne sont pas &eacute;valu&eacute;es
+   s&eacute;par&eacute;ment dans la sous-requ&ecirc;te.</p>
+
 </summary>
 
 <seealso><a href="../env.html">Les variables d'environnement et le
@@ -267,7 +280,7 @@ serveur HTTP Apache</a> pour des exemples suppl&eacute;mentaires.
 <usage>
     <p>La directive <directive>SetEnvIfExpr</directive> permet de
     d&eacute;finir des variables d'environnement en fonction d'une expression
-    <directive type="section">If</directive> <code>ap_expr</code>. Cette
+    <directive module="core" type="section">If</directive> <code>ap_expr</code>. Cette
     expression est &eacute;valu&eacute;e &agrave; l'ex&eacute;cution, et utilise les variables
     d'environnement <em>env-variable</em> de la m&ecirc;me mani&egrave;re que la
     directive <directive>SetEnvIf</directive>.</p>
@@ -291,8 +304,9 @@ serveur HTTP Apache</a> pour des exemples suppl&eacute;mentaires.
 
 <seealso><a href="../expr.html">Les expressions dans le serveur HTTP
 Apache</a>, pour une r&eacute;f&eacute;rence compl&egrave;te et davantage d'exemples.</seealso>
-<seealso>La directive <directive type="section">If</directive> peut &ecirc;tre
-utilis&eacute;e pour obtenir des r&eacute;sultats similaires.</seealso>
+<seealso>La directive <directive module="core"
+type="section">If</directive> permet d'obtenir des r&eacute;sultats
+similaires.</seealso>
 <seealso><module>mod_filter</module></seealso>
 </directivesynopsis>
 

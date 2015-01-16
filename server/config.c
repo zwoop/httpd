@@ -376,12 +376,6 @@ static int invoke_filter_init(request_rec *r, ap_filter_t *filters)
     return OK;
 }
 
-/*
- * TODO: Move this to an appropriate include file and possibly prefix it
- * with AP_.
- */
-#define DEFAULT_HANDLER_NAME ""
-
 AP_CORE_DECLARE(int) ap_invoke_handler(request_rec *r)
 {
     const char *handler;
@@ -430,7 +424,7 @@ AP_CORE_DECLARE(int) ap_invoke_handler(request_rec *r)
             }
         }
         else {
-            handler = DEFAULT_HANDLER_NAME;
+            handler = AP_DEFAULT_HANDLER_NAME;
         }
 
         r->handler = handler;
@@ -1613,11 +1607,7 @@ AP_DECLARE(const char *) ap_soak_end_container(cmd_parms *cmd, char *directive)
 
     while((rc = ap_varbuf_cfg_getline(&vb, cmd->config_file, max_len))
           == APR_SUCCESS) {
-#if RESOLVE_ENV_PER_TOKEN
         args = vb.buf;
-#else
-        args = ap_resolve_env(cmd->temp_pool, vb.buf);
-#endif
 
         cmd_name = ap_getword_conf(cmd->temp_pool, &args);
         if (cmd_name[0] == '<') {

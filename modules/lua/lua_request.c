@@ -28,9 +28,12 @@
 #include "apr_thread_mutex.h"
 #include "apr_tables.h"
 #include "util_cookies.h"
+
+#define APR_WANT_BYTEFUNC
 #include "apr_want.h"
 
-extern apr_thread_mutex_t* lua_ivm_mutex;
+extern apr_global_mutex_t* lua_ivm_mutex;
+extern apr_shm_t *lua_ivm_shm;
 
 APLOG_USE_MODULE(lua);
 #define POST_MAX_VARS 500
@@ -41,7 +44,7 @@ APLOG_USE_MODULE(lua);
 
 typedef char *(*req_field_string_f) (request_rec * r);
 typedef int (*req_field_int_f) (request_rec * r);
-typedef apr_table_t *(*req_field_apr_table_f) (request_rec * r);
+typedef req_table_t *(*req_field_apr_table_f) (request_rec * r);
 
 
 void ap_lua_rstack_dump(lua_State *L, request_rec *r, const char *msg)
@@ -169,6 +172,55 @@ static int req_aprtable2luatable_cb(void *l, const char *key,
     return 1;
 }
 
+/* helper callback for req_parseargs */
+static int req_aprtable2luatable_cb_len(void *l, const char *key,
+                                    const char *value, size_t len)
+{
+    int t;
+    lua_State *L = (lua_State *) l;     /* [table<s,t>, table<s,s>] */
+    /* rstack_dump(L, RRR, "start of cb"); */
+    /* L is [table<s,t>, table<s,s>] */
+    /* build complex */
+
+    lua_getfield(L, -1, key);   /* [VALUE, table<s,t>, table<s,s>] */
+    /* rstack_dump(L, RRR, "after getfield"); */
+    t = lua_type(L, -1);
+    switch (t) {
+    case LUA_TNIL:
+    case LUA_TNONE:{
+            lua_pop(L, 1);      /* [table<s,t>, table<s,s>] */
+            lua_newtable(L);    /* [array, table<s,t>, table<s,s>] */
+            lua_pushnumber(L, 1);       /* [1, array, table<s,t>, table<s,s>] */
+            lua_pushlstring(L, value, len);   /* [string, 1, array, table<s,t>, table<s,s>] */
+            lua_settable(L, -3);        /* [array, table<s,t>, table<s,s>]  */
+            lua_setfield(L, -2, key);   /* [table<s,t>, table<s,s>] */
+            break;
+        }
+    case LUA_TTABLE:{
+            /* [array, table<s,t>, table<s,s>] */
+            int size = lua_objlen(L, -1);
+            lua_pushnumber(L, size + 1);        /* [#, array, table<s,t>, table<s,s>] */
+            lua_pushlstring(L, value, len);   /* [string, #, array, table<s,t>, table<s,s>] */
+            lua_settable(L, -3);        /* [array, table<s,t>, table<s,s>] */
+            lua_setfield(L, -2, key);   /* [table<s,t>, table<s,s>] */
+            break;
+        }
+    }
+
+    /* L is [table<s,t>, table<s,s>] */
+    /* build simple */
+    lua_getfield(L, -2, key);   /* [VALUE, table<s,s>, table<s,t>] */
+    if (lua_isnoneornil(L, -1)) {       /* only set if not already set */
+        lua_pop(L, 1);          /* [table<s,s>, table<s,t>]] */
+        lua_pushlstring(L, value, len);       /* [string, table<s,s>, table<s,t>] */
+        lua_setfield(L, -3, key);       /* [table<s,s>, table<s,t>]  */
+    }
+    else {
+        lua_pop(L, 1);
+    }
+    return 1;
+}
+
 
 /*
  =======================================================================================================================
@@ -176,7 +228,8 @@ static int req_aprtable2luatable_cb(void *l, const char *key,
     requests. Used for multipart POST data.
  =======================================================================================================================
  */
-static int lua_read_body(request_rec *r, const char **rbuf, apr_off_t *size)
+static int lua_read_body(request_rec *r, const char **rbuf, apr_off_t *size,
+        apr_off_t maxsize)
 {
     int rc = OK;
 
@@ -191,6 +244,9 @@ static int lua_read_body(request_rec *r, const char **rbuf, apr_off_t *size)
         apr_off_t length = r->remaining;
         /*~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
 
+        if (maxsize != 0 && length > maxsize) {
+            return APR_EINCOMPLETE; /* Only room for incomplete data chunk :( */
+        }
         *rbuf = (const char *) apr_pcalloc(r->pool, (apr_size_t) (length + 1));
         *size = length;
         while ((len_read = ap_get_client_block(r, argsbuffer, sizeof(argsbuffer))) > 0) {
@@ -243,6 +299,8 @@ static apr_status_t lua_write_body(request_rec *r, apr_file_t *file, apr_off_t *
                                      &written);
             if (written != rsize || rc != OK)
                 return APR_ENOSPC;
+            if (rc != APR_SUCCESS)
+                return rc;
             rpos += rsize;
         }
     }
@@ -261,6 +319,21 @@ static int req_parseargs(lua_State *L)
     apr_table_do(req_aprtable2luatable_cb, L, form_table, NULL);
     return 2;                   /* [table<string, string>, table<string, array<string>>] */
 }
+
+/* ap_lua_binstrstr: Binary strstr function for uploaded data with NULL bytes */
+static char* ap_lua_binstrstr (const char * haystack, size_t hsize, const char* needle, size_t nsize)
+{
+    size_t p;
+    if (haystack == NULL) return NULL;
+    if (needle == NULL) return NULL;
+    if (hsize < nsize) return NULL;
+    for (p = 0; p <= (hsize - nsize); ++p) {
+        if (memcmp(haystack + p, needle, nsize) == 0) {
+            return (char*) (haystack + p);
+        }
+    }
+    return NULL;
+} 
 
 /* r:parsebody(): Parses regular (url-enocded) or multipart POST data and returns two tables*/
 static int req_parsebody(lua_State *L)
@@ -285,7 +358,7 @@ static int req_parsebody(lua_State *L)
         int         i;
         size_t      vlen = 0;
         size_t      len = 0;
-        if (lua_read_body(r, &data, (apr_off_t*) &size) != OK) {
+        if (lua_read_body(r, &data, (apr_off_t*) &size, max_post_size) != OK) {
             return 2;
         }
         len = strlen(multipart);
@@ -293,15 +366,15 @@ static int req_parsebody(lua_State *L)
         for
         (
             start = strstr((char *) data, multipart);
-            start != start + size;
+            start != NULL;
             start = end
         ) {
             i++;
             if (i == POST_MAX_VARS) break;
-            end = strstr((char *) (start + 1), multipart);
-            if (!end) end = start + size;
             crlf = strstr((char *) start, "\r\n\r\n");
             if (!crlf) break;
+            end = ap_lua_binstrstr(crlf, (size - (crlf - data)), multipart, len);
+            if (end == NULL) break;
             key = (char *) apr_pcalloc(r->pool, 256);
             filename = (char *) apr_pcalloc(r->pool, 256);
             vlen = end - crlf - 8;
@@ -311,7 +384,7 @@ static int req_parsebody(lua_State *L)
                 "Content-Disposition: form-data; name=\"%255[^\"]\"; filename=\"%255[^\"]\"",
                 key, filename);
             if (strlen(key)) {
-                req_aprtable2luatable_cb(L, key, buffer);
+                req_aprtable2luatable_cb_len(L, key, buffer, vlen);
             }
         }
     }
@@ -360,7 +433,7 @@ static int lua_ap_requestbody(lua_State *L)
         if (!filename) {
             const char     *data;
 
-            if (lua_read_body(r, &data, &size) != OK)
+            if (lua_read_body(r, &data, &size, maxSize) != OK)
                 return (0);
 
             lua_pushlstring(L, data, (size_t) size);
@@ -589,29 +662,49 @@ static int req_assbackwards_field(request_rec *r)
     return r->assbackwards;
 }
 
-static apr_table_t* req_headers_in(request_rec *r)
+static req_table_t *req_headers_in(request_rec *r)
 {
-    return r->headers_in;
+  req_table_t *t = apr_palloc(r->pool, sizeof(req_table_t));
+  t->r = r;
+  t->t = r->headers_in;
+  t->n = "headers_in";
+  return t;
 }
 
-static apr_table_t* req_headers_out(request_rec *r)
+static req_table_t *req_headers_out(request_rec *r)
 {
-    return r->headers_out;
+  req_table_t *t = apr_palloc(r->pool, sizeof(req_table_t));
+  t->r = r;
+  t->t = r->headers_out;
+  t->n = "headers_out";
+  return t;
 }
 
-static apr_table_t* req_err_headers_out(request_rec *r)
+static req_table_t *req_err_headers_out(request_rec *r)
 {
-  return r->err_headers_out;
+  req_table_t *t = apr_palloc(r->pool, sizeof(req_table_t));
+  t->r = r;
+  t->t = r->err_headers_out;
+  t->n = "err_headers_out";
+  return t;
 }
 
-static apr_table_t* req_subprocess_env(request_rec *r)
+static req_table_t *req_subprocess_env(request_rec *r)
 {
-  return r->subprocess_env;
+  req_table_t *t = apr_palloc(r->pool, sizeof(req_table_t));
+  t->r = r;
+  t->t = r->subprocess_env;
+  t->n = "subprocess_env";
+  return t;
 }
 
-static apr_table_t* req_notes(request_rec *r)
+static req_table_t *req_notes(request_rec *r)
 {
-  return r->notes;
+  req_table_t *t = apr_palloc(r->pool, sizeof(req_table_t));
+  t->r = r;
+  t->t = r->notes;
+  t->n = "notes";
+  return t;
 }
 
 static int req_ssl_is_https_field(request_rec *r)
@@ -647,7 +740,14 @@ static const char* lua_ap_allowoverrides(request_rec* r)
 {
     int opts;
     opts = ap_allow_overrides(r);
-    return apr_psprintf(r->pool, "%s %s %s %s %s %s", (opts&OR_NONE) ? "None" : "", (opts&OR_LIMIT) ? "Limit" : "", (opts&OR_OPTIONS) ? "Options" : "", (opts&OR_FILEINFO) ? "FileInfo" : "", (opts&OR_AUTHCFG) ? "AuthCfg" : "", (opts&OR_INDEXES) ? "Indexes" : "" );
+    if ( (opts & OR_ALL) == OR_ALL) {
+        return "All";
+    }
+    else if (opts == OR_NONE) {
+        return "None";
+    }
+    return apr_psprintf(r->pool, "%s %s %s %s %s", (opts & OR_LIMIT) ? "Limit" : "", (opts & OR_OPTIONS) ? "Options" : "", (opts & OR_FILEINFO) ? "FileInfo" : "", (opts & OR_AUTHCFG) ? "AuthCfg" : "", (opts & OR_INDEXES) ? "Indexes" : "" );
+    
 }
 
 static int lua_ap_started(request_rec* r) 
@@ -1145,16 +1245,22 @@ static int lua_ap_scoreboard_process(lua_State *L)
  */
 static int lua_ap_scoreboard_worker(lua_State *L)
 {
-    int i,
-        j;
-    worker_score   *ws_record;
+    int i, j;
+    worker_score *ws_record = NULL;
+    request_rec *r = NULL;
 
     luaL_checktype(L, 1, LUA_TUSERDATA);
     luaL_checktype(L, 2, LUA_TNUMBER);
     luaL_checktype(L, 3, LUA_TNUMBER);
+
+    r = ap_lua_check_request_rec(L, 1);
+    if (!r) return 0;
+
     i = lua_tointeger(L, 2);
     j = lua_tointeger(L, 3);
-    ws_record = ap_get_scoreboard_worker_from_indexes(i, j);
+    ws_record = apr_palloc(r->pool, sizeof *ws_record);
+
+    ap_copy_scoreboard_worker(ws_record, i, j);
     if (ws_record) {
         lua_newtable(L);
 
@@ -1726,7 +1832,7 @@ static int req_dispatch(lua_State *L)
     if (rft) {
         switch (rft->type) {
         case APL_REQ_FUNTYPE_TABLE:{
-                apr_table_t *rs;
+                req_table_t *rs;
                 req_field_apr_table_f func = (req_field_apr_table_f)rft->fun;
                 ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(01486)
                               "request_rec->dispatching %s -> apr table",
@@ -1831,21 +1937,23 @@ static int req_debug(lua_State *L)
 static int lua_ivm_get(lua_State *L) 
 {
     const char *key, *raw_key;
+    apr_pool_t *pool;
     lua_ivm_object *object = NULL;
     request_rec *r = ap_lua_check_request_rec(L, 1);
     key = luaL_checkstring(L, 2);
     raw_key = apr_pstrcat(r->pool, "lua_ivm_", key, NULL);
-    apr_thread_mutex_lock(lua_ivm_mutex);
-    apr_pool_userdata_get((void **)&object, raw_key, r->server->process->pool);
+    apr_global_mutex_lock(lua_ivm_mutex);
+    pool = *((apr_pool_t**) apr_shm_baseaddr_get(lua_ivm_shm));
+    apr_pool_userdata_get((void **)&object, raw_key, pool);
     if (object) {
         if (object->type == LUA_TBOOLEAN) lua_pushboolean(L, (int) object->number);
         else if (object->type == LUA_TNUMBER) lua_pushnumber(L, object->number);
         else if (object->type == LUA_TSTRING) lua_pushlstring(L, object->vb.buf, object->size);
-        apr_thread_mutex_unlock(lua_ivm_mutex);
+        apr_global_mutex_unlock(lua_ivm_mutex);
         return 1;
     }
     else {
-        apr_thread_mutex_unlock(lua_ivm_mutex);
+        apr_global_mutex_unlock(lua_ivm_mutex);
         return 0;
     }
 }
@@ -1855,6 +1963,7 @@ static int lua_ivm_set(lua_State *L)
 {
     const char *key, *raw_key;
     const char *value = NULL;
+    apr_pool_t *pool;
     size_t str_len;
     lua_ivm_object *object = NULL;
     request_rec *r = ap_lua_check_request_rec(L, 1);
@@ -1862,11 +1971,12 @@ static int lua_ivm_set(lua_State *L)
     luaL_checkany(L, 3);
     raw_key = apr_pstrcat(r->pool, "lua_ivm_", key, NULL);
     
-    apr_thread_mutex_lock(lua_ivm_mutex);
-    apr_pool_userdata_get((void **)&object, raw_key, r->server->process->pool);
+    apr_global_mutex_lock(lua_ivm_mutex);
+    pool = *((apr_pool_t**) apr_shm_baseaddr_get(lua_ivm_shm));
+    apr_pool_userdata_get((void **)&object, raw_key, pool);
     if (!object) {
-        object = apr_pcalloc(r->server->process->pool, sizeof(lua_ivm_object));
-        ap_varbuf_init(r->server->process->pool, &object->vb, 2);
+        object = apr_pcalloc(pool, sizeof(lua_ivm_object));
+        ap_varbuf_init(pool, &object->vb, 2);
         object->size = 1;
         object->vb_size = 1;
     }
@@ -1884,8 +1994,8 @@ static int lua_ivm_set(lua_State *L)
         memset(object->vb.buf, 0, str_len);
         memcpy(object->vb.buf, value, str_len-1);
     }
-    apr_pool_userdata_set(object, raw_key, NULL, r->server->process->pool);
-    apr_thread_mutex_unlock(lua_ivm_mutex);
+    apr_pool_userdata_set(object, raw_key, NULL, pool);
+    apr_global_mutex_unlock(lua_ivm_mutex);
     return 0;
 }
 
@@ -1905,27 +2015,105 @@ static int lua_get_cookie(lua_State *L)
 
 static int lua_set_cookie(lua_State *L) 
 {
-    const char *key, *value, *out, *strexpires;
-    int secure, expires;
+    const char *key, *value, *out, *path = "", *domain = "";
+    const char *strexpires = "", *strdomain = "", *strpath = "";
+    int secure = 0, expires = 0, httponly = 0;
     char cdate[APR_RFC822_DATE_LEN+1];
     apr_status_t rv;
     request_rec *r = ap_lua_check_request_rec(L, 1);
-    key = luaL_checkstring(L, 2);
-    value = luaL_checkstring(L, 3);
-    secure = 0;
-    if (lua_isboolean(L, 4)) {
-        secure = lua_toboolean(L, 4);
+    
+    /* New >= 2.4.8 method: */
+    if (lua_istable(L, 2)) {
+         
+        /* key */
+        lua_pushstring(L, "key");
+        lua_gettable(L, -2);
+        key = luaL_checkstring(L, -1);
+        lua_pop(L, 1);
+        
+        /* value */
+        lua_pushstring(L, "value");
+        lua_gettable(L, -2);
+        value = luaL_checkstring(L, -1);
+        lua_pop(L, 1);
+        
+        /* expiry */
+        lua_pushstring(L, "expires");
+        lua_gettable(L, -2);
+        expires = luaL_optint(L, -1, 0);
+        lua_pop(L, 1);
+        
+        /* secure */
+        lua_pushstring(L, "secure");
+        lua_gettable(L, -2);
+        if (lua_isboolean(L, -1)) {
+            secure = lua_toboolean(L, -1);
+        }
+        lua_pop(L, 1);
+        
+        /* httponly */
+        lua_pushstring(L, "httponly");
+        lua_gettable(L, -2);
+        if (lua_isboolean(L, -1)) {
+            httponly = lua_toboolean(L, -1);
+        }
+        lua_pop(L, 1);
+        
+        /* path */
+        lua_pushstring(L, "path");
+        lua_gettable(L, -2);
+        path = luaL_optstring(L, -1, "/");
+        lua_pop(L, 1);
+        
+        /* domain */
+        lua_pushstring(L, "domain");
+        lua_gettable(L, -2);
+        domain = luaL_optstring(L, -1, "");
+        lua_pop(L, 1);        
     }
-    expires = luaL_optinteger(L, 5, 0);
-    strexpires = "";
+    /* Old <= 2.4.7 method: */
+    else {
+        key = luaL_checkstring(L, 2);
+        value = luaL_checkstring(L, 3);
+        secure = 0;
+        if (lua_isboolean(L, 4)) {
+            secure = lua_toboolean(L, 4);
+        }
+        expires = luaL_optinteger(L, 5, 0);
+    }
+    
+    /* Calculate expiry if set */
     if (expires > 0) {
         rv = apr_rfc822_date(cdate, apr_time_from_sec(expires));
         if (rv == APR_SUCCESS) {
-            strexpires = apr_psprintf(r->pool, "Expires=%s", cdate);
+            strexpires = apr_psprintf(r->pool, "Expires=%s;", cdate);
         }
     }
-    out = apr_psprintf(r->pool, "%s=%s; %s %s", key, value, secure ? "Secure;" : "", expires ? strexpires : "");
-    apr_table_set(r->headers_out, "Set-Cookie", out);
+    
+    /* Create path segment */
+    if (path != NULL && strlen(path) > 0) {
+        strpath = apr_psprintf(r->pool, "Path=%s;", path);
+    }
+    
+    /* Create domain segment */
+    if (domain != NULL && strlen(domain) > 0) {
+        /* Domain does NOT like quotes in most browsers, so let's avoid that */
+        strdomain = apr_psprintf(r->pool, "Domain=%s;", domain);
+    }
+    
+    /* URL-encode key/value */
+    value = ap_escape_urlencoded(r->pool, value);
+    key = ap_escape_urlencoded(r->pool, key);
+    
+    /* Create the header */
+    out = apr_psprintf(r->pool, "%s=%s; %s %s %s %s %s", key, value, 
+            secure ? "Secure;" : "", 
+            expires ? strexpires : "", 
+            httponly ? "HttpOnly;" : "", 
+            strlen(strdomain) ? strdomain : "", 
+            strlen(strpath) ? strpath : "");
+    
+    apr_table_add(r->err_headers_out, "Set-Cookie", out);
     return 0;
 }
 
@@ -1936,7 +2124,7 @@ static apr_uint64_t ap_ntoh64(const apr_uint64_t *input)
     if (APR_IS_BIGENDIAN) {
         return *input;
     }
-
+    
     data[0] = *input >> 56;
     data[1] = *input >> 48;
     data[2] = *input >> 40;
@@ -1983,13 +2171,13 @@ static int lua_websocket_greet(lua_State *L)
             r->read_chunked = 0;
             ap_rflush(r);
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, 
-                    "Websocket: Upgraded from HTTP to Websocket");
+                          "Websocket: Upgraded from HTTP to Websocket");
             lua_pushboolean(L, 1);
             return 1;
         }
     }
-    ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, 
-                    "Websocket: Upgrade from HTTP to Websocket failed");
+    ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(02666)
+                  "Websocket: Upgrade from HTTP to Websocket failed");
     return 0;
 }
 
@@ -2016,6 +2204,27 @@ static apr_status_t lua_websocket_readbytes(conn_rec* c, char* buffer,
     return rv;
 }
 
+static int lua_websocket_peek(lua_State *L) 
+{
+    apr_status_t rv;
+    apr_bucket_brigade *brigade;
+    
+    request_rec *r = ap_lua_check_request_rec(L, 1);
+    
+    brigade = apr_brigade_create(r->connection->pool, 
+            r->connection->bucket_alloc);
+    rv = ap_get_brigade(r->connection->input_filters, brigade, 
+            AP_MODE_READBYTES, APR_NONBLOCK_READ, 1);
+    if (rv == APR_SUCCESS) {
+        lua_pushboolean(L, 1);
+    }
+    else {
+        lua_pushboolean(L, 0);
+    }
+    apr_brigade_cleanup(brigade);
+    return 1;
+}
+
 static int lua_websocket_read(lua_State *L) 
 {
     apr_socket_t *sock;
@@ -2030,7 +2239,7 @@ static int lua_websocket_read(lua_State *L)
     int plaintext;
     
     
-    request_rec *r = (request_rec *) lua_unboxpointer(L, 1);
+    request_rec *r = ap_lua_check_request_rec(L, 1);
     plaintext = ap_lua_ssl_is_https(r->connection) ? 0 : 1;
 
     
@@ -2098,7 +2307,7 @@ static int lua_websocket_read(lua_State *L)
                 }
             }
             ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, 
-                    "Websocket: Reading %lu (%s) bytes, masking is %s. %s", 
+                    "Websocket: Reading %" APR_SIZE_T_FMT " (%s) bytes, masking is %s. %s", 
                     plen,
                     (payload >= 126) ? "extra payload" : "no extra payload", 
                     mask ? "on" : "off", 
@@ -2133,14 +2342,14 @@ static int lua_websocket_read(lua_State *L)
                         }
                     }
                     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, 
-                    "Websocket: Frame contained %lu bytes, pushed to Lua stack", 
+                    "Websocket: Frame contained %" APR_OFF_T_FMT " bytes, pushed to Lua stack", 
                         at);
                 }
                 else {
                     rv = lua_websocket_readbytes(r->connection, buffer, 
                             remaining);
                     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, 
-                    "Websocket: SSL Frame contained %lu bytes, "\
+                    "Websocket: SSL Frame contained %" APR_SIZE_T_FMT " bytes, "\
                             "pushed to Lua stack", 
                         remaining);
                 }
@@ -2178,7 +2387,7 @@ static int lua_websocket_write(lua_State *L)
     size_t len;
     int raw = 0;
     char prelude;
-    request_rec *r = (request_rec *) lua_unboxpointer(L, 1);
+    request_rec *r = ap_lua_check_request_rec(L, 1);
     
     if (lua_isboolean(L, 3)) {
         raw = lua_toboolean(L, 3);
@@ -2227,7 +2436,7 @@ static int lua_websocket_close(lua_State *L)
 {
     apr_socket_t *sock;
     char prelude[2];
-    request_rec *r = (request_rec *) lua_unboxpointer(L, 1);
+    request_rec *r = ap_lua_check_request_rec(L, 1);
     
     sock = ap_get_conn_socket(r->connection);
     
@@ -2240,10 +2449,8 @@ static int lua_websocket_close(lua_State *L)
     apr_socket_close(sock);
     r->output_filters = NULL;
     r->connection->keepalive = AP_CONN_CLOSE;
-    ap_destroy_sub_req(r);
-    return DONE;
+    return 0;
 }
-
 
 static int lua_websocket_ping(lua_State *L) 
 {
@@ -2280,7 +2487,7 @@ static int lua_websocket_ping(lua_State *L)
         }
         if (plen > 0) {
             ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, 
-                        "Websocket: Reading %lu bytes of PONG", plen);
+                        "Websocket: Reading %" APR_SIZE_T_FMT " bytes of PONG", plen);
             return 1;
         }
         if (mask) {
@@ -2655,14 +2862,15 @@ void ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
                  makefun(&lua_websocket_greet, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "wsread", APR_HASH_KEY_STRING,
                  makefun(&lua_websocket_read, APL_REQ_FUNTYPE_LUACFUN, p));
+    apr_hash_set(dispatch, "wspeek", APR_HASH_KEY_STRING,
+                 makefun(&lua_websocket_peek, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "wswrite", APR_HASH_KEY_STRING,
                  makefun(&lua_websocket_write, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "wsclose", APR_HASH_KEY_STRING,
                  makefun(&lua_websocket_close, APL_REQ_FUNTYPE_LUACFUN, p));
     apr_hash_set(dispatch, "wsping", APR_HASH_KEY_STRING,
                  makefun(&lua_websocket_ping, APL_REQ_FUNTYPE_LUACFUN, p));
-
-
+    
     lua_pushlightuserdata(L, dispatch);
     lua_setfield(L, LUA_REGISTRYINDEX, "Apache2.Request.dispatch");
 
@@ -2694,12 +2902,17 @@ void ap_lua_load_request_lmodule(lua_State *L, apr_pool_t *p)
 
 void ap_lua_push_connection(lua_State *L, conn_rec *c)
 {
+    req_table_t *t;
     lua_boxpointer(L, c);
     luaL_getmetatable(L, "Apache2.Connection");
     lua_setmetatable(L, -2);
     luaL_getmetatable(L, "Apache2.Connection");
 
-    ap_lua_push_apr_table(L, c->notes);
+    t = apr_pcalloc(c->pool, sizeof(req_table_t));
+    t->t = c->notes;
+    t->r = NULL;
+    t->n = "notes";
+    ap_lua_push_apr_table(L, t);
     lua_setfield(L, -2, "notes");
 
     lua_pushstring(L, c->client_ip);

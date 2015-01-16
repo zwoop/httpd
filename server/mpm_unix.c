@@ -579,7 +579,7 @@ static apr_status_t podx_signal_internal(ap_pod_t *pod,
 
     rv = apr_file_write(pod->pod_out, &char_of_death, &one);
     if (rv != APR_SUCCESS) {
-        ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(2404)
+        ap_log_error(APLOG_MARK, APLOG_WARNING, rv, ap_server_conf, APLOGNO(02404)
                      "write pipe_of_death");
     }
     return rv;
@@ -742,7 +742,12 @@ void ap_mpm_pod_killpg(ap_pod_t *pod, int num)
      * readers stranded (a number of them could be tied up for
      * a while serving time-consuming requests)
      */
+    /* Recall: we only worry about IDLE child processes here */
     for (i = 0; i < num && rv == APR_SUCCESS; i++) {
+        if (ap_scoreboard_image->servers[i][0].status != SERVER_READY ||
+            ap_scoreboard_image->servers[i][0].pid == 0) {
+            continue;
+        }
         rv = dummy_connection(pod);
     }
 }

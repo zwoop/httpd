@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>站点导航 - Apache HTTP 服务器</title>
+<title>站点导航 - Apache HTTP 服务器 版本 2.4</title>
 <link href="./style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="./style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="./style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="./style/css/prettify.css" />
-<script src="./style/scripts/prettify.js" type="text/javascript">
+<script src="./style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="./images/favicon.ico" rel="shortcut icon" /></head>
@@ -182,6 +182,7 @@
 <li><a href="mod/mod_authn_dbm.html">Apache 模块 mod_authn_dbm</a></li>
 <li><a href="mod/mod_authn_file.html">Apache 模块 mod_authn_file</a></li>
 <li><a href="mod/mod_authn_socache.html">Apache 模块 mod_authn_socache</a></li>
+<li><a href="mod/mod_authnz_fcgi.html">Apache 模块 mod_authnz_fcgi</a></li>
 <li><a href="mod/mod_authnz_ldap.html">Apache 模块 mod_authnz_ldap</a></li>
 <li><a href="mod/mod_authz_core.html">Apache 模块 mod_authz_core</a></li>
 <li><a href="mod/mod_authz_dbd.html">Apache 模块 mod_authz_dbd</a></li>
@@ -210,7 +211,7 @@
 <li><a href="mod/mod_dumpio.html">Apache 模块 mod_dumpio</a></li>
 <li><a href="mod/mod_echo.html">Apache 模块 mod_echo</a></li>
 <li><a href="mod/mod_env.html">Apache 模块 mod_env</a></li>
-<li><a href="mod/mod_example.html">Apache 模块 mod_example</a></li>
+<li><a href="mod/mod_example_hooks.html">Apache 模块 mod_example_hooks</a></li>
 <li><a href="mod/mod_expires.html">Apache 模块 mod_expires</a></li>
 <li><a href="mod/mod_ext_filter.html">Apache 模块 mod_ext_filter</a></li>
 <li><a href="mod/mod_file_cache.html">Apache 模块 mod_file_cache</a></li>
@@ -330,7 +331,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/sitemap.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />基于 <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> 许可证.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />基于 <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> 许可证.</p>
 <p class="menu"><a href="./mod/">模块</a> | <a href="./mod/directives.html">指令</a> | <a href="http://wiki.apache.org/httpd/FAQ">常见问题</a> | <a href="./glossary.html">术语</a> | <a href="./sitemap.html">网站导航</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -236,10 +236,8 @@ static int ap_expr_eval_comp(ap_expr_eval_ctx_t *ctx, const ap_expr_t *node)
                 do {
                     const ap_expr_t *val = e2->node_arg1;
                     AP_DEBUG_ASSERT(e2->node_op == op_ListElement);
-                    if (strcmp(needle, ap_expr_eval_word(ctx, val)) == 0) {
+                    if (strcmp(needle, ap_expr_eval_word(ctx, val)) == 0)
                         return 1;
-                        break;
-                    }
                     e2 = e2->node_arg2;
                 } while (e2 != NULL);
             }
@@ -1396,13 +1394,13 @@ static const char *request_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
 }
 
 static const char *req_header_var_names[] = {
-    "HTTP_USER_AGENT",
-    "HTTP_PROXY_CONNECTION",
-    "HTTP_REFERER",
-    "HTTP_COOKIE",
-    "HTTP_FORWARDED",
-    "HTTP_HOST",
-    "HTTP_ACCEPT",
+    "HTTP_USER_AGENT",       /* 0 */
+    "HTTP_PROXY_CONNECTION", /* 1 */
+    "HTTP_REFERER",          /* 2 */
+    "HTTP_COOKIE",           /* 3 */
+    "HTTP_FORWARDED",        /* 4 */
+    "HTTP_HOST",             /* 5 */
+    "HTTP_ACCEPT",           /* 6 */
     NULL
 };
 
@@ -1422,7 +1420,7 @@ static const char *req_header_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
     int index = (varname - req_header_var_names);
     const char *name;
 
-    AP_DEBUG_ASSERT(index < 6);
+    AP_DEBUG_ASSERT(index < 7);
     if (!ctx->r)
         return "";
 
@@ -1475,7 +1473,7 @@ static const char *misc_var_fn(ap_expr_eval_ctx_t *ctx, const void *data)
     case 8:
         return ap_get_server_banner();
     case 9:
-        return apr_itoa(ctx->p, MODULE_MAGIC_NUMBER);
+        return apr_itoa(ctx->p, MODULE_MAGIC_NUMBER_MAJOR);
     default:
         ap_assert(0);
     }

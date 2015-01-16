@@ -101,7 +101,7 @@
     HTTP header with a 111 response code.</p>
 
     <p><module>mod_cache</module> requires the services of one or more
-    storage management modules. One storage management module is included in
+    storage management modules. The following storage management modules are included in
     the base Apache distribution:</p>
     <dl>
     <dt><module>mod_cache_disk</module></dt>
@@ -162,7 +162,7 @@ LoadModule cache_module modules/mod_cache.so
         CacheDirLevels 5
         CacheDirLength 3
     &lt;/IfModule&gt;
-    
+
     # When acting as a proxy, don't cache the list of security updates
     CacheDisable http://security.update.server/update-list/
 &lt;/IfModule&gt;
@@ -344,8 +344,10 @@ CustomLog invalidated-requests.log common env=cache-invalidate
 manager</description>
 <syntax>CacheEnable <var>cache_type</var> [<var>url-string</var>]</syntax>
 <contextlist><context>server config</context><context>virtual host</context>
-<context>directory</context>
-</contextlist>
+<context>directory</context></contextlist>
+<compatibility>A url-string of '/' applied to forward proxy content in 2.2 and
+ earlier.</compatibility>
+
 
 <usage>
     <p>The <directive>CacheEnable</directive> directive instructs
@@ -372,9 +374,8 @@ manager</description>
     <directive type="section">LocationMatch</directive> sections are processed
     before globally defined <directive>CacheEnable</directive> directives.</p>
 
-    <p>When acting as a forward proxy server, <var>url-string</var> can
-    also be used to specify remote sites and proxy protocols which
-    caching should be enabled for.</p>
+    <p>When acting as a forward proxy server, <var>url-string</var> must
+    minimally begin with a protocol for which caching should be enabled.</p>
 
     <highlight language="config">
 # Cache content (normal handler only)
@@ -389,13 +390,13 @@ CacheQuickHandler off
     CacheEnable disk
 &lt;/LocationMatch&gt;
 
-# Cache proxied url's (normal or quick handler)
+# Cache all but forward proxy url's (normal or quick handler)
 CacheEnable  disk  /
 
 # Cache FTP-proxied url's (normal or quick handler)
 CacheEnable  disk  ftp://
 
-# Cache content from www.example.org (normal or quick handler)
+# Cache forward proxy content from www.example.org (normal or quick handler)
 CacheEnable  disk  http://www.example.org/
     </highlight>
 
@@ -967,8 +968,8 @@ AddOutputFilterByType CACHE;INCLUDES;DEFLATE text/html
   <p>When the <directive module="mod_cache">CacheHeader</directive> directive
   is switched on, an <strong>X-Cache</strong> header will be added to the response
   with the cache status of this response. If the normal handler is used, this
-  directive may appear within a <directive module="core">&lt;Directory&gt;</directive>
-  or <directive module="core">&lt;Location&gt;</directive> directive. If the quick
+  directive may appear within a <directive module="core" type="section">Directory</directive>
+  or <directive module="core" type="section">Location</directive> directive. If the quick
   handler is used, this directive must appear within a server or virtual host
   context, otherwise the setting will be ignored.</p>
 
@@ -1016,8 +1017,8 @@ CacheHeader on
   used by the service and client.</p>
 
   <p>If the normal handler is used, this directive may appear within a
-  <directive module="core">&lt;Directory&gt;</directive> or
-  <directive module="core">&lt;Location&gt;</directive> directive. If the quick handler
+  <directive module="core" type="section">Directory</directive> or
+  <directive module="core" type="section">Location</directive> directive. If the quick handler
   is used, this directive must appear within a server or virtual host context, otherwise
   the setting will be ignored.</p>
 

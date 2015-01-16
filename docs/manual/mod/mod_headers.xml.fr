@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1540313 -->
+<!-- English Revision: 1643445 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -84,8 +84,9 @@ tardif</title>
     pr&eacute;coces ne peuvent &ecirc;tre d&eacute;finis que dans un contexte de serveur
     principal ou de serveur virtuel. Les directives pr&eacute;coces ne peuvent
     pas d&eacute;pendre d'un chemin de requ&ecirc;te, si bien qu'elles &eacute;choueront
-    dans des contextes tels que <code>&lt;Directory&gt;</code> ou
-    <code>&lt;Location&gt;</code>.</p>
+    dans des contextes tels que <directive type="section"
+    module="core">Directory</directive> ou <directive type="section"
+    module="core">Location</directive>.</p>
 </section>
 
 <section id="examples"><title>Exemples</title>
@@ -205,19 +206,31 @@ Header merge Cache-Control no-store env=NO_STORE
           Header set Set-Cookie testcookie "expr=-z %{req:Cookie}"
         </highlight>
       </li>
+      <li>
+        Ajoute un en-t&ecirc;te de mise en cache pour les r&eacute;ponses avec un
+	code d'&eacute;tat HTTP de 200
+        <highlight language="config">
+          Header append Cache-Control s-maxage=600 "expr=%{REQUEST_STATUS} == 200"
+        </highlight>
+      </li>
+
     </ol>
 </section>
 
 <directivesynopsis>
 <name>RequestHeader</name>
 <description>Configure les en-t&ecirc;tes d'une requ&ecirc;te HTTP</description>
-<syntax>RequestHeader add|append|edit|edit*|merge|set|unset
-<var>en-t&ecirc;te</var> [<var>valeur</var>] [<var>remplacement</var>]
-[early|env=[!]<var>variable</var>]|expr=<var>expression</var>]
+<syntax>RequestHeader add|append|edit|edit*|merge|set|setifempty|unset
+<var>en-t&ecirc;te</var> [[expr=]<var>valeur</var>
+[<var>remplacement</var>]
+[early|env=[!]<var>variable</var>|expr=<var>expression</var>]]
 </syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context></contextlist>
 <override>FileInfo</override>
+<compatibility>SetIfEmpty est disponible depuis la version 2.4.7 du
+serveur HTTP Apache ; le param&egrave;tre expr=valeur a &eacute;t&eacute; introduit avec la
+version 2.4.10</compatibility>
 
 <usage>
     <p>Cette directive permet de remplacer, fusionner, modifier ou
@@ -243,6 +256,7 @@ Header merge Cache-Control no-store env=NO_STORE
     m&eacute;thode HTTP standard permettant d'affecter plusieurs valeurs &agrave; un
     en-t&ecirc;te.</dd>
 
+    <dt><code>edit</code></dt>
     <dt><code>edit*</code></dt>
     <dd>Si l'en-t&ecirc;te existe, sa valeur est modifi&eacute;e en fonction d'une
     <glossary ref="regex">expression rationnelle</glossary> de type
@@ -274,7 +288,8 @@ Header merge Cache-Control no-store env=NO_STORE
 
     <dt><code>setifempty</code></dt>
     <dd>L'en-t&ecirc;te est d&eacute;fini, mais seulement s'il n'existe
-    aucun en-t&ecirc;te avec le m&ecirc;me nom.</dd>
+    aucun en-t&ecirc;te avec le m&ecirc;me nom.<br />
+    Disponible depuis la version 2.4.7 du serveur HTTP Apache.</dd>
 
     <dt><code>unset</code></dt>
     <dd>L'en-t&ecirc;te est supprim&eacute; s'il existe. Si plusieurs en-t&ecirc;tes
@@ -330,15 +345,17 @@ Header merge Cache-Control no-store env=NO_STORE
 <directivesynopsis>
 <name>Header</name>
 <description>Configure les en-t&ecirc;tes d'une r&eacute;ponse HTTP</description>
-<syntax>Header [<var>condition</var>] add|append|echo|edit|edit*|merge|set|unset|note
-<var>en-t&ecirc;te</var> [<var>valeur</var>] [<var>remplacement</var>]
-[early|env=[!]<var>variable</var>]|expr=<var>expression</var>]
+<syntax>Header [<var>condition</var>] add|append|echo|edit|edit*|merge|set|setifempty|unset|note
+<var>en-t&ecirc;te</var> [[expr=]<var>valeur</var>
+[<var>remplacement</var>]
+[early|env=[!]<var>variable</var>|expr=<var>expression</var>]]
 </syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context></contextlist>
 <override>FileInfo</override>
-<compatibility>La condition par d&eacute;faut est temporairement pass&eacute;e
-&agrave; "always" dans les version 2.3.9 et 2.3.10</compatibility>
+<compatibility>SetIfEmpty est disponible depuis la version 2.4.7 du
+serveur HTTP Apache ; le param&egrave;tre expr=valeur a &eacute;t&eacute; introduit avec la
+version 2.4.10</compatibility>
 
 <usage>
     <p>Cette directive permet de remplacer, fusionner, ou
@@ -349,24 +366,27 @@ Header merge Cache-Control no-store env=NO_STORE
 
     <p>L'argument optionnel <var>condition</var> permet de d&eacute;terminer
     sur quelle table interne d'en-t&ecirc;tes de r&eacute;ponses cette directive va
-    op&eacute;rer. D'autres composants du serveur peuvent avoir stock&eacute; leurs
-    en-t&ecirc;tes de r&eacute;ponses dans la table correspondant &agrave;
-    <code>onsuccess</code> ou dans celle correspondant &agrave;
-    <code>always</code>. Dans ce contexte, "Always" fait r&eacute;f&eacute;rence au
-    choix d'envoyer les en-t&ecirc;tes que vous ajoutez aux r&eacute;ponses, qu'elle
-    soient avec succ&egrave;s ou &eacute;chou&eacute;es ; par contre, si votre action est une
-    fonction d'un en-t&ecirc;te existant, vous devrez lire la documentation de
-    mani&egrave;re plus approfondie car dans ce cas, les choses se compliquent.</p>
+    op&eacute;rer. En d&eacute;pit du nom, la valeur par d&eacute;faut de
+    <code>onsuccess</code> ne limite <em>pas</em> une <var>action</var>
+    aux r&eacute;ponses avec un code d'&eacute;tat de 2xx. Les en-t&ecirc;tes d&eacute;finis sous
+    cette condition sont encore utilis&eacute;s quand par exemple une requ&ecirc;te
+    est mandat&eacute;e ou g&eacute;n&eacute;r&eacute;e par un programme CGI avec <em>succ&egrave;s</em>,
+    et ceci m&ecirc;me dans le cas o&ugrave; ils ont g&eacute;n&eacute;r&eacute; un code d'&eacute;chec.</p>
 
-    <p>Vous pouvez avoir &agrave; changer la valeur par d&eacute;faut
-    <code>onsuccess</code> en <code>always</code> dans des circonstances
-    similaires &agrave; celles expos&eacute;es plus loin. Notez aussi que la r&eacute;p&eacute;tition
+    <p>Lorsque votre action est une fonction agissant sur un en-t&ecirc;te
+    existant, vous pourrez &ecirc;tre amen&eacute; &agrave; sp&eacute;cifier une condition
+    <code>always</code>, en fonction de la table interne dans laquelle
+    l'en-t&ecirc;te original a &eacute;t&eacute; d&eacute;fini. La table qui correspond &agrave;
+    <code>always</code> est utilis&eacute;e pour les r&eacute;ponses d'erreur g&eacute;n&eacute;r&eacute;es
+    localement ainsi que pour les r&eacute;ponses qui ont abouti.
+     Notez aussi que la r&eacute;p&eacute;tition
     de cette directive avec les deux conditions peut &ecirc;tre pertinente
     dans certains sc&eacute;narios, car <code>always</code> n'englobe pas
     <code>onsuccess</code> en ce qui concerne les en-t&ecirc;tes existants :</p>
 
     <ul>
-       <li>Vous ajoutez un en-t&ecirc;te &agrave; une r&eacute;ponse &eacute;chou&eacute;e (non-2xx),
+       <li>Vous ajoutez un en-t&ecirc;te &agrave; une r&eacute;ponse
+       g&eacute;n&eacute;r&eacute;e localement et &eacute;chou&eacute;e (non-2xx),
        une redirection par exemple, et dans ce cas, seule la table
        correspondant &agrave; <code>always</code> est utilis&eacute;e dans la r&eacute;ponse
        d&eacute;finitive.</li>
@@ -378,6 +398,12 @@ Header merge Cache-Control no-store env=NO_STORE
        composant du serveur, mais cet en-t&ecirc;te n'est pas trouv&eacute; par la
        condition par d&eacute;faut <code>onsuccess</code>.</li>
     </ul>
+
+    <p>Outre le param&egrave;tre <var>condition</var> d&eacute;crit ci-dessus, vous
+    pouvez limiter une action en fonction de codes d'&eacute;tat HTTP, par
+    exemple pour les requ&ecirc;tes mandat&eacute;es ou g&eacute;n&eacute;r&eacute;es par un programme
+    CGI. Voir l'exemple qui utilise %{REQUEST_STATUS} dans la section
+    ci-dessus.</p>
 
     <p>L'action que cette directive provoque est d&eacute;termin&eacute;e par le
     premier argument (ou par le second argument si une
@@ -413,8 +439,7 @@ Header merge Cache-Control no-store env=NO_STORE
     <glossary ref="regex">expression rationnelle</glossary>, et
     l'argument <var>remplacement</var> une cha&icirc;ne de caract&egrave;res de
     remplacement qui peut contenir des r&eacute;f&eacute;rences
-    arri&egrave;res ou des sp&eacute;cificateurs de format. La forme
-    <code>edit</code> n'effectuera une
+    arri&egrave;res ou des sp&eacute;cificateurs de format. La forme <code>edit</code> n'effectuera une
     recherche/remplacement qu'une seule fois dans la valeur de
     l'en-t&ecirc;te, alors que la forme <code>edit*</code> en effectuera autant
     que le nombre d'apparition de la cha&icirc;ne &agrave; remplacer.</dd>
@@ -438,7 +463,8 @@ Header merge Cache-Control no-store env=NO_STORE
 
     <dt><code>setifempty</code></dt>
     <dd>L'en-t&ecirc;te est d&eacute;fini, mais seulement s'il n'existe
-    aucun en-t&ecirc;te avec le m&ecirc;me nom.</dd>
+    aucun en-t&ecirc;te avec le m&ecirc;me nom.<br />
+    Disponible depuis la version 2.4.7 du serveur HTTP Apache.</dd>
 
     <dt><code>unset</code></dt>
     <dd>L'en-t&ecirc;te est supprim&eacute; s'il existe. Si plusieurs en-t&ecirc;tes
@@ -448,11 +474,12 @@ Header merge Cache-Control no-store env=NO_STORE
     <dt><code>note</code></dt>
     <dd>La valeur de l'<var>en-t&ecirc;te</var> consid&eacute;r&eacute; est copi&eacute;e dans une
     note interne dont le nom est sp&eacute;cifi&eacute; via l'argument
-    <var>valeur</var>. Ceci permet d'enregistrer la valeur d'un en-t&ecirc;te
+    <var>valeur</var>. Ceci permet de journaliser la valeur d'un en-t&ecirc;te
     envoy&eacute; par un programme CGI ou une ressource mandat&eacute;e, m&ecirc;me s'il
-    est pr&eacute;vu de l'effacer.</dd>
+    est pr&eacute;vu de l'effacer.<br />
+    Disponible &agrave; partir de la version 2.4.7 du serveur HTTP Apache.</dd>
 
-    </dl>
+    </dl>    
 
     <p>Cet argument est suivi d'un nom d'<var>en-t&ecirc;te</var> qui peut se
     terminer par un caract&egrave;re ':', mais ce n'est pas obligatoire. La
@@ -467,8 +494,11 @@ Header merge Cache-Control no-store env=NO_STORE
     argument suivant. Si <var>valeur</var> contient des espaces, elle
     doit &ecirc;tre entour&eacute;e de guillemets. <var>valeur</var> peut &ecirc;tre une
     cha&icirc;ne de caract&egrave;res, une cha&icirc;ne contenant des sp&eacute;cificateurs de
-    format, ou une combinaison des deux. <var>valeur</var> supporte les
-    sp&eacute;cificateurs de format suivants :</p>
+    format propres &agrave; <module>mod_headers</module> (et des caract&egrave;res
+    litt&eacute;raux), ou une expression  <a href="../expr.html">ap_expr</a>
+    pr&eacute;fix&eacute;e par <em>expr=</em>.</p>
+    
+    <p><var>valeur</var> supporte les sp&eacute;cificateurs de format suivants :</p>
 
     <table border="1" style="zebra">
     <columnspec><column width=".25"/><column width=".75"/></columnspec>
@@ -489,24 +519,26 @@ Header merge Cache-Control no-store env=NO_STORE
 	valeur est exprim&eacute;e en microsecondes.</td></tr>
 
     <tr><td><code>%l</code></td>
-        <td>La charge courante du serveur. Ce sont les valeurs fournies
-	par <code>getloadavg()</code> qui repr&eacute;sentent la charge
-	courante, ainsi que la charge moyenne pendant les cinq et les
-	quinze derni&egrave;res minutes. Chaque valeur est pr&eacute;c&eacute;d&eacute;e de
-	<code>l=</code> et s&eacute;par&eacute;e des autres par un slash
-	<code>/</code>.
+        <td>La charge moyenne courante du serveur proprement dit. Ce
+	sont les valeurs obtenues par <code>getloadavg()</code> qui
+	repr&eacute;sentent la charge moyenne courante, sur 5 minutes et sur 15
+	minutes. Chaque valeur est pr&eacute;c&eacute;d&eacute;e de <code>l=</code> et
+	s&eacute;par&eacute;e de la suivante par un <code>/</code>.<br />
+	Disponible depuis la version 2.4.4 du serveur HTTP Apache.
         </td></tr>
 
     <tr><td><code>%i</code></td>
-        <td>Le pourcentage de disponibilit&eacute; de httpd (0 &agrave; 100) bas&eacute; sur
-	le nombre de threads et de processus disponibles. La valeur est
-	pr&eacute;c&eacute;d&eacute;e de <code>i=</code>.
+        <td>Le pourcentage courant de httpd au repos (de 0 &agrave; 100)
+	en se basant sur le nombre de processus et threads disponibles.
+	La valeur est pr&eacute;c&eacute;d&eacute;e de <code>i=</code>.<br />
+	Disponible depuis la version 2.4.4 du serveur HTTP Apache.
         </td></tr>
 
     <tr><td><code>%b</code></td>
-        <td>Le pourcentage d'utilisation de httpd (0 &agrave; 100) bas&eacute; sur
-	le nombre de threads et de processus disponibles. La valeur est
-	pr&eacute;c&eacute;d&eacute;e de <code>b=</code>.
+        <td>Le pourcentage courant de httpd utilis&eacute; (de 0 &agrave; 100)
+	en se basant sur le nombre de processus et threads disponibles.
+	La valeur est pr&eacute;c&eacute;d&eacute;e de <code>b=</code>.<br />
+	Disponible depuis la version 2.4.4 du serveur HTTP Apache.
         </td></tr>
 
     <tr><td><code>%{NOM_VARIABLE}e</code></td>
@@ -530,11 +562,34 @@ Header merge Cache-Control no-store env=NO_STORE
       efficace que <code>%s</code>.</p>
     </note>
 
+    <note><title>Note &agrave; propos des valeurs des expressions</title>
+    <p>Lorsque le param&egrave;tre valeur utilise l'interpr&eacute;teur <a
+    href="../expr.html">ap_expr</a>, certaines syntaxes d'expressions
+    seront diff&eacute;rentes des exemples qui &eacute;valuent des expressions
+    <em>bool&eacute;ennes</em> telles que &lt;If&gt; :</p>
+    <ul>
+      <li>Le point de d&eacute;part de la syntaxe est 'string' au lieu de
+      'expr'.</li>
+      <li>Les appels de fonction utilisent la syntaxe %{funcname:arg} au
+      lieu de funcname(arg).</li>
+      <li>Les fonctions multi-arguments ne sont pas encore disponibles
+      depuis le point de d&eacute;part 'string'.</li>
+      <li>Il faut mettre entre guillemets l'ensemble du param&egrave;tre, comme
+      dans l'exemple suivant : 
+          <highlight language="config">
+        Header set foo-checksum "expr=%{md5:foo}"
+          </highlight>
+       </li>
+                   
+    </ul>
+    </note>
+
     <p><code>edit</code>n&eacute;cessite les deux arguments
     <var>valeur</var>, qui est une <glossary ref="regex">expression
     rationnelle</glossary>, et une cha&icirc;ne additionnelle
     <var>remplacement</var>. Depuis la version 2.4.7, la cha&icirc;ne de
-    remplacement peut aussi contenir des sp&eacute;cificateurs de format.</p>
+    remplacement peut aussi
+    contenir des sp&eacute;cificateurs de format.</p>
 
     <p>La directive <directive>Header</directive> peut &ecirc;tre suivie d'un
     argument additionnel qui peut prendre les valeurs suivantes :</p>
@@ -559,8 +614,9 @@ Header merge Cache-Control no-store env=NO_STORE
     directives <directive>Header</directive> sont trait&eacute;es juste avant
     l'envoi de la r&eacute;ponse sur le r&eacute;seau. Cela signifie qu'il est
     possible de d&eacute;finir et/ou modifier la plupart des en-t&ecirc;tes, &agrave;
-    l'exception de ceux qui sont ajout&eacute;s par le filtre HTTP
-    d'en-t&ecirc;te, comme Content-Type.</p>
+    l'exception de certains en-t&ecirc;tes qui sont ajout&eacute;s par le filtre
+    d'en-t&ecirc;te HTTP. Avant la version 2.2.12, il n'&eacute;tait pas
+    possible de modifier l'en-t&ecirc;te Content-Type avec cette directive.</p>
 </usage>
 </directivesynopsis>
 

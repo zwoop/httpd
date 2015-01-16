@@ -484,8 +484,14 @@ static int update_child_status_internal(int child_num,
             ws->conn_bytes = 0;
         }
         if (r) {
-            apr_cpystrn(ws->client, ap_get_remote_host(c, r->per_dir_config,
-                        REMOTE_NOLOOKUP, NULL), sizeof(ws->client));
+            const char *client = ap_get_remote_host(c, r->per_dir_config,
+                                 REMOTE_NOLOOKUP, NULL);
+            if (!client || !strcmp(client, c->client_ip)) {
+                apr_cpystrn(ws->client, r->useragent_ip, sizeof(ws->client));
+            }
+            else {
+                apr_cpystrn(ws->client, client, sizeof(ws->client));
+            }
             copy_request(ws->request, sizeof(ws->request), r);
             if (r->server) {
                 apr_snprintf(ws->vhost, sizeof(ws->vhost), "%s:%d",
@@ -521,7 +527,7 @@ AP_DECLARE(int) ap_update_child_status_from_indexes(int child_num,
 AP_DECLARE(int) ap_update_child_status(ap_sb_handle_t *sbh, int status,
                                       request_rec *r)
 {
-    if (!sbh)
+    if (!sbh || (sbh->child_num < 0))
         return -1;
 
     return update_child_status_internal(sbh->child_num, sbh->thread_num,
@@ -533,7 +539,7 @@ AP_DECLARE(int) ap_update_child_status(ap_sb_handle_t *sbh, int status,
 AP_DECLARE(int) ap_update_child_status_from_conn(ap_sb_handle_t *sbh, int status,
                                        conn_rec *c)
 {
-    if (!sbh)
+    if (!sbh || (sbh->child_num < 0))
         return -1;
 
     return update_child_status_internal(sbh->child_num, sbh->thread_num,
@@ -577,6 +583,21 @@ AP_DECLARE(worker_score *) ap_get_scoreboard_worker(ap_sb_handle_t *sbh)
 
     return ap_get_scoreboard_worker_from_indexes(sbh->child_num,
                                                  sbh->thread_num);
+}
+
+AP_DECLARE(void) ap_copy_scoreboard_worker(worker_score *dest, 
+                                           int child_num,
+                                           int thread_num)
+{
+    worker_score *ws = ap_get_scoreboard_worker_from_indexes(child_num, thread_num);
+
+    memcpy(dest, ws, sizeof *ws);
+
+    /* For extra safety, NUL-terminate the strings returned, though it
+     * should be true those last bytes are always zero anyway. */
+    dest->client[sizeof(dest->client) - 1] = '\0';
+    dest->request[sizeof(dest->request) - 1] = '\0';
+    dest->vhost[sizeof(dest->vhost) - 1] = '\0';
 }
 
 AP_DECLARE(process_score *) ap_get_scoreboard_process(int x)

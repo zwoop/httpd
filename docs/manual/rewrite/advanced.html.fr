@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>Advanced Techniques with mod_rewrite - Serveur Apache HTTP</title>
+<title>Advanced Techniques with mod_rewrite - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -21,9 +21,11 @@
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Rewrite</a></div><div id="page-content"><div id="preamble"><h1>Advanced Techniques with mod_rewrite</h1>
 <div class="toplang">
-<p><span>Langues Disponibles: </span><a href="../en/rewrite/avoid.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
-<a href="../fr/rewrite/avoid.html" title="Français">&nbsp;fr&nbsp;</a></p>
+<p><span>Langues Disponibles: </span><a href="../en/rewrite/advanced.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
+<a href="../fr/rewrite/advanced.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div>
+<div class="outofdate">Cette traduction peut être périmée. Vérifiez la version
+            anglaise pour les changements récents.</div>
 
 
 <p>Ce document complète la <a href="../mod/mod_rewrite.html">documentation de référence</a> du
@@ -41,7 +43,6 @@ simplement les copier/coller dans votre configuration.</div>
   d'arrière-plan en fonction de l'adresse IP</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#on-the-fly-content">Régéneration de contenu à la volée</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#load-balancing">Répartition de charge</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#autorefresh">Actualisation automatique d'un document</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#structuredhomedirs">Répertoires Home structurés</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#redirectanchors">Redirection des ancrages</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#time-dependent">Réécriture dépendant de l'heure</a></li>
@@ -101,11 +102,9 @@ http://serveur_physique_utilisateur1/u/utilisateur/chemin
       serveur par défaut qui sera utilisé lorsqu'un utilisateur ne
       possèdera pas d'entrée dans la table de correspondances :</p>
 
-<pre class="prettyprint lang-config">
-RewriteEngine on
+<pre class="prettyprint lang-config">RewriteEngine on
 RewriteMap      users-to-hosts   txt:/path/to/map.users-to-hosts
-RewriteRule   ^/u/([^/]+)/?(.*)   http://${users-to-hosts:$1|server0}/u/$1/$2
-</pre>
+RewriteRule   ^/u/([^/]+)/?(.*)   http://${users-to-hosts:$1|server0}/u/$1/$2</pre>
 
     </dd>
   </dl>
@@ -136,11 +135,9 @@ RewriteRule   ^/u/([^/]+)/?(.*)   http://${users-to-hosts:$1|server0}/u/$1/$2
     <dd>
       A cet effet, on utilise le jeu de règles suivant :
 
-<pre class="prettyprint lang-config">
-# Cet exemple n'est valable que dans un contexte de répertoire
+<pre class="prettyprint lang-config"># Cet exemple n'est valable que dans un contexte de répertoire
 RewriteCond %{REQUEST_URI}   !-U
-RewriteRule ^(.+)\.html$          /regenerate_page.cgi   [PT,L]
-</pre>
+RewriteRule ^(.+)\.html$          /regenerate_page.cgi   [PT,L]</pre>
 
 
       <p>L'opérateur <code>-U</code> permet de déterminer si la chaîne
@@ -181,11 +178,9 @@ RewriteRule ^(.+)\.html$          /regenerate_page.cgi   [PT,L]
       <p>Pour y parvenir, nous allons utiliser la directive <code class="directive"><a href="../mod/mod_rewrite.html#rewritemap">RewriteMap</a></code> et une liste de
       serveurs.</p>
 
-<pre class="prettyprint lang-config">
-RewriteEngine on
+<pre class="prettyprint lang-config">RewriteEngine on
 RewriteMap lb rnd:/path/to/serverlist.txt
-RewriteRule ^/(.*) http://${lb:serveurs}/$1 [P,L]
-</pre>
+RewriteRule ^/(.*) http://${lb:serveurs}/$1 [P,L]</pre>
 
 
 <p><code>liste-serveurs.txt</code> contiendra la liste des serveurs :</p>
@@ -207,165 +202,6 @@ les autres, faites le figurer plusieurs fois dans la liste.</p>
 <code class="module"><a href="../mod/mod_proxy_balancer.html">mod_proxy_balancer</a></code> - beaucoup plus souple et présentant
 plus de fonctionnalités dans ce domaine que mod_rewrite.</p>
    </dd>
-  </dl>
-
-</div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="section">
-<h2><a name="autorefresh" id="autorefresh">Actualisation automatique d'un document</a></h2>
-
-  
-
-  
-
-  <dl>
-    <dt>Description :</dt>
-
-    <dd>
-      <p>Lorsque nous créons une page web complexe, ne serait-il pas
-	  souhaitable que le navigateur web actualise automatiquement la
-	  page chaque fois que nous en sauvegardons une nouvelle version
-	  à partir de notre éditeur ? Impossible ?</p>
-    </dd>
-
-    <dt>Solution :</dt>
-
-    <dd>
-      <p>Non ! Nous allons pour cela combiner la fonctionnalité MIME
-	  multipart, la fonctionnalité NPH du serveur web et la
-	  puissance de <code class="module"><a href="../mod/mod_rewrite.html">mod_rewrite</a></code> pour la manipulation
-	  d'URLs. Tout d'abord, nous définissons une nouvelle
-	  fonctionnalité pour les URLs : l'ajout de
-	  <code>:refresh</code> à toute URL fait que la 'page' est
-	  actualisée chaque fois que la ressource est mise à jour dans
-	  le système de fichiers.</p>
-
-<pre class="prettyprint lang-config">
-RewriteRule   ^(/[uge]/[^/]+/?.*):refresh  /interne/cgi/apache/nph-refresh?f=$
-</pre>
-
-
-      <p>Nous appelons maintenant cette URL</p>
-
-<div class="example"><p><code>
-/u/foo/bar/page.html:refresh
-</code></p></div>
-
-      <p>ce qui entraîne en interne l'invocation de l'URL</p>
-
-<div class="example"><p><code>
-/interne/cgi/apache/nph-refresh?f=/u/foo/bar/page.html
-</code></p></div>
-
-      <p>Il ne reste plus qu'à écrire le script NPH-CGI. Bien que l'on
-	  écrive habituellement dans ces cas "laissé à la charge du
-	  lecteur à titre d'exercice", ;-) je vous l'offre, aussi.</p>
-
-<pre class="prettyprint lang-perl">
-#!/sw/bin/perl
-##
-##  nph-refresh -- script NPH/CGI pour l'actualisation automatique de
-##  pages
-##  Copyright (c) 1997 Ralf S. Engelschall, All Rights Reserved.
-##
-$| = 1;
-
-#   éclate la variable QUERY_STRING
-@pairs = split( /&amp;/, $ENV{'QUERY_STRING'} );
-foreach $pair (@pairs) {
-    ( $name, $value ) = split( /=/, $pair );
-    $name =~ tr/A-Z/a-z/;
-    $name = 'QS_' . $name;
-    $value =~ s/%([a-fA-F0-9][a-fA-F0-9])/pack("C", hex($1))/eg;
-    eval "\$$name = \"$value\"";
-}
-$QS_s = 1    if ( $QS_s eq '' );
-$QS_n = 3600 if ( $QS_n eq '' );
-if ( $QS_f eq '' ) {
-    print "HTTP/1.0 200 OK\n";
-    print "Content-type: text/html\n\n";
-    print "&lt;b&gt;ERROR&lt;/b&gt;: No file given\n";
-    exit(0);
-}
-if ( !-f $QS_f ) {
-    print "HTTP/1.0 200 OK\n";
-    print "Content-type: text/html\n\n";
-    print "&lt;b&gt;ERROR&lt;/b&gt;: File $QS_f not found\n";
-    exit(0);
-}
-
-sub print_http_headers_multipart_begin {
-    print "HTTP/1.0 200 OK\n";
-    $bound = "ThisRandomString12345";
-    print "Content-type: multipart/x-mixed-replace;boundary=$bound\n";
-    &amp;print_http_headers_multipart_next;
-}
-
-sub print_http_headers_multipart_next {
-    print "\n--$bound\n";
-}
-
-sub print_http_headers_multipart_end {
-    print "\n--$bound--\n";
-}
-
-sub displayhtml {
-    local ($buffer) = @_;
-    $len = length($buffer);
-    print "Content-type: text/html\n";
-    print "Content-length: $len\n\n";
-    print $buffer;
-}
-
-sub readfile {
-    local ($file) = @_;
-    local ( *FP, $size, $buffer, $bytes );
-    ( $x, $x, $x, $x, $x, $x, $x, $size ) = stat($file);
-    $size = sprintf( "%d", $size );
-    open( FP, "&lt;$file" );
-    $bytes = sysread( FP, $buffer, $size );
-    close(FP);
-    return $buffer;
-}
-
-$buffer = &amp;readfile($QS_f);
-&amp;print_http_headers_multipart_begin;
-&amp;displayhtml($buffer);
-
-sub mystat {
-    local ($file) = $_[0];
-    local ($time);
-
-    ( $x, $x, $x, $x, $x, $x, $x, $x, $x, $mtime ) = stat($file);
-    return $mtime;
-}
-
-$mtimeL = &amp;mystat($QS_f);
-$mtime  = $mtime;
-for ( $n = 0 ; $n &amp; lt ; $QS_n ; $n++ ) {
-    while (1) {
-        $mtime = &amp;mystat($QS_f);
-        if ( $mtime ne $mtimeL ) {
-            $mtimeL = $mtime;
-            sleep(2);
-            $buffer = &amp;readfile($QS_f);
-            &amp;print_http_headers_multipart_next;
-            &amp;displayhtml($buffer);
-            sleep(5);
-            $mtimeL = &amp;mystat($QS_f);
-            last;
-        }
-        sleep($QS_s);
-    }
-}
-
-&amp;print_http_headers_multipart_end;
-
-exit(0);
-
-##EOF##
-</pre>
-
-    </dd>
   </dl>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -395,10 +231,8 @@ exit(0);
       <p>On utilise le jeu de règles suivant pour développer les
 	  URLs avec tilde selon l'organisation structurée précédente.</p>
 
-<pre class="prettyprint lang-config">
-RewriteEngine on
-RewriteRule   ^/~(<strong>([a-z])</strong>[a-z0-9]+)(.*)  /home/<strong>$2</strong>/$1/public_html$3
-</pre>
+<pre class="prettyprint lang-config">RewriteEngine on
+RewriteRule   ^/~(<strong>([a-z])</strong>[a-z0-9]+)(.*)  /home/<strong>$2</strong>/$1/public_html$3</pre>
 
     </dd>
   </dl>
@@ -458,12 +292,10 @@ RewriteRule   ^/~(<strong>([a-z])</strong>[a-z0-9]+)(.*)  /home/<strong>$2</stro
 	  permettent d'effectuer des redirections dépendant de
 	  l'heure :</p>
 
-<pre class="prettyprint lang-config">
-+RewriteEngine on
+<pre class="prettyprint lang-config">+RewriteEngine on
 +RewriteCond   %{TIME_HOUR}%{TIME_MIN} &gt;0700
 +RewriteCond   %{TIME_HOUR}%{TIME_MIN} &lt;1900
-+RewriteRule   ^foo\.html$             foo.day.html [L]
-</pre>
++RewriteRule   ^foo\.html$             foo.day.html [L]</pre>
 
 
       <p>Avec cet exemple, l'URL <code>foo.html</code> renvoie
@@ -477,8 +309,7 @@ RewriteRule   ^/~(<strong>([a-z])</strong>[a-z0-9]+)(.*)  /home/<strong>$2</stro
 	la fenêtre de temps configurée. On peut utiliser
 	<code class="module"><a href="../mod/mod_expires.html">mod_expires</a></code> pour contourner ce problème. Il est
 	cependant bien plus commode de servir un contenu dynamique, et
-	de le personnaliser en fonction de l'heure du jour.</div>
-    </dd>
+	de le personnaliser en fonction de l'heure du jour.</div> </dd>
   </dl>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -506,19 +337,15 @@ RewriteRule   ^/~(<strong>([a-z])</strong>[a-z0-9]+)(.*)  /home/<strong>$2</stro
       <p>Utiliser le drapeau [E] pour définir une variable
       d'environnement.</p>
 
-<pre class="prettyprint lang-config">
-RewriteEngine on
-RewriteRule   ^/cheval/(.*)   /poney/$1 [E=<strong>rewritten:1</strong>]
-</pre>
+<pre class="prettyprint lang-config">RewriteEngine on
+RewriteRule   ^/cheval/(.*)   /poney/$1 [E=<strong>rewritten:1</strong>]</pre>
 
 
     <p>Plus loin dans votre jeu de règles, vous pouvez vérifier le
     contenu de cette variable d'environnement via une directive
     RewriteCond :</p>
 
-<pre class="prettyprint lang-config">
-RewriteCond %{ENV:rewritten} =1
-</pre>
+<pre class="prettyprint lang-config">RewriteCond %{ENV:rewritten} =1</pre>
 
 
     </dd>
@@ -526,12 +353,12 @@ RewriteCond %{ENV:rewritten} =1
 
 </div></div>
 <div class="bottomlang">
-<p><span>Langues Disponibles: </span><a href="../en/rewrite/avoid.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
-<a href="../fr/rewrite/avoid.html" title="Français">&nbsp;fr&nbsp;</a></p>
+<p><span>Langues Disponibles: </span><a href="../en/rewrite/advanced.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
+<a href="../fr/rewrite/advanced.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div><div class="top"><a href="#page-header"><img src="../images/up.gif" alt="top" /></a></div><div class="section"><h2><a id="comments_section" name="comments_section">Commentaires</a></h2><div class="warning"><strong>Notice:</strong><br />This is not a Q&amp;A section. Comments placed here should be pointed towards suggestions on improving the documentation or server, and may be removed again by our moderators if they are either implemented or considered invalid/off-topic. Questions on how to manage the Apache HTTP Server should be directed at either our IRC channel, #httpd, on Freenode, or sent to our <a href="http://httpd.apache.org/lists.html">mailing lists</a>.</div>
 <script type="text/javascript"><!--//--><![CDATA[//><!--
 var comments_shortname = 'httpd';
-var comments_identifier = 'http://httpd.apache.org/docs/2.4/rewrite/avoid.html';
+var comments_identifier = 'http://httpd.apache.org/docs/2.4/rewrite/advanced.html';
 (function(w, d) {
     if (w.location.hostname.toLowerCase() == "httpd.apache.org") {
         d.write('<div id="comments_thread"><\/div>');
@@ -546,7 +373,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/rewrite/avoid.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -86,40 +86,6 @@ static apr_pool_t *gpool = NULL;
 #define DEFAULT_SLOTMEM_SUFFIX ".shm"
 #define DEFAULT_SLOTMEM_PERSIST_SUFFIX ".persist"
 
-/* apr:shmem/unix/shm.c */
-static apr_status_t unixd_set_shm_perms(const char *fname)
-{
-#ifdef AP_NEED_SET_MUTEX_PERMS
-#if APR_USE_SHMEM_SHMGET || APR_USE_SHMEM_SHMGET_ANON
-    struct shmid_ds shmbuf = { { 0 } };
-    key_t shmkey;
-    int shmid;
-
-    shmkey = ftok(fname, 1);
-    if (shmkey == (key_t)-1) {
-        return errno;
-    }
-    if ((shmid = shmget(shmkey, 0, SHM_R | SHM_W)) == -1) {
-        return errno;
-    }
-#if MODULE_MAGIC_NUMBER_MAJOR <= 20081212
-#define ap_unixd_config unixd_config
-#endif
-    shmbuf.shm_perm.uid  = ap_unixd_config.user_id;
-    shmbuf.shm_perm.gid  = ap_unixd_config.group_id;
-    shmbuf.shm_perm.mode = 0600;
-    if (shmctl(shmid, IPC_SET, &shmbuf) == -1) {
-        return errno;
-    }
-    return APR_SUCCESS;
-#else
-    return APR_ENOTIMPL;
-#endif
-#else
-    return APR_ENOTIMPL;
-#endif
-}
-
 /*
  * Persist the slotmem in a file
  * slotmem name and file name.
@@ -247,19 +213,19 @@ static apr_status_t restore_slotmem(void *ptr, const char *name, apr_size_t size
                         rv = APR_SUCCESS;
                         apr_md5(digest2, ptr, nbytes);
                         if (memcmp(digest, digest2, APR_MD5_DIGESTSIZE)) {
-                            ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf,
+                            ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf,
                                          APLOGNO(02551) "bad md5 match");
                             rv = APR_EGENERAL;
                         }
                     }
                 }
                 else {
-                    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf,
+                    ap_log_error(APLOG_MARK, APLOG_NOTICE, 0, ap_server_conf,
                                  APLOGNO(02552) "at EOF... bypassing md5 match check (old persist file?)");
                 }
             }
             else if (nbytes != size) {
-                ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf,
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf,
                              APLOGNO(02553) "Expected %" APR_SIZE_T_FMT ": Read %" APR_SIZE_T_FMT,
                              size, nbytes);
                 rv = APR_EGENERAL;
@@ -354,6 +320,8 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
                 if (strcmp(next->name, fname) == 0) {
                     /* we already have it */
                     *new = next;
+                    ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(02603)
+                                 "create found %s in global list", fname);
                     return APR_SUCCESS;
                 }
                 if (!next->next) {
@@ -362,6 +330,8 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
                 next = next->next;
             }
         }
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(02602)
+                     "create didn't find %s in global list", fname);
     }
     else {
         fbased = 0;
@@ -379,15 +349,24 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
         rv = APR_EINVAL;
     }
     if (rv == APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_DEBUG, 0, ap_server_conf, APLOGNO(02598)
+                     "apr_shm_attach() succeeded");
+
         /* check size */
         if (apr_shm_size_get(shm) != size) {
             apr_shm_detach(shm);
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf, APLOGNO(02599)
+                         "existing shared memory for %s could not be used (failed size check)",
+                         fname);
             return APR_EINVAL;
         }
         ptr = (char *)apr_shm_baseaddr_get(shm);
         memcpy(&desc, ptr, sizeof(desc));
         if (desc.size != item_size || desc.num != item_num) {
             apr_shm_detach(shm);
+            ap_log_error(APLOG_MARK, APLOG_ERR, 0, ap_server_conf, APLOGNO(02600)
+                         "existing shared memory for %s could not be used (failed contents check)",
+                         fname);
             return APR_EINVAL;
         }
         ptr += AP_SLOTMEM_OFFSET;
@@ -401,17 +380,13 @@ static apr_status_t slotmem_create(ap_slotmem_instance_t **new,
         else {
             rv = apr_shm_create(&shm, size, NULL, gpool);
         }
+        ap_log_error(APLOG_MARK, rv == APR_SUCCESS ? APLOG_DEBUG : APLOG_ERR,
+                     rv, ap_server_conf, APLOGNO(02611)
+                     "create: apr_shm_create(%s) %s",
+                     fname ? fname : "",
+                     rv == APR_SUCCESS ? "succeeded" : "failed");
         if (rv != APR_SUCCESS) {
             return rv;
-        }
-        if (fbased) {
-            /* Set permissions to shared memory
-             * so it can be attached by child process
-             * having different user credentials
-             *
-             * See apr:shmem/unix/shm.c
-             */
-            unixd_set_shm_perms(fname);
         }
         ptr = (char *)apr_shm_baseaddr_get(shm);
         desc.size = item_size;

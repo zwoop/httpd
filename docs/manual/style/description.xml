@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -34,17 +33,17 @@ Some targets have additional requirements:
   - the HTML Help compiler in PATH (or modify this build file). The
     compiler (hhc.exe) is part of the HTML Help Workshop which is freely
     available and can be downloaded from
-    http://msdn.microsoft.com/library/en-us/htmlhelp/html/hwMicrosoftHTMLHelpDownloads.asp
+    http://msdn.microsoft.com/en-us/library/windows/desktop/ms669985%28v=vs.85%29.aspx
   - The appropriate locale (e.g. Japanese) before invoking hhc.exe. Otherwise
     the compiler is not able to build the fulltext search index correctly and
     the TOC may be garbled, too. In particular:
-    + chm-da: Dansk (DK)
     + chm-de: German (Germany), sorting order: dictionary
     + chm-en: English (USA)
     + chm-es: Spanish (Spain), sorting order: international
+    + chm-fr: French (France)
     + chm-ja: Japanese
     + chm-ko: Korean
     + chm-tr: Turkish
-    + chm-zh-cn: Simplified Chinese
+    + chm-zh-cn: Chinese (China), sorting order: phonetic
 
 </description>

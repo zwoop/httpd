@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -45,9 +44,6 @@
 </target>
 <target description="- builds the Dansk Konqueror Web Archive" depends="-off-da" name="war-da">
     <war.generic lang="da"/>
-</target>
-<target description="- builds the Dansk CHM file" name="chm-da">
-    <chm.generic lang="da"/>
 </target>
 <target description="- builds the Dansk nroff files" unless="skip-man" depends="check-man" name="man-da">
     <nroff.generic lang="da"/>
@@ -147,6 +143,9 @@
 </target>
 <target description="- builds the French Konqueror Web Archive" depends="-off-fr" name="war-fr">
     <war.generic lang="fr"/>
+</target>
+<target description="- builds the French CHM file" name="chm-fr">
+    <chm.generic lang="fr"/>
 </target>
 
 <!-- Japanese                                                             -->
@@ -264,7 +263,7 @@
 <!-- Simplified Chinese                                                   -->
 <!-- ==================================================================== -->
 <property value=".xml.zh-cn" name="inputext.zh-cn"/>
-<property value=".html.zh-cn" name="outputext.zh-cn"/>
+<property value=".html.zh-cn.utf8" name="outputext.zh-cn"/>
 
 <target description="- builds Simplified Chinese HTML files" name="zh-cn">
     <html.generic lang="zh-cn"/>

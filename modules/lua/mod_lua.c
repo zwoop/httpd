@@ -20,15 +20,30 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <apr_thread_mutex.h>
-
+#include <apr_pools.h>
 #include "lua_apr.h"
 #include "lua_config.h"
 #include "apr_optional.h"
 #include "mod_ssl.h"
 #include "mod_auth.h"
+#include "util_mutex.h"
+
 
 #ifdef APR_HAS_THREADS
 #include "apr_thread_proc.h"
+#endif
+
+/* getpid for *NIX */
+#if APR_HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if APR_HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+/* getpid for Windows */
+#if APR_HAVE_PROCESS_H
+#include <process.h>
 #endif
 
 APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ap_lua, AP_LUA, int, lua_open,
@@ -51,8 +66,12 @@ typedef struct {
     const char *file_name;
     const char *function_name;
     ap_lua_vm_spec *spec;
-    apr_array_header_t *args;
 } lua_authz_provider_spec;
+
+typedef struct {
+    lua_authz_provider_spec *spec;
+    apr_array_header_t *args;
+} lua_authz_provider_func;
 
 apr_hash_t *lua_authz_providers;
 
@@ -64,7 +83,16 @@ typedef struct
     int broken;
 } lua_filter_ctx;
 
-apr_thread_mutex_t* lua_ivm_mutex = NULL;
+apr_global_mutex_t *lua_ivm_mutex;
+apr_shm_t *lua_ivm_shm;
+char *lua_ivm_shmfile;
+
+static apr_status_t shm_cleanup_wrapper(void *unused) {
+    if (lua_ivm_shm) {
+        return apr_shm_destroy(lua_ivm_shm);
+    }
+    return OK;
+}
 
 /**
  * error reporting if lua has an error.
@@ -75,11 +103,11 @@ static void report_lua_error(lua_State *L, request_rec *r)
     const char *lua_response;
     r->status = HTTP_INTERNAL_SERVER_ERROR;
     r->content_type = "text/html";
-    ap_rputs("<b>Error!</b>\n", r);
-    ap_rputs("<p>", r);
+    ap_rputs("<h3>Error!</h3>\n", r);
+    ap_rputs("<pre>", r);
     lua_response = lua_tostring(L, -1);
-    ap_rputs(lua_response, r);
-    ap_rputs("</p>\n", r);
+    ap_rputs(ap_escape_html(r->pool, lua_response), r);
+    ap_rputs("</pre>\n", r);
 
     ap_log_perror(APLOG_MARK, APLOG_WARNING, 0, r->pool, APLOGNO(01471) "Lua error: %s",
                   lua_response);
@@ -282,7 +310,7 @@ static int lua_handler(request_rec *r)
         lua_getglobal(L, "handle");
         if (!lua_isfunction(L, -1)) {
             ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(01475)
-                          "lua: Unable to find function %s in %s",
+                          "lua: Unable to find entry function '%s' in %s (not a valid function)",
                           "handle",
                           spec->file);
             ap_lua_release_state(L, spec, r);
@@ -352,7 +380,7 @@ static apr_status_t lua_setup_filter_ctx(ap_filter_t* f, request_rec* r, lua_fil
                 lua_getglobal(L, hook_spec->function_name);
                 if (!lua_isfunction(L, -1)) {
                     ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(02329)
-                                    "lua: Unable to find function %s in %s",
+                                "lua: Unable to find entry function '%s' in %s (not a valid function)",
                                     hook_spec->function_name,
                                     hook_spec->file_name);
                     ap_lua_release_state(L, spec, r);
@@ -476,6 +504,9 @@ static apr_status_t lua_output_filter_handle(ap_filter_t *f, apr_bucket_brigade 
                 ap_remove_output_filter(f);
                 apr_brigade_cleanup(pbbIn);
                 apr_brigade_cleanup(ctx->tmpBucket);
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02663)
+                              "lua: Error while executing filter: %s",
+                              lua_tostring(L, -1));
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
         }
@@ -656,7 +687,7 @@ static int lua_request_rec_hook_harness(request_rec *r, const char *name, int ap
 
             if (!L) {
                 ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(01477)
-                              "lua: Failed to obtain lua interpreter for %s %s",
+                    "lua: Failed to obtain lua interpreter for entry function '%s' in %s",
                               hook_spec->function_name, hook_spec->file_name);
                 return HTTP_INTERNAL_SERVER_ERROR;
             }
@@ -665,7 +696,7 @@ static int lua_request_rec_hook_harness(request_rec *r, const char *name, int ap
                 lua_getglobal(L, hook_spec->function_name);
                 if (!lua_isfunction(L, -1)) {
                     ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(01478)
-                                  "lua: Unable to find function %s in %s",
+                               "lua: Unable to find entry function '%s' in %s (not a valid function)",
                                   hook_spec->function_name,
                                   hook_spec->file_name);
                     ap_lua_release_state(L, spec, r);
@@ -704,6 +735,32 @@ static int lua_request_rec_hook_harness(request_rec *r, const char *name, int ap
                 return rc;
             }
             ap_lua_release_state(L, spec, r);
+        }
+    }
+    return DECLINED;
+}
+
+
+/* Fix for making sure that LuaMapHandler works when FallbackResource is set */
+static int lua_map_handler_fixups(request_rec *r)
+{
+    /* If there is no handler set yet, this might be a LuaMapHandler request */
+    if (r->handler == NULL) {
+        int n = 0;
+        ap_regmatch_t match[10];
+        const ap_lua_dir_cfg *cfg = ap_get_module_config(r->per_dir_config,
+                                                     &lua_module);
+        for (n = 0; n < cfg->mapped_handlers->nelts; n++) {
+            ap_lua_mapped_handler_spec *hook_spec =
+            ((ap_lua_mapped_handler_spec **) cfg->mapped_handlers->elts)[n];
+
+            if (hook_spec == NULL) {
+                continue;
+            }
+            if (!ap_regexec(hook_spec->uri_pattern, r->uri, 10, match, 0)) {
+                r->handler = apr_pstrdup(r->pool, "lua-map-handler");
+                return OK;
+            }
         }
     }
     return DECLINED;
@@ -750,7 +807,7 @@ static int lua_map_handler(request_rec *r)
 
             if (!L) {
                 ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(02330)
-                                "lua: Failed to obtain lua interpreter for %s %s",
+                                "lua: Failed to obtain Lua interpreter for entry function '%s' in %s",
                                 function_name, filename);
                 ap_lua_release_state(L, spec, r);
                 return HTTP_INTERNAL_SERVER_ERROR;
@@ -760,7 +817,7 @@ static int lua_map_handler(request_rec *r)
                 lua_getglobal(L, function_name);
                 if (!lua_isfunction(L, -1)) {
                     ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(02331)
-                                    "lua: Unable to find function %s in %s",
+                                    "lua: Unable to find entry function '%s' in %s (not a valid function)",
                                     function_name,
                                     filename);
                     ap_lua_release_state(L, spec, r);
@@ -954,11 +1011,11 @@ static const char *register_named_block_function_hook(const char *name,
     if (line[0]) { 
         const char *word;
         word = ap_getword_conf(cmd->temp_pool, &line);
-        if (word && *word) {
+        if (*word) {
             function = apr_pstrdup(cmd->pool, word);
         }
         word = ap_getword_conf(cmd->temp_pool, &line);
-        if (word && *word) {
+        if (*word) {
             if (!strcasecmp("early", word)) { 
                 when = AP_LUA_HOOK_FIRST;
             }
@@ -1122,18 +1179,22 @@ static const char *register_filter_function_hook(const char *filter,
     }
     return NULL;
 }
+/* disabled (see reference below)
 static int lua_check_user_id_harness_first(request_rec *r)
 {
     return lua_request_rec_hook_harness(r, "check_user_id", AP_LUA_HOOK_FIRST);
 }
+*/
 static int lua_check_user_id_harness(request_rec *r)
 {
     return lua_request_rec_hook_harness(r, "check_user_id", APR_HOOK_MIDDLE);
 }
+/* disabled (see reference below)
 static int lua_check_user_id_harness_last(request_rec *r)
 {
     return lua_request_rec_hook_harness(r, "check_user_id", AP_LUA_HOOK_LAST);
 }
+*/
 
 static int lua_translate_name_harness_first(request_rec *r)
 {
@@ -1285,7 +1346,7 @@ static const char *register_check_user_id_hook(cmd_parms *cmd, void *_cfg,
                                                const char *when)
 {
     int apr_hook_when = APR_HOOK_MIDDLE;
-
+/* XXX: This does not currently work!!
     if (when) {
         if (!strcasecmp(when, "early")) {
             apr_hook_when = AP_LUA_HOOK_FIRST;
@@ -1297,7 +1358,7 @@ static const char *register_check_user_id_hook(cmd_parms *cmd, void *_cfg,
             return "Third argument must be 'early' or 'late'";
         }
     }
-
+*/
     return register_named_file_function_hook("check_user_id", cmd, _cfg, file,
                                              function, apr_hook_when);
 }
@@ -1635,6 +1696,7 @@ static const char *lua_authz_parse(cmd_parms *cmd, const char *require_line,
 {
     const char *provider_name;
     lua_authz_provider_spec *spec;
+    lua_authz_provider_func *func = apr_pcalloc(cmd->pool, sizeof(lua_authz_provider_func));
 
     apr_pool_userdata_get((void**)&provider_name, AUTHZ_PROVIDER_NAME_NOTE,
                           cmd->temp_pool);
@@ -1642,16 +1704,17 @@ static const char *lua_authz_parse(cmd_parms *cmd, const char *require_line,
 
     spec = apr_hash_get(lua_authz_providers, provider_name, APR_HASH_KEY_STRING);
     ap_assert(spec != NULL);
+    func->spec = spec;
 
     if (require_line && *require_line) {
         const char *arg;
-        spec->args = apr_array_make(cmd->pool, 2, sizeof(const char *));
+        func->args = apr_array_make(cmd->pool, 2, sizeof(const char *));
         while ((arg = ap_getword_conf(cmd->pool, &require_line)) && *arg) {
-            APR_ARRAY_PUSH(spec->args, const char *) = arg;
+            APR_ARRAY_PUSH(func->args, const char *) = arg;
         }
     }
 
-    *parsed_require_line = spec;
+    *parsed_require_line = func;
     return NULL;
 }
 
@@ -1665,7 +1728,8 @@ static authz_status lua_authz_check(request_rec *r, const char *require_line,
                                                          &lua_module);
     const ap_lua_dir_cfg *cfg = ap_get_module_config(r->per_dir_config,
                                                      &lua_module);
-    const lua_authz_provider_spec *prov_spec = parsed_require_line;
+    const lua_authz_provider_func *prov_func = parsed_require_line;
+    const lua_authz_provider_spec *prov_spec = prov_func->spec;
     int result;
     int nargs = 0;
 
@@ -1681,25 +1745,25 @@ static authz_status lua_authz_check(request_rec *r, const char *require_line,
     lua_getglobal(L, prov_spec->function_name);
     if (!lua_isfunction(L, -1)) {
         ap_log_rerror(APLOG_MARK, APLOG_CRIT, 0, r, APLOGNO(02319)
-                      "Unable to find function %s in %s",
+                      "Unable to find entry function '%s' in %s (not a valid function)",
                       prov_spec->function_name, prov_spec->file_name);
         ap_lua_release_state(L, spec, r);
         return AUTHZ_GENERAL_ERROR;
     }
     ap_lua_run_lua_request(L, r);
-    if (prov_spec->args) {
+    if (prov_func->args) {
         int i;
-        if (!lua_checkstack(L, prov_spec->args->nelts)) {
+        if (!lua_checkstack(L, prov_func->args->nelts)) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02315)
                           "Error: authz provider %s: too many arguments", prov_spec->name);
             ap_lua_release_state(L, spec, r);
             return AUTHZ_GENERAL_ERROR;
         }
-        for (i = 0; i < prov_spec->args->nelts; i++) {
-            const char *arg = APR_ARRAY_IDX(prov_spec->args, i, const char *);
+        for (i = 0; i < prov_func->args->nelts; i++) {
+            const char *arg = APR_ARRAY_IDX(prov_func->args, i, const char *);
             lua_pushstring(L, arg);
         }
-        nargs = prov_spec->args->nelts;
+        nargs = prov_func->args->nelts;
     }
     if (lua_pcall(L, 1 + nargs, 1, 0)) {
         const char *err = lua_tostring(L, -1);
@@ -1916,11 +1980,54 @@ static int lua_request_hook(lua_State *L, request_rec *r)
     return OK;
 }
 
+static int lua_pre_config(apr_pool_t *pconf, apr_pool_t *plog,
+                            apr_pool_t *ptemp)
+{
+    ap_mutex_register(pconf, "lua-ivm-shm", NULL, APR_LOCK_DEFAULT, 0);
+    return OK;
+}
+
 static int lua_post_config(apr_pool_t *pconf, apr_pool_t *plog,
                              apr_pool_t *ptemp, server_rec *s)
 {
+    apr_pool_t **pool;
+    const char *tempdir;
+    apr_status_t rs;
+
     lua_ssl_val = APR_RETRIEVE_OPTIONAL_FN(ssl_var_lookup);
     lua_ssl_is_https = APR_RETRIEVE_OPTIONAL_FN(ssl_is_https);
+    
+    if (ap_state_query(AP_SQ_MAIN_STATE) == AP_SQ_MS_CREATE_PRE_CONFIG)
+        return OK;
+
+    /* Create ivm mutex */
+    rs = ap_global_mutex_create(&lua_ivm_mutex, NULL, "lua-ivm-shm", NULL,
+                            s, pconf, 0);
+    if (APR_SUCCESS != rs) {
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    /* Create shared memory space */
+    rs = apr_temp_dir_get(&tempdir, pconf);
+    if (rs != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, APLOGNO(02664)
+                 "mod_lua IVM: Failed to find temporary directory");
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+    lua_ivm_shmfile = apr_psprintf(pconf, "%s/httpd_lua_shm.%ld", tempdir,
+                           (long int)getpid());
+    rs = apr_shm_create(&lua_ivm_shm, sizeof(apr_pool_t**),
+                    (const char *) lua_ivm_shmfile, pconf);
+    if (rs != APR_SUCCESS) {
+        ap_log_error(APLOG_MARK, APLOG_ERR, rs, s, APLOGNO(02665)
+            "mod_lua: Failed to create shared memory segment on file %s",
+                     lua_ivm_shmfile);
+        return HTTP_INTERNAL_SERVER_ERROR;
+    }
+    pool = (apr_pool_t **)apr_shm_baseaddr_get(lua_ivm_shm);
+    apr_pool_create(pool, pconf);
+    apr_pool_cleanup_register(pconf, NULL, shm_cleanup_wrapper,
+                          apr_pool_cleanup_null);
     return OK;
 }
 static void *overlay_hook_specs(apr_pool_t *p,
@@ -1997,13 +2104,16 @@ static void lua_register_hooks(apr_pool_t *p)
     ap_hook_map_to_storage(lua_map_to_storage_harness, NULL, NULL,
                            APR_HOOK_MIDDLE);
 
-    ap_hook_check_user_id(lua_check_user_id_harness_first, NULL, NULL,
+/*  XXX: Does not work :(  
+ *  ap_hook_check_user_id(lua_check_user_id_harness_first, NULL, NULL,
                           AP_LUA_HOOK_FIRST);
+ */
     ap_hook_check_user_id(lua_check_user_id_harness, NULL, NULL,
                            APR_HOOK_MIDDLE);
-    ap_hook_check_user_id(lua_check_user_id_harness_last, NULL, NULL,
+/*  XXX: Does not work :(
+ * ap_hook_check_user_id(lua_check_user_id_harness_last, NULL, NULL,
                           AP_LUA_HOOK_LAST);
-
+*/
     ap_hook_type_checker(lua_type_checker_harness, NULL, NULL,
                          APR_HOOK_MIDDLE);
 
@@ -2025,6 +2135,7 @@ static void lua_register_hooks(apr_pool_t *p)
     ap_hook_quick_handler(lua_quick_harness, NULL, NULL, APR_HOOK_FIRST);
 
     ap_hook_post_config(lua_post_config, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_pre_config(lua_pre_config, NULL, NULL, APR_HOOK_MIDDLE);
 
     APR_OPTIONAL_HOOK(ap_lua, lua_open, lua_open_hook, NULL, NULL,
                       APR_HOOK_REALLY_FIRST);
@@ -2032,14 +2143,14 @@ static void lua_register_hooks(apr_pool_t *p)
     APR_OPTIONAL_HOOK(ap_lua, lua_request, lua_request_hook, NULL, NULL,
                       APR_HOOK_REALLY_FIRST);
     ap_hook_handler(lua_map_handler, NULL, NULL, AP_LUA_HOOK_FIRST);
+    
+    /* Hook this right before FallbackResource kicks in */
+    ap_hook_fixups(lua_map_handler_fixups, NULL, NULL, AP_LUA_HOOK_LAST-2);
 #if APR_HAS_THREADS
     ap_hook_child_init(ap_lua_init_mutex, NULL, NULL, APR_HOOK_MIDDLE);
 #endif
     /* providers */
     lua_authz_providers = apr_hash_make(p);
-    
-    /* ivm mutex */
-    apr_thread_mutex_create(&lua_ivm_mutex, APR_THREAD_MUTEX_DEFAULT, p);
     
     /* Logging catcher */
     ap_hook_log_transaction(lua_log_transaction_harness,NULL,NULL,

@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>İsme Dayalı Sanal Konaklar - Apache HTTP Sunucusu</title>
+<title>İsme Dayalı Sanal Konaklar - Apache HTTP Sunucusu Sürüm 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -28,6 +28,7 @@
 <a href="../ko/vhosts/name-based.html" hreflang="ko" rel="alternate" title="Korean">&nbsp;ko&nbsp;</a> |
 <a href="../tr/vhosts/name-based.html" title="Türkçe">&nbsp;tr&nbsp;</a></p>
 </div>
+<div class="outofdate">Bu çeviri güncel olmayabilir. Son değişiklikler için İngilizce sürüm geçerlidir.</div>
 
     <p>Bu belgede isme dayalı sanal konakların ne zaman, nasıl kullanılacakları
       açıklanmıştır.</p>
@@ -138,8 +139,7 @@ Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak ya
       varsayalım. Bunun için <code>httpd.conf</code> dosyanıza basitçe şu
       satırları ekleyebilirsiniz:</p>
 
-    <pre class="prettyprint lang-config">
-&lt;VirtualHost *:80&gt;
+    <pre class="prettyprint lang-config">&lt;VirtualHost *:80&gt;
     #İlk sanal konak aynı zamanda *:80 için de öntanımlıdır.
     ServerName site1.example.com
     ServerAlias example.com
@@ -149,8 +149,7 @@ Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak ya
 &lt;VirtualHost *:80&gt;
     ServerName site2.example.com
     DocumentRoot /siteler/site2
-&lt;/VirtualHost&gt;
-    </pre>
+&lt;/VirtualHost&gt;</pre>
 
 
     <p>İsterseniz, <code class="directive"><a href="../mod/core.html#virtualhost">&lt;VirtualHost&gt;</a></code> yönergesinde argüman olarak <code>*</code>
@@ -166,9 +165,7 @@ Barındırma</a></li><li><a href="examples.html">Çok kullanılan sanal konak ya
       kullanıcıların aynı siteye farklı isimlerle erişmelerini mümkün kılmak
       için bölüm içine şu satırı ekleyebilirsiniz:</p>
 
-    <pre class="prettyprint lang-config">
-ServerAlias example.com *.example.com
-    </pre>
+    <pre class="prettyprint lang-config">ServerAlias example.com *.example.com</pre>
 
 
     <p>Böylece <code>example.com</code> alanındaki tüm konaklar için gelen
@@ -225,7 +222,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/vhosts/name-based.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

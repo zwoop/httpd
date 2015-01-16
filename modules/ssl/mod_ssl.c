@@ -91,9 +91,6 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(CertificateChainFile, TAKE1,
                 "SSL Server CA Certificate Chain file "
                 "('/path/to/file' - PEM encoded)")
-    SSL_CMD_SRV(PKCS7CertificateFile, TAKE1,
-                "PKCS#7 file containing server certificate and chain"
-                " certificates ('/path/to/file' - PEM encoded)")
 #ifdef HAVE_TLS_SESSION_TICKETS
     SSL_CMD_SRV(SessionTicketKeyFile, TAKE1,
                 "TLS session ticket encryption/decryption key file (RFC 5077) "
@@ -140,6 +137,9 @@ static const command_rec ssl_config_cmds[] = {
                 "Use the server's cipher ordering preference")
     SSL_CMD_SRV(Compression, FLAG,
                 "Enable SSL level compression "
+                "(`on', `off')")
+    SSL_CMD_SRV(SessionTickets, FLAG,
+                "Enable or disable TLS session tickets"
                 "(`on', `off')")
     SSL_CMD_SRV(InsecureRenegotiation, FLAG,
                 "Enable support for insecure renegotiation")
@@ -236,6 +236,8 @@ static const command_rec ssl_config_cmds[] = {
                 "Maximum age of OCSP responses")
     SSL_CMD_SRV(OCSPResponderTimeout, TAKE1,
                 "OCSP responder query timeout")
+    SSL_CMD_SRV(OCSPUseRequestNonce, FLAG,
+                "Whether OCSP queries use a nonce or not ('on', 'off')")
 
 #ifdef HAVE_OCSP_STAPLING
     /*
@@ -264,6 +266,11 @@ static const command_rec ssl_config_cmds[] = {
                 "SSL stapling option for OCSP Response Error Cache Lifetime")
     SSL_CMD_SRV(StaplingForceURL, TAKE1,
                 "SSL stapling option to Force the OCSP Stapling URL")
+#endif
+
+#ifdef HAVE_SSL_CONF_CMD
+    SSL_CMD_SRV(OpenSSLConfCmd, TAKE2,
+		"OpenSSL configuration command")
 #endif
 
     /* Deprecated directives. */
@@ -295,9 +302,12 @@ static apr_status_t ssl_cleanup_pre_config(void *data)
 #endif
     ERR_remove_state(0);
 
-    /* Don't call ERR_free_strings here; ERR_load_*_strings only
-     * actually load the error strings once per process due to static
+    /* Don't call ERR_free_strings in earlier versions, ERR_load_*_strings only
+     * actually loaded the error strings once per process due to static
      * variable abuse in OpenSSL. */
+#if (OPENSSL_VERSION_NUMBER >= 0x00090805f)
+    ERR_free_strings();
+#endif
 
     /* Also don't call CRYPTO_cleanup_all_ex_data here; any registered
      * ex_data indices may have been cached in static variables in

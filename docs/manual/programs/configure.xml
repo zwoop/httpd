@@ -302,8 +302,8 @@
         <p>To find out which modules are compiled by default, run
         <code>./configure -h</code> or <code>./configure --help</code>
         and look under <code>Optional Features</code>.  Suppose you
-        are interested in <module>mod_example1</module> and
-        <module>mod_example2</module>, and you
+        are interested in <code>mod_example1</code> and
+        <code>mod_example2</code>, and you
         see this:</p>
 
         <example><pre>Optional Features:
@@ -428,16 +428,6 @@
           <directive module="mod_so">LoadModule</directive> directives for all
           built modules can be activated via the configure option
           <code>--enable-load-all-modules</code>.</p>
-          <p><strong>Caveat:</strong>
-          <code>--enable-mods-shared=all</code> does not actually build all
-          modules. To build all modules then, one might use:</p>
-          <example>
-            ./configure \<br />
-            <indent>
-                --with-ldap \<br />
-                --enable-mods-shared="all ssl ldap cache proxy authn_alias file_cache authnz_ldap charset_lite dav_lock cache_disk"
-            </indent>
-          </example>
         </dd>
 
         <dt><code>--enable-mods-static=<var>MODULE-LIST</var></code></dt>

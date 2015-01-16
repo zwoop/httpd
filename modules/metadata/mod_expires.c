@@ -267,10 +267,7 @@ static char *check_code(apr_pool_t *p, const char *code, char **real_code)
         /* <type>
          */
         word = ap_getword_conf(p, &code);
-        if (word[0]) {
-            /* do nothing */
-        }
-        else {
+        if (word[0] == '\0') {
             return apr_pstrcat(p, "bad expires code, missing <type>", NULL);
         }
 
@@ -453,6 +450,12 @@ static apr_status_t expires_filter(ap_filter_t *f,
     expires_dir_config *conf;
     const char *expiry;
     apr_table_t *t;
+
+    /* Don't add Expires headers to errors */
+    if (ap_is_HTTP_ERROR(f->r->status)) {
+        ap_remove_output_filter(f);
+        return ap_pass_brigade(f->next, b);
+    }
 
     r = f->r;
     conf = (expires_dir_config *) ap_get_module_config(r->per_dir_config,

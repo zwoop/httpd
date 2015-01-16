@@ -80,11 +80,11 @@ FOREACH(onelib ${APR_LIBRARIES})
 ENDFOREACH()
 
 MACRO(DEFINE_WITH_BLANKS output_definition input_symbol input_value)
-  IF(MSVC_IDE)
+  IF(MSVC_IDE OR ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}.${CMAKE_PATCH_VERSION} VERSION_GREATER 2.8.11)
     SET(${output_definition} "-D${input_symbol}=\"${input_value}\"")
   ELSE()
-    # assume command-line tool, where extra quotes must be added and escaped to
-    # survive
+    # command-line tool + older cmake, where extra quotes must be added and
+    # escaped to survive
     SET(${output_definition} "-D${input_symbol}=\"\\\"${input_value}\\\"\"")
   ENDIF()
 ENDMACRO()
@@ -203,6 +203,7 @@ SET(MODULE_LIST
   "modules/aaa/mod_authn_dbm+I+DBM-based authentication control"
   "modules/aaa/mod_authn_file+A+file-based authentication control"
   "modules/aaa/mod_authn_socache+I+Cached authentication control"
+  "modules/aaa/mod_authnz_fcgi+I+FastCGI authorizer-based authentication and authorization"
   "modules/aaa/mod_authnz_ldap+i+LDAP based authentication"
   "modules/aaa/mod_authz_core+A+core authorization provider vector module"
   "modules/aaa/mod_authz_dbd+I+SQL based authorization and Login/Session support"
@@ -863,6 +864,8 @@ MESSAGE(STATUS "  Install prefix .................. : ${CMAKE_INSTALL_PREFIX}")
 MESSAGE(STATUS "  C compiler ...................... : ${CMAKE_C_COMPILER}")
 MESSAGE(STATUS "  APR include directory ........... : ${APR_INCLUDE_DIR}")
 MESSAGE(STATUS "  APR libraries ................... : ${APR_LIBRARIES}")
+MESSAGE(STATUS "  OpenSSL include directory ....... : ${OPENSSL_INCLUDE_DIR}")
+MESSAGE(STATUS "  OpenSSL libraries ............... : ${OPENSSL_LIBRARIES}")
 MESSAGE(STATUS "  PCRE include directory .......... : ${PCRE_INCLUDE_DIR}")
 MESSAGE(STATUS "  PCRE libraries .................. : ${PCRE_LIBRARIES}")
 MESSAGE(STATUS "  libxml2 iconv prereq include dir. : ${LIBXML2_ICONV_INCLUDE_DIR}")

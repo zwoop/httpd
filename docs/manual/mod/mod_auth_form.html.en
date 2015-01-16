@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_auth_form - Apache HTTP Server</title>
+<title>mod_auth_form - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -107,16 +107,14 @@
       a file using <code class="module"><a href="../mod/mod_authn_file.html">mod_authn_file</a></code>. If authentication is unsuccessful,
       the user will be redirected to the form login page.</p>
 
-      <div class="example"><h3>Basic example</h3><pre class="prettyprint lang-config">
-AuthFormProvider file
+      <div class="example"><h3>Basic example</h3><pre class="prettyprint lang-config">AuthFormProvider file
 AuthUserFile conf/passwd
 AuthType form
 AuthName realm
 AuthFormLoginRequiredLocation http://example.com/login.html
 Session On
 SessionCookieName session path=/
-SessionCryptoPassphrase secret
-        </pre>
+SessionCryptoPassphrase secret</pre>
 </div>
 
       <p>The directive <code class="directive"><a href="../mod/mod_authn_core.html#authtype">AuthType</a></code> will enable
@@ -150,20 +148,18 @@ SessionCryptoPassphrase secret
       directive. Typically this login page will contain an HTML form, asking the user to
       provide their usename and password.</p>
 
-      <div class="example"><h3>Example login form</h3><p><code>
-        &lt;form method="POST" action="/dologin.html"&gt;<br />
-        Username: &lt;input type="text" name="httpd_username" value="" /&gt;<br />
-        Password: &lt;input type="password" name="httpd_password" value="" /&gt;<br />
-        &lt;input type="submit" name="login" value="Login" /&gt;<br />
-        &lt;/form&gt;<br />
-      </code></p></div>
+      <div class="example"><h3>Example login form</h3><pre class="prettyprint lang-html">&lt;form method="POST" action="/dologin.html"&gt;
+  Username: &lt;input type="text" name="httpd_username" value="" /&gt;
+  Password: &lt;input type="password" name="httpd_password" value="" /&gt;
+  &lt;input type="submit" name="login" value="Login" /&gt;
+&lt;/form&gt;</pre>
+</div>
 
       <p>The part that does the actual login is handled by the <var>form-login-handler</var>.
       The action of the form should point at this handler, which is configured within
       Apache httpd as follows:</p>
 
-      <div class="example"><h3>Form login handler example</h3><pre class="prettyprint lang-config">
-&lt;Location /dologin.html&gt;
+      <div class="example"><h3>Form login handler example</h3><pre class="prettyprint lang-config">&lt;Location /dologin.html&gt;
     SetHandler form-login-handler
     AuthFormLoginRequiredLocation http://example.com/login.html
     AuthFormLoginSuccessLocation http://example.com/success.html
@@ -174,8 +170,7 @@ SessionCryptoPassphrase secret
     Session On
     SessionCookieName session path=/
     SessionCryptoPassphrase secret
-&lt;/Location&gt;
-        </pre>
+&lt;/Location&gt;</pre>
 </div>
 
       <p>The URLs specified by the
@@ -188,16 +183,13 @@ SessionCryptoPassphrase secret
       form, as in the example below. As a result, the same <var>form-login-handler</var> can be
       reused for different areas of a website.</p>
 
-      <div class="example"><h3>Example login form with location</h3><p><code>
-        &lt;form method="POST" action="/dologin.html"&gt;<br />
-        <span class="indent">
-          Username: &lt;input type="text" name="httpd_username" value="" /&gt;<br />
-          Password: &lt;input type="password" name="httpd_password" value="" /&gt;<br />
-          &lt;input type="submit" name="login" value="Login" /&gt;<br />
-          &lt;input type="hidden" name="httpd_location" value="http://example.com/success.html" /&gt;<br />
-        </span>
-        &lt;/form&gt;<br />
-      </code></p></div>
+      <div class="example"><h3>Example login form with location</h3><pre class="prettyprint lang-html">&lt;form method="POST" action="/dologin.html"&gt;
+  Username: &lt;input type="text" name="httpd_username" value="" /&gt;
+  Password: &lt;input type="password" name="httpd_password" value="" /&gt;
+  &lt;input type="submit" name="login" value="Login" /&gt;
+  &lt;input type="hidden" name="httpd_location" value="http://example.com/success.html" /&gt;
+&lt;/form&gt;</pre>
+</div>
 
     </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -228,8 +220,7 @@ SessionCryptoPassphrase secret
       returned by the <var>HTTP_UNAUTHORIZED</var> status code with a custom error document
       containing the login form, as follows:</p>
 
-      <div class="example"><h3>Basic inline example</h3><pre class="prettyprint lang-config">
-AuthFormProvider file
+      <div class="example"><h3>Basic inline example</h3><pre class="prettyprint lang-config">AuthFormProvider file
 ErrorDocument 401 /login.shtml
 AuthUserFile conf/passwd
 AuthType form
@@ -237,8 +228,7 @@ AuthName realm
 AuthFormLoginRequiredLocation http://example.com/login.html
 Session On
 SessionCookieName session path=/
-SessionCryptoPassphrase secret
-        </pre>
+SessionCryptoPassphrase secret</pre>
 </div>
 
       <p>The error document page should contain a login form with an empty action property,
@@ -246,15 +236,12 @@ SessionCryptoPassphrase secret
       the original protected URL, without the page having to know what that
       URL is.</p>
 
-      <div class="example"><h3>Example inline login form</h3><p><code>
-        &lt;form method="POST" <strong>action=""</strong>&gt;<br />
-        <span class="indent">
-          Username: &lt;input type="text" name="httpd_username" value="" /&gt;<br />
-          Password: &lt;input type="password" name="httpd_password" value="" /&gt;<br />
-          &lt;input type="submit" name="login" value="Login" /&gt;<br />
-        </span>
-        &lt;/form&gt;<br />
-      </code></p></div>
+      <div class="example"><h3>Example inline login form</h3><pre class="prettyprint lang-html">&lt;form method="POST" <strong>action=""</strong>&gt;
+  Username: &lt;input type="text" name="httpd_username" value="" /&gt;
+  Password: &lt;input type="password" name="httpd_password" value="" /&gt;
+  &lt;input type="submit" name="login" value="Login" /&gt;
+&lt;/form&gt;</pre>
+</div>
 
       <p>When the end user has filled in their login details, the form will make
       an HTTP POST request to the original password protected URL.
@@ -282,18 +269,15 @@ SessionCryptoPassphrase secret
       <p>To enable body preservation, add three additional fields to the login form as
       per the example below.</p>
 
-      <div class="example"><h3>Example with body preservation</h3><p><code>
-        &lt;form method="POST" action=""&gt;<br />
-        <span class="indent">
-          Username: &lt;input type="text" name="httpd_username" value="" /&gt;<br />
-          Password: &lt;input type="password" name="httpd_password" value="" /&gt;<br />
-          &lt;input type="submit" name="login" value="Login" /&gt;<br />
-          <strong>&lt;input type="hidden" name="httpd_method" value="POST" /&gt;<br />
-          &lt;input type="hidden" name="httpd_mimetype" value="application/x-www-form-urlencoded" /&gt;<br />
-          &lt;input type="hidden" name="httpd_body" value="name1=value1&amp;name2=value2" /&gt;</strong><br />
-        </span>
-        &lt;/form&gt;
-      </code></p></div>
+      <div class="example"><h3>Example with body preservation</h3><pre class="prettyprint lang-html">&lt;form method="POST" action=""&gt;
+  Username: &lt;input type="text" name="httpd_username" value="" /&gt;
+  Password: &lt;input type="password" name="httpd_password" value="" /&gt;
+  &lt;input type="submit" name="login" value="Login" /&gt;
+  <br />  <strong>&lt;input type="hidden" name="httpd_method" value="POST" /&gt;
+  &lt;input type="hidden" name="httpd_mimetype" value="application/x-www-form-urlencoded" /&gt;
+  &lt;input type="hidden" name="httpd_body" value="name1=value1&amp;name2=value2" /&gt;</strong><br />
+&lt;/form&gt;</pre>
+</div>
 
       <p>How the method, mimetype and body of the original request are embedded within the
       login form will depend on the platform and technology being used within the website.
@@ -306,11 +290,9 @@ SessionCryptoPassphrase secret
       <p>Another option is to render the login form using a CGI script or other dynamic
       technology.</p>
 
-      <div class="example"><h3>CGI example</h3><pre class="prettyprint lang-config">
-        AuthFormProvider file
+      <div class="example"><h3>CGI example</h3><pre class="prettyprint lang-config">        AuthFormProvider file
         ErrorDocument 401 /cgi-bin/login.cgi
-        ...
-        </pre>
+        ...</pre>
 </div>
 
     </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -328,14 +310,12 @@ SessionCryptoPassphrase secret
       logout. This URL might explain to the user that they have been logged out, and
       give the user the option to log in again.</p>
 
-      <div class="example"><h3>Basic logout example</h3><pre class="prettyprint lang-config">
-SetHandler form-logout-handler
+      <div class="example"><h3>Basic logout example</h3><pre class="prettyprint lang-config">SetHandler form-logout-handler
 AuthName realm
 AuthFormLogoutLocation http://example.com/loggedout.html
 Session On
 SessionCookieName session path=/
-SessionCryptoPassphrase secret
-        </pre>
+SessionCryptoPassphrase secret</pre>
 </div>
 
       <p>Note that logging a user out does not delete the session; it merely removes
@@ -346,14 +326,12 @@ SessionCryptoPassphrase secret
       value, like 1 (setting the directive to zero would mean no session age limit).
       </p>
 
-      <div class="example"><h3>Basic session expiry example</h3><pre class="prettyprint lang-config">
-SetHandler form-logout-handler
+      <div class="example"><h3>Basic session expiry example</h3><pre class="prettyprint lang-config">SetHandler form-logout-handler
 AuthFormLogoutLocation http://example.com/loggedout.html
 Session On
 SessionMaxAge 1
 SessionCookieName session path=/
-SessionCryptoPassphrase secret
-        </pre>
+SessionCryptoPassphrase secret</pre>
 </div>
 
     </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -535,14 +513,12 @@ parser hass been added in 2.4.4.</td></tr>
     <p>When a URI is accessed that is served by the handler <code>form-logout-handler</code>,
     the page specified by this directive will be shown to the end user. For example:</p>
 
-    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">
-&lt;Location /logout&gt;
+    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">&lt;Location /logout&gt;
     SetHandler form-logout-handler
     AuthFormLogoutLocation http://example.com/loggedout.html
     Session on
     #...
-&lt;/Location&gt;
-      </pre>
+&lt;/Location&gt;</pre>
 </div>
 
     <p>An attempt to access the URI <var>/logout/</var> will result in the user being logged
@@ -632,8 +608,7 @@ parser hass been added in 2.4.4.</td></tr>
     by the <code class="module"><a href="../mod/mod_authn_file.html">mod_authn_file</a></code> module.  Make sure
     that the chosen provider module is present in the server.</p>
 
-    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">
-&lt;Location /secure&gt;
+    <div class="example"><h3>Example</h3><pre class="prettyprint lang-config">&lt;Location /secure&gt;
     AuthType form
     AuthName "private area"
     AuthFormProvider  dbm
@@ -641,8 +616,7 @@ parser hass been added in 2.4.4.</td></tr>
     AuthDBMUserFile    /www/etc/dbmpasswd
     Require            valid-user
     #...
-&lt;/Location&gt;
-      </pre>
+&lt;/Location&gt;</pre>
 </div>
 
     <p>Providers are implemented by <code class="module"><a href="../mod/mod_authn_dbm.html">mod_authn_dbm</a></code>,
@@ -746,7 +720,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_auth_form.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

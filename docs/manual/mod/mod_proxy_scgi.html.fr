@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>mod_proxy_scgi - Serveur Apache HTTP</title>
+<title>mod_proxy_scgi - Serveur Apache HTTP Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -71,9 +71,7 @@
     fonctionner, vous devez activer <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code> et
     <code class="module"><a href="../mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code>.</p>
 
-    <div class="example"><h3>Passerelle simple</h3><pre class="prettyprint lang-config">
-      ProxyPass /scgi-bin/ scgi://localhost:4000/
-      </pre>
+    <div class="example"><h3>Passerelle simple</h3><pre class="prettyprint lang-config">ProxyPass /scgi-bin/ scgi://localhost:4000/</pre>
 </div>
 
     <p>La passerelle à répartition de charge nécessite le chargement du
@@ -83,13 +81,11 @@
     déjà cités. <code class="module"><a href="../mod/mod_lbmethod_byrequests.html">mod_lbmethod_byrequests</a></code> est le module
     par défaut et sera utilisé dans cet exemple de configuration.</p>
 
-    <div class="example"><h3>Passerelle à répartition de charge</h3><pre class="prettyprint lang-config">
-ProxyPass /scgi-bin/ balancer://somecluster/
+    <div class="example"><h3>Passerelle à répartition de charge</h3><pre class="prettyprint lang-config">ProxyPass /scgi-bin/ balancer://somecluster/
 &lt;Proxy balancer://somecluster&gt;
     BalancerMember scgi://localhost:4000
     BalancerMember scgi://localhost:4001
-&lt;/Proxy&gt;
-    </pre>
+&lt;/Proxy&gt;</pre>
 </div>
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -129,16 +125,14 @@ provenance du serveur cible.</td></tr>
     l'état de la réponse est <code>OK</code> (<code>200</code>), et si
     la réponse contient un en-tête <code>Location</code> dont la valeur
     débute par un slash (<code>/</code>). Cette valeur est interprétée
-    comme une nouvelle URL locale vers laquelle Apache effectue sa
+    comme une nouvelle URL locale vers laquelle Apache httpd effectue sa
     redirection.</p>
 
     <p>De ce point de vue, <code class="module"><a href="../mod/mod_proxy_scgi.html">mod_proxy_scgi</a></code> fait la même
     chose que <code class="module"><a href="../mod/mod_cgi.html">mod_cgi</a></code>, mais vous pouvez en plus
     désactiver la fonctionnalité.</p>
 
-    <div class="example"><h3>Exemple</h3><pre class="prettyprint lang-config">
-    ProxySCGIInternalRedirect Off
-    </pre>
+    <div class="example"><h3>Exemple</h3><pre class="prettyprint lang-config">ProxySCGIInternalRedirect Off</pre>
 </div>
 
 </div>
@@ -155,10 +149,12 @@ provenance du serveur cible.</td></tr>
 </table>
     <p>La directive <code class="directive">ProxySCGISendfile</code> permet au
     serveur cible SCGI de faire servir les fichiers directement par la
-    passerelle. Ceci s'avère bénéfique en matière de performances --
+    passerelle. Ceci s'avère bénéfique en
+    matière de performances &#8212;
     httpd peut alors utiliser <code>sendfile</code> ou d'autres
     optimisations, ce qui n'est pas possible si les fichiers passent par
-    la socket du serveur cible.</p>
+    la socket du serveur cible. En outre, les fichiers ne sont transmis
+    qu'une seule fois.</p>
     <p>L'argument de la directive
     <code class="directive">ProxySCGISendfile</code> détermine le comportement
     de la passerelle :</p>
@@ -175,17 +171,16 @@ provenance du serveur cible.</td></tr>
 
     <dt>toute autre valeur</dt>
     <dd>Identique à <code>On</code>, mais au lieu de rechercher le nom
-    d'en-tête codé en dur, c'est la valeur de l'argument qui constitue
-    le nom de l'en-tête à rechercher.</dd>
+    d'en-tête codé en dur <code>X-Sendfile</code>, c'est la
+    valeur de l'argument qui constitue le nom de l'en-tête
+    à rechercher.</dd>
     </dl>
 
-    <div class="example"><h3>Exemple</h3><pre class="prettyprint lang-config">
-    # Utilise le nom d'en-tête par défaut (X-Sendfile)
+    <div class="example"><h3>Exemple</h3><pre class="prettyprint lang-config">    # Utilise le nom d'en-tête par défaut (X-Sendfile)
     ProxySCGISendfile On
 
     # Utilise un nom d'en-tête différent
-    ProxySCGISendfile X-Send-Static
-    </pre>
+    ProxySCGISendfile X-Send-Static</pre>
 </div>
 
 </div>
@@ -211,7 +206,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_proxy_scgi.h
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

@@ -202,7 +202,7 @@ module AP_MODULE_DECLARE_DATA   example_module =
 <!-- END EXAMPLE CODE -->
 
 
-<p>This lets the server know that we are not interesting in anything fancy, we 
+<p>This lets the server know that we are not interested in anything fancy, we 
 just want to hook onto the requests and possibly handle some of them. </p> 
 
 <p> The reference in our example declaration, <code>register_hooks</code> 
@@ -1234,7 +1234,7 @@ configurations. We do so by creating the function we just referenced in
 our name tag as the Per-directory configuration handler:</p>
 <!-- BEGIN EXAMPLE CODE -->
 <highlight language="c">
-void* example_create_dir_conf(apr_pool_t* pool, char* context) {
+void* create_dir_conf(apr_pool_t* pool, char* context) {
     context = context ? context : "(undefined context)";
     example_config *cfg = apr_pcalloc(pool, sizeof(example_config));
     if(cfg) {

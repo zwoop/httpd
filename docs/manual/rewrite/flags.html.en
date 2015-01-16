@@ -5,11 +5,11 @@
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
       -->
-<title>RewriteRule Flags - Apache HTTP Server</title>
+<title>RewriteRule Flags - Apache HTTP Server Version 2.4</title>
 <link href="../style/css/manual.css" rel="stylesheet" media="all" type="text/css" title="Main stylesheet" />
 <link href="../style/css/manual-loose-100pc.css" rel="alternate stylesheet" media="all" type="text/css" title="No Sidebar - Default font size" />
 <link href="../style/css/manual-print.css" rel="stylesheet" media="print" type="text/css" /><link rel="stylesheet" type="text/css" href="../style/css/prettify.css" />
-<script src="../style/scripts/prettify.js" type="text/javascript">
+<script src="../style/scripts/prettify.min.js" type="text/javascript">
 </script>
 
 <link href="../images/favicon.ico" rel="shortcut icon" /></head>
@@ -173,10 +173,8 @@ browsers that support this feature.</dd>
 
 <p>Consider this example:</p>
 
-<pre class="prettyprint lang-config">
-RewriteEngine On
-RewriteRule ^/index\.html - [CO=frontdoor:yes:.example.com:1440:/]
-</pre>
+<pre class="prettyprint lang-config">RewriteEngine On
+RewriteRule ^/index\.html - [CO=frontdoor:yes:.example.com:1440:/]</pre>
 
 
 <p>In the example give, the rule doesn't rewrite the request.
@@ -262,10 +260,8 @@ value of '1' if the requested URI is an image file. Then, that
 environment variable is used to exclude those requests from the access
 log.</p>
 
-<pre class="prettyprint lang-config">
-RewriteRule \.(png|gif|jpg)$ - [E=image:1]
-CustomLog logs/access_log combined env=!image
-</pre>
+<pre class="prettyprint lang-config">RewriteRule \.(png|gif|jpg)$ - [E=image:1]
+CustomLog logs/access_log combined env=!image</pre>
 
 
 <p>Note that this same effect can be obtained using <code class="directive"><a href="../mod/mod_setenvif.html#setenvif">SetEnvIf</a></code>. This technique is offered as
@@ -336,9 +332,7 @@ For example, the following snippet used in per-server context allows
 <code>.php</code> files to be <em>displayed</em> by <code>mod_php</code>
 if they are requested with the <code>.phps</code> extension:</p>
 
-<pre class="prettyprint lang-config">
-RewriteRule ^(/source/.+\.php)s$ $1 [H=application/x-httpd-php-source]
-</pre>
+<pre class="prettyprint lang-config">RewriteRule ^(/source/.+\.php)s$ $1 [H=application/x-httpd-php-source]</pre>
 
 
 <p>The regular expression above - <code>^(/source/.+\.php)s$</code> - will
@@ -386,11 +380,9 @@ redirects.</p>
 argument to <code>index.php</code>, however, the <code class="directive"><a href="../mod/mod_rewrite.html#rewritecond">RewriteCond</a></code> ensures that if the request
 is already for <code>index.php</code>, the <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> will be skipped.</p>
 
-<pre class="prettyprint lang-config">
-RewriteBase /
+<pre class="prettyprint lang-config">RewriteBase /
 RewriteCond %{REQUEST_URI} !=/index.php
-RewriteRule ^(.*) /index.php?req=$1 [L,PT]
-</pre>
+RewriteRule ^(.*) /index.php?req=$1 [L,PT]</pre>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -406,14 +398,21 @@ certain string or letter repeatedly in a request. The example shown here
 will replace A with B everywhere in a request, and will continue doing
 so until there are no more As to be replaced.
 </p>
-
 <pre class="prettyprint lang-config">RewriteRule (.*)A(.*) $1B$2 [N]</pre>
-
 
 <p>You can think of this as a <code>while</code> loop: While this
 pattern still matches (i.e., while the URI still contains an
 <code>A</code>), perform this substitution (i.e., replace the
 <code>A</code> with a <code>B</code>).</p>
+
+<p>In 2.4.8 and later, this module returns an error after 32,000 iterations to
+protect against unintended looping.  An alternative maximum number of 
+iterations can be specified by adding to the N flag.  </p>
+<pre class="prettyprint lang-config"># Be willing to replace 1 character in each pass of the loop
+RewriteRule (.+)[&gt;&lt;;]$ $1 [N=64000]
+# ... or, give up if after 10 loops
+RewriteRule (.+)[&gt;&lt;;]$ $1 [N=10]</pre>
+
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -536,10 +535,8 @@ use the [PT] flag to ensure that the
 <code class="directive"><a href="../mod/mod_alias.html#alias">Alias</a></code> is evaluated.
 </p>
 
-<pre class="prettyprint lang-config">
-Alias /icons /usr/local/apache/icons
-RewriteRule /pics/(.+)\.jpg$ /icons/$1.gif [PT]
-</pre>
+<pre class="prettyprint lang-config">Alias /icons /usr/local/apache/icons
+RewriteRule /pics/(.+)\.jpg$ /icons/$1.gif [PT]</pre>
 
 
 <p>
@@ -638,22 +635,20 @@ URI in request' warnings.
 <h2><a name="flag_s" id="flag_s">S|skip</a></h2>
 <p>The [S] flag is used to skip rules that you don't want to run. The
 syntax of the skip flag is [S=<em>N</em>], where <em>N</em> signifies
-the number of rules to skip (provided the <code class="directive"><a href="../mod/mod_rewrite.html#&#10;rewriterule">
+the number of rules to skip (provided the <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">
 RewriteRule</a></code> matches). This can be thought of as a <code>goto</code>
 statement in your rewrite ruleset. In the following example, we only want
 to run the <code class="directive"><a href="../mod/mod_rewrite.html#rewriterule">RewriteRule</a></code> if the
 requested URI doesn't correspond with an actual file.</p>
 
-<pre class="prettyprint lang-config">
-# Is the request for a non-existent file?
+<pre class="prettyprint lang-config"># Is the request for a non-existent file?
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # If so, skip these two RewriteRules
 RewriteRule .? - [S=2]
 
 RewriteRule (.*\.gif) images.php?$1
-RewriteRule (.*\.html) docs.php?$1
-</pre>
+RewriteRule (.*\.html) docs.php?$1</pre>
 
 
 <p>This technique is useful because a <code class="directive"><a href="../mod/mod_rewrite.html#rewritecond">RewriteCond</a></code> only applies to the
@@ -664,8 +659,7 @@ negate those conditions and add a <code>RewriteRule</code> with a [Skip] flag. Y
 use this to make pseudo if-then-else constructs: The last rule of
 the then-clause becomes <code>skip=N</code>, where N is the
 number of rules in the else-clause:</p>
-<pre class="prettyprint lang-config">
-# Does the file exist?
+<pre class="prettyprint lang-config"># Does the file exist?
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 # Create an if-then-else construct by skipping 3 lines if we meant to go to the "else" stanza.
@@ -678,8 +672,7 @@ RewriteRule .? - [S=3]
     RewriteRule .? - [S=1]
 # ELSE...
     RewriteRule (.*) 404.php?file=$1
-# END
-</pre>
+# END</pre>
 
 
 <p>It is probably easier to accomplish this kind of configuration using
@@ -694,20 +687,16 @@ sent. This has the same effect as the <code class="directive"><a href="../mod/mo
 <p>For example, you might use the following technique to serve Perl
 source code as plain text, if requested in a particular way:</p>
 
-<pre class="prettyprint lang-config">
-# Serve .pl files as plain text
-RewriteRule \.pl$ - [T=text/plain]
-</pre>
+<pre class="prettyprint lang-config"># Serve .pl files as plain text
+RewriteRule \.pl$ - [T=text/plain]</pre>
 
 
 <p>Or, perhaps, if you have a camera that produces jpeg images without
 file extensions, you could force those images to be served with the
 correct MIME type by virtue of their file names:</p>
 
-<pre class="prettyprint lang-config">
-# Files with 'IMG' in the name are jpg images.
-RewriteRule IMG - [T=image/jpg]
-</pre>
+<pre class="prettyprint lang-config"># Files with 'IMG' in the name are jpg images.
+RewriteRule IMG - [T=image/jpg]</pre>
 
 
 <p>Please note that this is a trivial example, and could be better done
@@ -746,7 +735,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/rewrite/flags.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2013 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

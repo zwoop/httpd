@@ -597,6 +597,7 @@ typedef struct {
 #define AP_CONDITION_ELSE      2
 #define AP_CONDITION_ELSEIF    (AP_CONDITION_ELSE|AP_CONDITION_IF)
     unsigned int condition_ifelse : 2; /* is this an <If>, <ElseIf>, or <Else> */
+    unsigned int d_is_directory : 1; /* Whether core_dir_config is Directory* */
 
     ap_expr_info_t *condition;   /* Conditionally merge <If> sections */
 
@@ -616,6 +617,10 @@ typedef struct {
     int max_overlaps;
     /** Max number of Range reversals (eg: 200-300, 100-125) allowed **/
     int max_reversals;
+
+
+    /** Named back references */
+    apr_array_header_t *refs;
 
 } core_dir_config;
 
@@ -663,6 +668,10 @@ typedef struct {
 #define AP_TRACE_ENABLE    1
 #define AP_TRACE_EXTENDED  2
     int trace_enable;
+#define AP_MERGE_TRAILERS_UNSET    0
+#define AP_MERGE_TRAILERS_ENABLE   1
+#define AP_MERGE_TRAILERS_DISABLE  2
+    int merge_trailers;
 
 } core_server_config;
 

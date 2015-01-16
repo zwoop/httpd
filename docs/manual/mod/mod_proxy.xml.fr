@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1532824 -->
+<!-- English Revision: 1641386:1651668 (outdated) -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -184,6 +184,28 @@ ProxyVia On
     </highlight>
     </example>
     </section> <!-- /examples -->
+
+    <section id="handler"><title>Acc&egrave;s via un gestionnaire</title>
+
+    <p>Vous pouvez aussi forcer le traitement d'une requ&ecirc;te en tant que
+    requ&ecirc;te de mandataire inverse en cr&eacute;ant un gestionnaire de transfert
+    appropri&eacute;. Dans l'exemple suivant, toutes les requ&ecirc;tes pour
+    des scripts PHP seront transmises au serveur FastCGI
+    sp&eacute;cifi&eacute; via un mandat inverse :
+    </p>
+
+    <example><title>Scripts PHP et mandataire inverse</title>
+    <highlight language="config">
+&lt;FilesMatch \.php$&gt;
+    SetHandler  "proxy:unix:/path/to/app.sock|fcgi://localhost/"
+&lt;/FilesMatch&gt;
+    </highlight>
+      </example>
+
+      <p>Cette fonctionnalit&eacute; est disponible &agrave; partir de la version
+      2.4.10 du serveur HTTP Apache.</p>
+
+    </section> <!-- /handler -->
 
     <section id="workers"><title>Workers</title>
       <p>Le mandataire g&egrave;re la configuration et les param&egrave;tres de
@@ -489,6 +511,10 @@ ProxyPass /examples http://backend.example.com/examples timeout=10
     module="mod_proxy">ProxyVia</directive> directives, qui permettent
     de contr&ocirc;ler d'autres en-t&ecirc;tes de requ&ecirc;te.</p>
 
+    <p>Note : Si vous devez ajouter des en-t&ecirc;tes particuliers &agrave; la
+    requ&ecirc;te mandat&eacute;e, utilisez la directive  <directive
+    module="mod_headers">RequestHeader</directive>.</p>
+
    </section> <!--/x-headers -->
 
 
@@ -525,6 +551,22 @@ mandat&eacute;es</description>
   SetOutputFilter INCLUDES
 &lt;/Proxy&gt;
     </highlight>
+
+    <note><title>Diff&eacute;rences avec la section de configuration Location</title>
+      <p>Une URL d'arri&egrave;re-plan sera concern&eacute;e par le conteneur Proxy si
+      elle commence par la <var>url-avec-jokers</var>, m&ecirc;me si le
+      dernier segment de chemin de la directive ne correspond qu'&agrave; un
+      pr&eacute;fixe de segment dee chemin de l'URL d'arri&egrave;re-plan. Par exemple, &lt;Proxy
+      http://example.com/foo&gt; correspondra entre autres aux URLs
+      http://example.com/foo, http://example.com/foo/bar, et
+      http://example.com/foobar. La correspondance de l'URL finale
+      diff&egrave;re du comportement de la section <directive type="section"
+      module="core">Location</directive> qui, pour le cas de cette note,
+      traitera le segment de chemin final comme s'il se terminait par un
+      slash.</p>
+      <p>Pour un contr&ocirc;le plus fin de la correspondance des URL, voir la
+      directive <directive type="section">ProxyMatch</directive>.</p>
+    </note>
 
 </usage>
 <seealso><directive type="section" module="mod_proxy">ProxyMatch</directive></seealso>
@@ -579,6 +621,21 @@ mandat&eacute;es correspondant &agrave; une expression rationnelle</description>
     type="section">Proxy</directive>, &agrave; l'exception qu'elle d&eacute;finit
     les URLs auxquelles elle s'applique en utilisant une <glossary
     ref="regex">expression rationnelle</glossary>.</p>
+
+    <p>A partir de la version 2.4.8, les groupes nomm&eacute;s et les
+    r&eacute;f&eacute;rences arri&egrave;res sont extraits et enregistr&eacute;s dans
+    l'environnement avec leur nom en majuscules et pr&eacute;fix&eacute; par "MATCH_". Ceci permet
+    de r&eacute;f&eacute;rencer des URLs dans des <a href="../expr.html">expressions</a>
+    ou au sein de modules comme <module>mod_rewrite</module>. Pour
+    &eacute;viter toute confusion, les r&eacute;f&eacute;rences arri&egrave;res num&eacute;rot&eacute;es (non
+    nomm&eacute;es) sont ignor&eacute;es. Vous devez utiliser &agrave; la place des groupes
+    nomm&eacute;s.</p>
+
+<highlight language="config">
+&lt;ProxyMatch ^http://(?&lt;sitename&gt;[^/]+)&gt;
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;/ProxyMatch&gt;
+</highlight>
 </usage>
 <seealso><directive type="section" module="mod_proxy">Proxy</directive></seealso>
 </directivesynopsis>
@@ -738,7 +795,7 @@ serveur HTTP Apache</compatibility>
     <default>BalancerPersist Off</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
     <compatibility>BalancerPersist n'est disponible qu'&agrave; partir de la
-    version 2.5.0 du serveur HTTP Apache.</compatibility>
+    version 2.4.4 du serveur HTTP Apache.</compatibility>
     <usage>
         <p>Cette directive permet de conserver le contenu de l'espace
 	m&eacute;moire partag&eacute; associ&eacute; aux r&eacute;partiteurs de charge et &agrave; leurs
@@ -755,7 +812,7 @@ serveur principal</description>
     <syntax>ProxyPassInherit On|Off</syntax>
     <default>ProxyPassInherit On</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
-    <compatibility>Disponible &agrave; partir de la version 2.5.0 du serveur
+    <compatibility>Disponible &agrave; partir de la version 2.4.5 du serveur
 HTTP Apache.</compatibility>
     <usage>
         <p>Cette directive permet &agrave; un serveur virtuel d'h&eacute;riter des
@@ -778,7 +835,7 @@ HTTP Apache.</compatibility>
     <syntax>BalancerInherit On|Off</syntax>
     <default>BalancerInherit On</default>
     <contextlist><context>server config</context><context>virtual host</context></contextlist>
-    <compatibility>Disponible &agrave; partir de la version 2.5.0 du serveur
+    <compatibility>Disponible &agrave; partir de la version 2.4.5 du serveur
     HTTP Apache.</compatibility>
     <usage>
         <p>Cette directive permet d'attribuer au serveur virtuel courant
@@ -804,17 +861,16 @@ charge</description>
 </contextlist>
 <compatibility>Disponible depuis la version 2.2 du serveur HTTP Apache.</compatibility>
 <usage>
-    <p>Cette directive parmet d'ajouter un membre &agrave; un groupe de
+    <p>Cette directive permet d'ajouter un membre &agrave; un groupe de
     r&eacute;partition de charge. Elle peut se trouver dans un conteneur
     <code>&lt;Proxy <var>balancer://</var>...&gt;</code>, et accepte
     tous les param&egrave;tres de paires cl&eacute;/valeur que supporte la directive
     <directive module="mod_proxy">ProxyPass</directive>.</p>
-    <p>La directive <directive
-    module="mod_proxy">BalancerMember</directive> accepte un param&egrave;tre
+    <p>La directive <directive>BalancerMember</directive> accepte un param&egrave;tre
     suppl&eacute;mentaire : <var>loadfactor</var>. Il s'agit du facteur de
     charge du membre - un nombre entre 1 (valeur par d&eacute;faut) et 100, qui
     d&eacute;finit la charge &agrave; appliquer au membre en question.</p>
-    <p>L'argument balancerurl n'est requis que s'il ne se trouve pas
+    <p>L'argument <var>balancerurl</var> n'est requis que s'il ne se trouve pas
     d&egrave;j&agrave; dans la directive de conteneur <code>&lt;Proxy
     <var>balancer://</var>...&gt;</code>. Il correspond &agrave; l'URL d'un
     r&eacute;partiteur de charge d&eacute;fini par une directive <directive
@@ -823,7 +879,7 @@ charge</description>
     conteneur <code>&lt;Proxy <var>balancer://</var>...&gt;</code> est
     ignor&eacute;e.</p>
     <p>En particulier, le slash de fin de l'URL d'un
-    <code>BalancerMember</code> doit &ecirc;tre supprim&eacute;.</p>
+    <directive>BalancerMember</directive> doit &ecirc;tre supprim&eacute;.</p>
 </usage>
 </directivesynopsis>
 
@@ -911,6 +967,16 @@ l'espace d'URLs du serveur local</description>
     module="mod_proxy">ProxyRequests</directive> doit &ecirc;tre d&eacute;finie &agrave;
     <strong>off</strong> lorsqu'on utilise la directive
     <directive>ProxyPass</directive>.</note>
+
+    <p>Le support des sockets de style Unix est fourni ; il suffit pour
+    cela d'utiliser une URL cible pr&eacute;fix&eacute;e par
+    <code>unix:/path/lis.sock|</code>. Par exemple, pour mandater HTTP
+    et cibler l'UDS /home/www/socket, vous devez utiliser
+    <code>unix:/home/www.socket|http://localhost/whatever/</code>.</p>
+
+    <note><strong>Note :</strong>Le chemin associ&eacute; &agrave; l'URL
+    <code>unix:</code> tient compte de la directive
+    <directive>DefaultRuntimeDir</directive>.</note>
 
     <p>Supposons que le serveur local a pour adresse
     <code>http://example.com/</code> ; alors la ligne</p>
@@ -1271,7 +1337,8 @@ ProxyPass /mirror/foo http://backend.example.com
 	d'application d'arri&egrave;re-plan utilise des noms diff&eacute;rents pour
 	les cookies et les identifiants cod&eacute;s d'URL (comme les
 	conteneurs de servlet), s&eacute;parez-les par le caract&egrave;re '|'. La
-	premi&egrave;re partie contient le cookie et la seconde le chemin.
+	premi&egrave;re partie contient le cookie et la seconde le chemin.<br />
+	Disponible depuis la version 2.4.4 du serveur HTTP Apache.
     </td></tr>
     <tr><td>stickysessionsep</td>
         <td>"."</td>
@@ -1312,7 +1379,7 @@ ProxyPass /mirror/foo http://backend.example.com
 	d&eacute;pass&eacute; en entr&eacute;e/sortie apr&egrave;s envoi d'une requ&ecirc;te au serveur
 	d'arri&egrave;re-plan va mettre le processus en &eacute;tat d'erreur. La
 	sortie de cet &eacute;tat d'erreur se passe de la m&ecirc;me fa&ccedil;on que pour
-	les autres erreurs.
+	les autres erreurs.<br />
 	Disponible &agrave; partir de la version 2.4.5 du serveur HTTP Apache.
     </td></tr>
     <tr><td>nonce</td>
@@ -1343,7 +1410,8 @@ ProxyPass /mirror/foo http://backend.example.com
 	surcharg&eacute; entre dans une situation critique si la relance de
 	tous les membres est forc&eacute;e sans tenir compte du param&egrave;tre retry
 	de chaque membre. Dans ce cas, d&eacute;finissez ce param&egrave;tre &agrave;
-	<code>Off</code>.
+	<code>Off</code>.<br />
+	Disponible depuis la version 2.4.2 du serveur HTTP Apache.
     </td></tr>
 
     </table>
@@ -1408,8 +1476,7 @@ ProxyPass / balancer://hotcluster/
     module="mod_rewrite">RewriteRule</directive> et son drapeau
     <code>[P]</code>.</p>
 
-    <p>Le mot-cl&eacute; optionnel <var>interpolate</var> (disponible depuis
-    httpd 2.2.9), en combinaison avec la directive
+    <p>Le mot-cl&eacute; optionnel <var>interpolate</var>, en combinaison avec la directive
     <directive>ProxyPassInterpolateEnv</directive>, permet &agrave; ProxyPass
     d'interpoler les variables d'environnement &agrave; l'aide de la syntaxe
     <var>${VARNAME}</var>. Notez que de nombreuses variables
@@ -1464,7 +1531,7 @@ du serveur local en utilisant des expressions rationnelles</description>
     <code>http://example.com/</code> ; alors</p>
 
     <highlight language="config">
-      ProxyPassMatch ^(/.*\.gif)$ http://backend.example.com$1
+      ProxyPassMatch ^(/.*\.gif)$ http://backend.example.com/$1
     </highlight>
 
     <p>va provoquer la conversion interne de la requ&ecirc;te locale
@@ -1500,6 +1567,14 @@ du serveur local en utilisant des expressions rationnelles</description>
     plus flexible, voyez la directive <directive
     module="mod_rewrite">RewriteRule</directive> avec le drapeau
     <code>[P]</code>.</p>
+
+    <note>
+ 	<title>Substitution par d&eacute;faut</title>
+ 	<p>Lorsque le param&egrave;tre URL n'utilise pas de r&eacute;f&eacute;rences arri&egrave;res
+	dans l'expression rationnelle, l'URL originale sera ajout&eacute;e au
+	param&egrave;tre URL.
+ 	</p>
+ 	</note>
 
     <note type="warning">
       <title>Avertissement &agrave; propos de la s&eacute;curit&eacute;</title>
@@ -1579,8 +1654,8 @@ ProxyPassReverseCookiePath  /  /mirror/foo/
     <directive module="mod_proxy">ProxyPass</directive>
     correspondante.</p>
 
-    <p>Le mot-cl&eacute; optionnel <var>interpolate</var> (disponible depuis
-    httpd 2.2.9), utilis&eacute; en combinaison avec la directive
+    <p>Le mot-cl&eacute; optionnel <var>interpolate</var>, en
+    combinaison avec la directive
     <directive>ProxyPassInterpolateEnv</directive>, permet
     l'interpolation des variables d'environnement sp&eacute;cifi&eacute;es en
     utilisant le format <var>${VARNAME}</var> Notez que l'interpolation

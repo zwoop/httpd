@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1525590 -->
+<!-- English Revision: 1643418 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -361,6 +361,9 @@ d'Apache</compatibility>
     disponibles, sous r&eacute;serve du chargement de modules d'autorisation
     suppl&eacute;mentaires.</p>
 
+    <p>Depuis la version 2.4.8, les directives require LDAP supportent
+    les <a href="../expr.html">expressions</a>.</p>
+
 <section id="requser"><title>Require ldap-user</title>
 
     <p>La directive <code>Require ldap-user</code> permet de sp&eacute;cifier
@@ -454,12 +457,12 @@ uniqueMember: cn=Elliot Rhodes, o=Example
 </pre></example>
 
     <p>Les directives suivantes autoriseraient alors l'acc&egrave;s &agrave; Bob
-    Ellis, Tom Jackson, Barbara Jensen, Fred User, Allan Jefferson, et
+    Ellis, Tom Jackson, Barbara Jenson, Fred User, Allan Jefferson, et
     Paul Tilley, mais l'interdiraient &agrave; Jim Swenson, ou Elliot Rhodes
     (car ils sont situ&eacute;s dans un sous-groupe de niveau de profondeur 2)
     :</p>
 <highlight language="config">
-Require ldap-group cn=Employees, o-Example
+Require ldap-group cn=Employees, o=Example
 AuthLDAPMaxSubGroupDepth 1
 </highlight>
 
@@ -599,6 +602,17 @@ Require valid-user
 <highlight language="config">
 AuthLDAPURL ldap://ldap.example.com/o=Example?uid
 Require ldap-group cn=Administrators, o=Example
+</highlight>
+      </li>
+
+      <li>
+      Accorde l'acc&egrave;s &agrave; tout utilisateur appartenant au groupe dont le
+      nom correspond au nom d'h&ocirc;te du serveur virtuel. Dans cet exemple,
+      on utilise une <a href="../expr.html">expression</a> pour
+      construire le filtre.
+<highlight language="config">
+AuthLDAPURL ldap://ldap.example.com/o=Example?uid
+Require ldap-group cn=%{SERVER_NAME}, o=Example
 </highlight>
       </li>
 
@@ -1016,6 +1030,8 @@ connexion</description>
 <contextlist><context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>AuthConfig</override>
+<compatibility><em>exec:</em> est disponible depuis la version 2.4.5 du
+serveur HTTP Apache.</compatibility>
 
 <usage>
     <p>Cette directive permet de sp&eacute;cifier un mot de passe &agrave; utiliser en
@@ -1031,7 +1047,7 @@ connexion</description>
     <p>Si la valeur sp&eacute;cifi&eacute;e d&eacute;bute par "exec:", la commande qui suit sera
     ex&eacute;cut&eacute;e, et la premi&egrave;re ligne renvoy&eacute;e par la commande sur la
     sortie standard sera utilis&eacute;e comme mot de passe.</p>
-<example><pre>
+<highlight language="config">
 # Mot de passe sp&eacute;cifi&eacute; directement
 AuthLDAPBindPassword secret
 
@@ -1040,7 +1056,7 @@ AuthLDAPBindPassword exec:/path/to/program
 
 # Ex&eacute;cution de /path/to/otherProgram avec un argument pour obtenir le mot de passe
 AuthLDAPBindPassword "exec:/path/to/otherProgram argument1"
-</pre></example>
+</highlight>
 
 </usage>
 </directivesynopsis>
@@ -1480,7 +1496,10 @@ sp&eacute;cifi&eacute;s.</p>
 	taille des filtres est limit&eacute;e &agrave; environ 8000 caract&egrave;res (valeur
 	de la macro <code>MAX_STRING_LEN</code> dans le code source
 	d'Apache), ce qui s'av&egrave;re plus que suffisant pour la plupart des
-	applications.</dd>
+	applications. Depuis la version 2.4.10, il est possible
+	d'utiliser le param&egrave;tre "none" pour sp&eacute;cifier qu'aucun filtre
+	n'est activ&eacute; ; ce param&egrave;tre est obligatoire avec certains
+	serveurs LDAP primitifs.</dd>
 </dl>
 
     <p>Pour une recherche, les attribut, filtre et nom d'utilisateur

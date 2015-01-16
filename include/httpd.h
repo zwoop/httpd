@@ -648,6 +648,9 @@ struct ap_method_list_t {
 #define INCLUDES_MAGIC_TYPE3 "text/x-server-parsed-html3"
 /** Magic for mod_dir */
 #define DIR_MAGIC_TYPE "httpd/unix-directory"
+/** Default for r->handler if no content-type set by type_checker */
+#define AP_DEFAULT_HANDLER_NAME ""
+#define AP_IS_DEFAULT_HANDLER_NAME(x) (*x == '\0')
 
 /** @} */
 /* Just in case your linefeed isn't the one the other end is expecting. */
@@ -1032,6 +1035,11 @@ struct request_rec {
      */
     apr_sockaddr_t *useragent_addr;
     char *useragent_ip;
+
+    /** MIME trailer environment from the request */
+    apr_table_t *trailers_in;
+    /** MIME trailer environment from the response */
+    apr_table_t *trailers_out;
 };
 
 /**

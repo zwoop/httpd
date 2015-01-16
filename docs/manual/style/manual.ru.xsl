@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
  contributor license agreements.  See the NOTICE file distributed with
@@ -30,6 +29,7 @@
 <xsl:variable name="output-encoding">KOI8-R</xsl:variable>
 <xsl:variable name="is-chm" select="false()"/>
 <xsl:variable name="is-zip" select="false()"/>
+<xsl:variable name="is-retired" select="false()"/>
 
 <!-- Now get the real guts of the stylesheet -->
 <xsl:include href="xsl/common.xsl"/>
