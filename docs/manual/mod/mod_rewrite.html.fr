@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -27,6 +29,8 @@
 <p><span>Langues Disponibles: </span><a href="../en/mod/mod_rewrite.html" hreflang="en" rel="alternate" title="English">&nbsp;en&nbsp;</a> |
 <a href="../fr/mod/mod_rewrite.html" title="Français">&nbsp;fr&nbsp;</a></p>
 </div>
+<div class="outofdate">Cette traduction peut être périmée. Vérifiez la version
+            anglaise pour les changements récents.</div>
 <table class="module"><tr><th><a href="module-dict.html#Description">Description:</a></th><td>Ce module fournit un moteur de réécriture à base de
 règles permettant de réécrire les URLs des requêtes
 à la volée</td></tr>
@@ -61,7 +65,10 @@ règles permettant de réécrire les URLs des requêtes
       <a href="../rewrite/">documentation détaillée
       sur mod_rewrite</a>.</p>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
+<div id="quickview"><h3>Sujets</h3>
+<ul id="topics">
+<li><img alt="" src="../images/down.gif" /> <a href="#logging">Journalisation</a></li>
+</ul><h3 class="directives">Directives</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#rewritebase">RewriteBase</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rewritecond">RewriteCond</a></li>
@@ -70,10 +77,7 @@ règles permettant de réécrire les URLs des requêtes
 <li><img alt="" src="../images/down.gif" /> <a href="#rewriteoptions">RewriteOptions</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rewriterule">RewriteRule</a></li>
 </ul>
-<h3>Sujets</h3>
-<ul id="topics">
-<li><img alt="" src="../images/down.gif" /> <a href="#logging">Journalisation</a></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
+<ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="logging" id="logging">Journalisation</a></h2>
@@ -115,7 +119,7 @@ règles permettant de réécrire les URLs des requêtes
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteBase" id="RewriteBase">RewriteBase</a> <a name="rewritebase" id="rewritebase">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewritebase" id="rewritebase">Directive</a> <a name="RewriteBase" id="RewriteBase">RewriteBase</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit l'URL de base pour les réécritures au niveau
 répertoire</td></tr>
@@ -144,6 +148,10 @@ répertoire</td></tr>
 	  contenant la <code class="directive">RewriteRule</code>, suffixé par
 	  la substitution relative est aussi valide en tant qu'URL sur
 	  le serveur (ce qui est rare).</li>
+	  <li>A partir de la version 2.4.13 du serveur HTTP Apache,
+	  cette directive peut être omise lorsque la requête est
+	  transformée via une directive <code class="directive"><a href="../mod/mod_alias.html#alias">Alias</a></code> ou le module
+	  <code class="module"><a href="../mod/mod_userdir.html">mod_userdir</a></code>.</li>
       </ul>
 
 <p>Dans l'exemple ci-dessous, la directive
@@ -153,18 +161,19 @@ ressource n'était pas relative à la racine des documents. Cette erreur
 de configuration aurait conduit le serveur à rechercher un répertoire
 "opt" à la racine des documents.</p>
 
-<pre class="prettyprint lang-config">DocumentRoot /var/www/example.com
-Alias /myapp /opt/myapp-1.2.3
-&lt;Directory /opt/myapp-1.2.3&gt;
+<pre class="prettyprint lang-config">DocumentRoot "/var/www/example.com"
+AliasMatch "^/myapp" "/opt/myapp-1.2.3"
+&lt;Directory "/opt/myapp-1.2.3"&gt;
  RewriteEngine On
     RewriteBase /myapp/
-    RewriteRule ^index\.html$  welcome.html
+    RewriteRule "^index\.html$"  "welcome.html"
 &lt;/Directory&gt;</pre>
+
 
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteCond" id="RewriteCond">RewriteCond</a> <a name="rewritecond" id="rewritecond">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewritecond" id="rewritecond">Directive</a> <a name="RewriteCond" id="RewriteCond">RewriteCond</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit une condition qui devra être satisfaite pour que
 la réécriture soit effectuée
@@ -202,8 +211,8 @@ la réécriture soit effectuée
 	  </strong> : ce sont des références arrières de la forme
 	  <strong><code>%N</code></strong> (0 &lt;= N &lt;= 9). %1 à %9
 	  permettent d'accéder aux parties regroupées (entre
-	  parenthèses) du modèle, issues de la <code>RewriteRule</code>
-	  concernée par le jeu de conditions <code>RewriteCond</code>
+	  parenthèses) du modèle, issues de la dernière
+	  condition <code>RewriteCond</code> satisfaite du jeu de conditions <code>RewriteCond</code>
 	  courant. %0 donne accès à l'ensemble de la chaîne
 	  correspondant au modèle.</li>
         <li>
@@ -683,7 +692,7 @@ la réécriture soit effectuée
            </p>
 
            <pre class="prettyprint lang-config">           RewriteCond expr "! %{HTTP_REFERER} -strmatch '*://%{HTTP_HOST}/*'"<br />
-           RewriteRule ^/images - [F]</pre>
+           RewriteRule "^/images" "-" [F]</pre>
 
         </li>
 
@@ -712,9 +721,9 @@ la réécriture soit effectuée
 	  Permet de chaîner les conditions de règles avec un OU au
 	  lieu du AND implicite. Exemple typique :
 
-<pre class="prettyprint lang-config">RewriteCond %{REMOTE_HOST}  ^host1  [OR]
-RewriteCond %{REMOTE_HOST}  ^host2  [OR]
-RewriteCond %{REMOTE_HOST}  ^host3
+<pre class="prettyprint lang-config">RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host3"
 RewriteRule ...règles concernant tous ces hôtes...</pre>
 
 
@@ -742,10 +751,10 @@ RewriteRule ...règles concernant tous ces hôtes...</pre>
        l'en-tête ``<code>User-Agent:</code>'' de la requête, vous
        pouvez utiliser ce qui suit : </p>
 
-<pre class="prettyprint lang-config">RewriteCond  %{HTTP_USER_AGENT}  (iPhone|Blackberry|Android)
-RewriteRule  ^/$                 /homepage.mobile.html  [L]
+<pre class="prettyprint lang-config">RewriteCond  "%{HTTP_USER_AGENT}"  "(iPhone|Blackberry|Android)"
+RewriteRule  "^/$"                 "/homepage.mobile.html"  [L]
 
-RewriteRule  ^/$                 /homepage.std.html  [L]</pre>
+RewriteRule  "^/$"                "/homepage.std.html"  [L]</pre>
 
 
         <p>Explications : si vous utilisez un navigateur
@@ -758,7 +767,7 @@ RewriteRule  ^/$                 /homepage.std.html  [L]</pre>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteEngine" id="RewriteEngine">RewriteEngine</a> <a name="rewriteengine" id="rewriteengine">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewriteengine" id="rewriteengine">Directive</a> <a name="RewriteEngine" id="RewriteEngine">RewriteEngine</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Active ou désactive l'exécution du
 moteur de réécriture</td></tr>
@@ -795,7 +804,7 @@ moteur de réécriture</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteMap" id="RewriteMap">RewriteMap</a> <a name="rewritemap" id="rewritemap">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewritemap" id="rewritemap">Directive</a> <a name="RewriteMap" id="RewriteMap">RewriteMap</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit une fonction de mise en correspondance pour la
 recherche de mots-clés</td></tr>
@@ -841,13 +850,13 @@ recherche de mots-clés</td></tr>
       <p>Par exemple, vous pouvez définir une directive
       <code class="directive">RewriteMap</code> comme suit </p>
 
-      <pre class="prettyprint lang-config">RewriteMap map-exemple txt:/chemin/vers/fichier/map.txt</pre>
+      <pre class="prettyprint lang-config">RewriteMap "map-exemple" "txt:/chemin/vers/fichier/map.txt"</pre>
 
 
       <p>Vous pourrez ensuite utiliser cette table dans une
       directive <code class="directive">RewriteRule</code> comme suit :</p>
 
-      <pre class="prettyprint lang-config">RewriteRule ^/ex/(.*) ${map-exemple:$1}</pre>
+      <pre class="prettyprint lang-config">RewriteRule "^/ex/(.*)" "${map-exemple:$1}"</pre>
 
 
       <p>Les combinaisons suivantes pour <em>type de correspondance</em>
@@ -888,7 +897,7 @@ recherche de mots-clés</td></tr>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteOptions" id="RewriteOptions">RewriteOptions</a> <a name="rewriteoptions" id="rewriteoptions">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewriteoptions" id="rewriteoptions">Directive</a> <a name="RewriteOptions" id="RewriteOptions">RewriteOptions</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Configure certaines options spéciales
 pour le moteur de réécriture</td></tr>
@@ -1033,11 +1042,28 @@ la version version 2.1</td></tr>
       cette option permet de le rétablir à partir de la version 2.4.4 du
       serveur HTTP Apache.</p>
       </dd>
+      
+      <dt><code>IgnoreContextInfo</code></dt>
+      <dd>
+
+      <p>Dans les versions 2.4.13 et antérieures, lors d'une
+      substitution relative dans un contexte de répertoire (htaccess),
+      et si la directive <code class="directive"><a href="#rewritebase">RewriteBase</a></code> n'a pas été définie,
+      ce module utilise des informations en provenance d'une extension
+      d'URL et du contexte du système de fichiers pour transformer la
+      sustitution relative en URL. Par exemple, les modules
+      <code class="module"><a href="../mod/mod_userdir.html">mod_userdir</a></code> et <code class="module"><a href="../mod/mod_alias.html">mod_alias</a></code>
+      utilisent ces informations de contexte étendu. Cette option
+      désactive le comportement introduit avec la version 2.4.13, et ne
+      doit être utilisée que si toutes les conditions précédentes sont
+      vérifiées, et si la substitution renvoie un résultat inattendu.</p>
+      </dd>
+
       </dl>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="RewriteRule" id="RewriteRule">RewriteRule</a> <a name="rewriterule" id="rewriterule">Directive</a></h2>
+<div class="directive-section"><h2><a name="rewriterule" id="rewriterule">Directive</a> <a name="RewriteRule" id="RewriteRule">RewriteRule</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Définit les règles pour le moteur de réécriture</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>RewriteRule
@@ -1059,10 +1085,11 @@ la version version 2.1</td></tr>
       <a id="regexp" name="regexp">expression rationnelle</a>
       compatible perl. Dans la première règle de réécriture,
       l'expression est comparée au (%-decoded)
-      <a href="./directive-dict.html#Syntax">chemin de l'URL</a> (ou au
-      <a href="./directive-dict.html#Syntax">chemin fichier</a>, en
-      fonction du contexte) de la
-      requête. Les expressions suivantes sont comparées à la sortie de
+      <a href="./directive-dict.html#Syntax">chemin de l'URL</a> de la
+      requête, ou, dans un contexte de répertoire (voir
+      ci-dessous), au chemin de l'URL relativement à ce contexte de
+      répertoire. 
+      Les expressions suivantes sont comparées à la sortie de
       la dernière règle de réécriture qui
       correspondait.</p>
 

@@ -260,8 +260,22 @@ later</compatibility>
       default behavior in 2.4.0 through 2.4.3, and the flag to restore it is
       available Apache HTTP Server 2.4.4 and later.</p>
       </dd>
-      </dl>
 
+      <dt><code>IgnoreContextInfo</code></dt>
+      <dd>
+
+      <p>In versions 2.4.13 and later, when a relative substitution is made
+         in directory (htaccess) context and <directive module="mod_rewrite"
+         >RewriteBase</directive> has not been set, this module uses some
+         extended URL and filesystem context information to change the 
+         relative substitution back into a URL. Modules such as 
+         <module>mod_userdir</module> and <module>mod_alias</module>
+         supply this extended context info.  This option disables the behavior
+         introduced in 2.4.13 and should only be set if all of the conditions 
+         above are present and a substituion has an unexpected result.  </p>
+      </dd>
+
+      </dl>
 </usage>
 
 </directivesynopsis>
@@ -307,14 +321,14 @@ later</compatibility>
       <directive>RewriteMap</directive> as:</p>
 
       <highlight language="config">
-      RewriteMap examplemap txt:/path/to/file/map.txt
+      RewriteMap "examplemap" "txt:/path/to/file/map.txt"
       </highlight>
 
       <p>You would then be able to use this map in a
       <directive>RewriteRule</directive> as follows:</p>
 
       <highlight language="config">
-      RewriteRule ^/ex/(.*) ${examplemap:$1}
+      RewriteRule "^/ex/(.*)" "${examplemap:$1}"
       </highlight>
 
       <p>The following combinations for <em>MapType</em> and
@@ -381,6 +395,10 @@ later</compatibility>
                <directive>RewriteRule</directive>, suffixed by the relative 
                substitution is also valid as a URL path on the server 
                (this is rare).</li>
+          <li> In Apache HTTP Server 2.4.13 and later, this directive may be 
+                omitted when the request is mapped via 
+                <directive module="mod_alias">Alias</directive>
+                or <module>mod_userdir</module>.</li>
       </ul>
 
 <p> In the example below, <directive>RewriteBase</directive> is necessary
@@ -389,14 +407,15 @@ later</compatibility>
     misconfiguration would normally cause the server to look for an "opt"
     directory under the document root.</p>
 <highlight language="config">
-DocumentRoot /var/www/example.com
-Alias /myapp /opt/myapp-1.2.3
-&lt;Directory /opt/myapp-1.2.3&gt;
+DocumentRoot "/var/www/example.com"
+AliasMatch "^/myapp" "/opt/myapp-1.2.3"
+&lt;Directory "/opt/myapp-1.2.3"&gt;
     RewriteEngine On
     RewriteBase /myapp/
-    RewriteRule ^index\.html$  welcome.html 
+    RewriteRule "^index\.html$"  "welcome.html"
 &lt;/Directory&gt;
 </highlight>
+
 </usage>
 
 </directivesynopsis>
@@ -610,7 +629,7 @@ Alias /myapp /opt/myapp-1.2.3
 
                   <dd>The path component of the requested URI,
                   such as "/index.html".  This notably excludes the
-                  query string which is available as as its own variable
+                  query string which is available as its own variable
                   named <code>QUERY_STRING</code>.</dd>
 
                   <dt><code>THE_REQUEST</code></dt>
@@ -671,7 +690,9 @@ Alias /myapp /opt/myapp-1.2.3
         <module>mod_ssl</module> is loaded, but will always expand to
         the empty string if it is not.  Example:
         <code>%{SSL:SSL_CIPHER_USEKEYSIZE}</code> may expand to
-        <code>128</code>.</li>
+        <code>128</code>. These variables are available even without
+        setting the <code>StdEnvVars</code> option of the
+        <directive module="mod_ssl">SSLOptions</directive> directive.</li>
 
         <li>
         <code>%{HTTP:header}</code>, where <em>header</em> can be
@@ -901,7 +922,7 @@ Alias /myapp /opt/myapp-1.2.3
 
            <highlight language="config">
            RewriteCond expr "! %{HTTP_REFERER} -strmatch '*://%{HTTP_HOST}/*'"<br />
-           RewriteRule ^/images - [F]
+           RewriteRule "^/images" "-" [F]
            </highlight>
         </li>
 
@@ -929,9 +950,9 @@ Alias /myapp /opt/myapp-1.2.3
           instead of the implicit AND. Typical example:
 
 <highlight language="config">
-RewriteCond %{REMOTE_HOST}  ^host1  [OR]
-RewriteCond %{REMOTE_HOST}  ^host2  [OR]
-RewriteCond %{REMOTE_HOST}  ^host3
+RewriteCond "%{REMOTE_HOST}"  "^host1"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host2"  [OR]
+RewriteCond "%{REMOTE_HOST}"  "^host3"
 RewriteRule ...some special stuff for any of these hosts...
 </highlight>
 
@@ -959,10 +980,10 @@ RewriteRule ...some special stuff for any of these hosts...
         use the following: </p>
 
 <highlight language="config">
-RewriteCond  %{HTTP_USER_AGENT}  (iPhone|Blackberry|Android)
-RewriteRule  ^/$                 /homepage.mobile.html  [L]
+RewriteCond  "%{HTTP_USER_AGENT}"  "(iPhone|Blackberry|Android)"
+RewriteRule  "^/$"                 "/homepage.mobile.html"  [L]
 
-RewriteRule  ^/$                 /homepage.std.html  [L]
+RewriteRule  "^/$"                 "/homepage.std.html"  [L]
 </highlight>
 
         <p>Explanation: If you use a browser which identifies itself
@@ -994,10 +1015,11 @@ RewriteRule  ^/$                 /homepage.std.html  [L]
       <p><a id="patterns" name="patterns"><em>Pattern</em></a> is
       a perl compatible <a id="regexp" name="regexp">regular
       expression</a>. On the first RewriteRule, it is matched against
-      the (%-decoded) <a href="./directive-dict.html#Syntax">URL-path</a> (or 
-      <a href="./directive-dict.html#Syntax">file-path</a>, depending 
-      on the context) of the request. Subsequent patterns are matched against the 
-      output of the last matching RewriteRule.</p>
+      the (%-decoded) <a href="directive-dict.html#Syntax">URL-path</a>
+      of the request, or, in per-directory context (see below), the URL
+      path relative to that per-directory context. Subsequent patterns
+      are matched against the output of the last matching RewriteRule.</p>
+
 
 <note><title><a id="what_is_matched" name="what_is_matched">What is matched?</a></title>
       <p>In <directive module="core">VirtualHost</directive> context,

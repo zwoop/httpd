@@ -34,7 +34,7 @@ configuration</description>
     <code>httpd.conf</code> file.</p>
 
     <highlight language="config">
-&lt;Location /server-info&gt;
+&lt;Location "/server-info"&gt;
     SetHandler server-info
 &lt;/Location&gt;
     </highlight>
@@ -45,7 +45,7 @@ configuration</description>
     information:</p>
 
     <highlight language="config">
-&lt;Location /server-info&gt;
+&lt;Location "/server-info"&gt;
     SetHandler server-info
     Require host example.com
 &lt;/Location&gt;
@@ -73,13 +73,13 @@ configuration</description>
 
     <example><title>Access control</title>
     <highlight language="config">
-&lt;Location /server-info&gt;
+&lt;Location "/server-info"&gt;
     SetHandler server-info
-    Order allow,deny
     # Allow access from server itself
-    Allow from 127.0.0.1
+    Require ip 127.0.0.1
+
     # Additionally, allow access from local workstation
-    Allow from 192.168.1.17
+    Require ip 192.168.1.17
 &lt;/Location&gt;
       </highlight>
     </example>

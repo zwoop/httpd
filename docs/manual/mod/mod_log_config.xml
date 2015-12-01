@@ -216,6 +216,15 @@
     <tr><td><code>%T</code></td>
         <td>The time taken to serve the request, in seconds.</td></tr>
 
+    <tr><td><code>%{<var>UNIT</var>}T</code></td>
+        <td>The time taken to serve the request, in a time unit given by
+        <code>UNIT</code>. Valid units are <code>ms</code> for milliseconds,
+        <code>us</code> for microseconds, and <code>s</code> for seconds.
+        Using <code>s</code> gives the same result as <code>%T</code>
+        without any format; using <code>us</code> gives the same result
+        as <code>%D</code>. Combining <code>%T</code> with a unit is
+        available in 2.4.13 and later.</td></tr>
+
     <tr><td><code>%u</code></td>
         <td>Remote user if the request was authenticated. May be bogus if return status
         (<code>%s</code>) is 401 (unauthorized).</td></tr>
@@ -253,8 +262,9 @@
         You need to enable <module>mod_logio</module> to use this.</td></tr>
 
     <tr><td><code>%O</code></td>
-        <td>Bytes sent, including headers. Cannot be zero. You need to
-        enable <module>mod_logio</module> to use this.</td></tr>
+        <td>Bytes sent, including headers. May be zero in rare cases
+        such as when a request is aborted before a response is sent.
+        You need to enable <module>mod_logio</module> to use this.</td></tr>
 
     <tr><td><code>%S</code></td>
         <td>Bytes transferred (received and sent), including request and headers,
@@ -462,10 +472,10 @@ expr=<var>expression</var>]</syntax>
     <highlight language="config">
 # CustomLog with format nickname
 LogFormat "%h %l %u %t \"%r\" %&gt;s %b" common
-CustomLog logs/access_log common
+CustomLog "logs/access_log" common
 
 # CustomLog with explicit format string
-CustomLog logs/access_log "%h %l %u %t \"%r\" %&gt;s %b"
+CustomLog "logs/access_log" "%h %l %u %t \"%r\" %&gt;s %b"
     </highlight>
 
     <p>The third argument is optional and controls whether or
@@ -487,8 +497,8 @@ CustomLog logs/access_log "%h %l %u %t \"%r\" %&gt;s %b"
 
     <highlight language="config">
 SetEnvIf Request_URI \.gif$ gif-image
-CustomLog gif-requests.log common env=gif-image
-CustomLog nongif-requests.log common env=!gif-image
+CustomLog "gif-requests.log" common env=gif-image
+CustomLog "nongif-requests.log" common env=!gif-image
     </highlight>
 
     <p>Or, to reproduce the behavior of the old RefererIgnore
@@ -496,7 +506,7 @@ CustomLog nongif-requests.log common env=!gif-image
 
     <highlight language="config">
 SetEnvIf Referer example\.com localreferer
-CustomLog referer.log referer env=!localreferer
+CustomLog "referer.log" referer env=!localreferer
     </highlight>
 </usage>
 </directivesynopsis>

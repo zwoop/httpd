@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.tr.xsl"?>
-<!-- English Revision: 1619884:1647230 (outdated) -->
+<!-- English Revision: 1705784 -->
 <!-- =====================================================
  Translated by: Nilgün Belma Bugüner <nilgun belgeler.gen.tr>
    Reviewed by: Orhan Berent <berent belgeler.gen.tr>
@@ -56,7 +56,7 @@
       protokoller için kullanışlıdır. Örnek:</p>
 
     <highlight language="config">
-    AcceptFilter nntp none
+AcceptFilter nntp none
     </highlight>
 
     <p>Öntanımlı protokol isimleri port 443 için <code>https</code> ve tüm
@@ -211,7 +211,7 @@ AcceptFilter https data
       önce,</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
     AllowOverride None
 &lt;/Directory&gt;
     </highlight>
@@ -460,8 +460,8 @@ AcceptFilter https data
         <directive module="mod_include">XBitHack</directive> yönergelerinin
         kullanımına izin verilir. <directive
         module="core">Options</directive> komutunda belirtilecek seçenekler
-        bir eşit işaretinden sonra aralarına sadece virgül konarak
-        (boşluksuz)  belirtilebilir.
+        bir eşit işaretinden sonra aralarına sadece virgül konarak,
+        fakat virgülden sonra boşluk bırakmadan belirtilebilir.
 
       <note><title>Options'ın örtük iptali</title>
       <p><a href="#accessfilename">.htaccess</a> dosyalarında kullanılabilen
@@ -486,7 +486,7 @@ AcceptFilter https data
     <p>Bu örnekte <code>AuthConfig</code> ve <code>Indexes</code> grubundaki
       yönergeler bir dahili sunucu hatasına yol açmayacaktır.</p>
 
-    <note><p>Güvenlik ve başarımı arttırmak için <code>&lt;Directory /&gt;</code>
+    <note><p>Güvenlik ve başarımı arttırmak için <code>&lt;Directory "/"&gt;</code>
       bloğu içinde <code>AllowOverride</code> yönergesine <code>None</code>
       dışında bir değer atamayın. Böyle yapmak yerine bir <code>.htaccess</code>
       dosyası yerleştirmeyi düşündüğünüz dizine ait bir
@@ -576,6 +576,42 @@ AllowOverrideList CookieTracking CookieName
       Örneğin, <code>CGIMapExtension sys:\foo.nlm .foo</code> satırı
       <code>.foo</code> uzantılı CGI betik dosyalarının FOO yorumlayıcıya
       aktarılmasını sağlar.</p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>CGIPassAuth</name>
+<description>HTTP yetkilendirme başlıklarının betiklere CGI değişkenleri
+olarak aktarılmasını etkin kılar</description>
+<syntax>CGIPassAuth On|Off</syntax>
+<default>CGIPassAuth Off</default>
+<contextlist><context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>AuthConfig</override>
+<compatibility> Apache HTTP Sunucusunun 2.4.13 ve sonraki sürümlerinde kullanılabilmektedir</compatibility>
+
+<usage>
+    <p><directive>CGIPassAuth</directive> yönergesi, HTTP Temel kimlik
+      doğrulamasını gerçekleştiren betikler için gereken
+      <code>Authorization</code> gibi HTTP yetkilendirme başlıklarına
+      betiklerin erişebilmesini sağlar. Normalde bu HTTP başlıkları
+      betiklerden gizli olup sunucuda HTTP Temel kimlik kanıtlaması etkin
+      kılındığında sunucuya erişmekte kullanılan kullanıcı kimliklerinin ve
+      parolalarının betikler tarafından görülmemesini mümkün kılar. Bu yönerge,
+      HTTP Temel kimlik kanıtlamasını betiklerin gerçekleştirmesini sağlamak
+      için kullanılmalıdır.</p>
+
+    <p>Apache HTTP Sunucusunun önceki sürümlerinde derleme sırasında
+      kullanılabilen <code>SECURITY_HOLE_PASS_AUTHORIZATION</code> sabitinin
+      yerine bu yönerge kullanılabilir.</p>
+
+    <p>Bu ayarlama <module>mod_cgi</module>, <module>mod_cgid</module>,
+      <module>mod_proxy_fcgi</module>, <module>mod_proxy_scgi</module> ve
+      benzerleri gibi <code>ap_add_common_vars()</code> kullanan modüller
+      tarafından kabul görür. Özellikle, isteği alışılmış tarzda işleme
+      sokmayıp bu arayüzü kullanan modülleri etkiler. Ayrıca,
+      <code>ap_add_common_vars()</code> kullanmayan üçüncü parti modüller de
+      bu ayarlamayı kullanmayı tercih edebilir.</p>
 </usage>
 </directivesynopsis>
 
@@ -716,7 +752,7 @@ için iptal edilmiştir.</compatibility>
   Define servername www.example.com
   Define SSL
 &lt;/IfDefine&gt;
-DocumentRoot /var/www/${servername}/htdocs
+DocumentRoot "/var/www/${servername}/htdocs"
     </highlight>
 
     <p><directive module="mod_rewrite">RewriteMap</directive> sözdizimi ile
@@ -730,7 +766,7 @@ DocumentRoot /var/www/${servername}/htdocs
 <description>Sadece ismi belirtilen dosya sistemi dizininde ve bunun
   altdizinlerinde ve bunların içeriğinde uygulanacak bir yönerge grubunu
   sarmalar.</description>
-<syntax>&lt;Directory <var>dizin-yolu</var>&gt;
+<syntax>&lt;Directory "<var>dizin-yolu</var>"&gt;
 ... &lt;/Directory&gt;</syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
@@ -747,8 +783,8 @@ DocumentRoot /var/www/${servername}/htdocs
       <code>*</code> herhangi bir karakter dizisiyle eşleşir. Ayrıca
       <code>[]</code> karakter aralıkları da kullanılabilir. ‘/’ karakteri
       ile hiçbir kalıp karakteri eşleşmez, bu bakımdan <code>&lt;Directory
-      /*/public_html&gt;</code> ile <code>/home/user/public_html</code>
-      değil, ama <code>&lt;Directory /home/*/public_html&gt;</code>
+      "/*/public_html"&gt;</code> ile <code>/home/user/public_html</code>
+      değil, ama <code>&lt;Directory "/home/*/public_html"&gt;</code>
       eşleşecektir. Örnek:</p>
 
     <highlight language="config">
@@ -756,6 +792,10 @@ DocumentRoot /var/www/${servername}/htdocs
   Options Indexes FollowSymLinks
 &lt;/Directory&gt;
     </highlight>
+
+    <p>Dizin yollarında isterseniz önceleme kullanabilirsiniz, ancak eğer yol
+      bazı boşluklar içeriyorsa mutlaka kullanmanız gerekir. Bir boşluk aksi
+      belirtilmedikçe bir ifadenin sonunu belirlediğinden bu gereklidir.</p>
 
     <note>
       <p><var>dizin-yolu</var> argümanlarını belirtirken dikkatli
@@ -786,7 +826,7 @@ DocumentRoot /var/www/${servername}/htdocs
       genişletilir. Örneğin,</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
   AllowOverride None
 &lt;/Directory&gt;
 
@@ -829,12 +869,12 @@ DocumentRoot /var/www/${servername}/htdocs
       ve buna ilişkin <directive type="section">Directory</directive>
       uygulanacaktır.</p>
 
-   <p><strong><code>&lt;Directory /&gt;</code> için öntanımlı erişimin   tüm
+   <p><strong><code>&lt;Directory "/"&gt;</code> için öntanımlı erişimin tüm
      erişime izin vermek oluşuna dikkat ediniz. Bunu şöyle bir blokla
      değiştirmeniz,</strong></p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
   Require all denied
 &lt;/Directory&gt;
     </highlight>
@@ -873,13 +913,13 @@ DocumentRoot /var/www/${servername}/htdocs
       bir <glossary ref="regex">düzenli ifade</glossary> alır. Örnek:</p>
 
     <highlight language="config">
-&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}"&gt;
+&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}/"&gt;
     # ...
 &lt;/DirectoryMatch&gt;
 </highlight>
 
-    <p>yönergesi <code>/www/</code> içindeki üç rakamdan oluşan dizinlerle
-      eşleşecektir.</p>
+    <p>yönergesi <code>/www/</code> içindeki (veya alt dizinlerindeki) üç
+      rakamdan oluşan dizinlerle eşleşecektir.</p>
 
    <note><title>Uyumluluk</title>
       2.3.9 öncesinde, bu yönerge örtük olarak (<directive module="core"
@@ -904,7 +944,7 @@ DocumentRoot /var/www/${servername}/htdocs
       kullanılmalıdır.</p>
 
 <highlight language="config">
-&lt;DirectoryMatch ^/var/www/combined/(?&lt;sitename&gt;[^/]+)&gt;
+&lt;DirectoryMatch "^/var/www/combined/(?&lt;sitename&gt;[^/]+)"&gt;
     require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/DirectoryMatch&gt;
 </highlight>
@@ -923,7 +963,7 @@ DocumentRoot /var/www/${servername}/htdocs
 <name>DocumentRoot</name>
 <description>İstemciye görünür olan ana belge ağacının kök dizinini belirler.</description>
 <syntax>DocumentRoot <var>dizin-yolu</var></syntax>
-<default>DocumentRoot /usr/local/apache/htdocs</default>
+<default>DocumentRoot "/usr/local/apache/htdocs"</default>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
 
@@ -1218,6 +1258,9 @@ DocumentRoot /var/www/${servername}/htdocs
       kodundan sonra bir URL veya hata iletisi) ile belirtilir. Apache httpd
       bazı durumlarda sorun/hata ile ilgili ek bilgi verecektir.</p>
 
+    <p>2.4.13 itibariyle, özdevinimli dizgeler ve URLler üretmek için yönerge
+      içinde <a href="../expr.html">ifade sözdizimi</a> kullanılabilir.</p>
+
     <p>URL’ler yerel yollarda (<directive
       module="core">DocumentRoot</directive>’a göre) bir bölü çizgisi (/) ile
       başlatılabileceği gibi istemci tarafından çözümlenecek tam bir URL
@@ -1229,6 +1272,7 @@ ErrorDocument 500 http://foo.example.com/cgi-bin/tester
 ErrorDocument 404 /cgi-bin/bad_urls.pl
 ErrorDocument 401 /subscription_info.html
 ErrorDocument 403 "Kusura bakmayın, bugün hizmet veremiyoruz."
+ErrorDocument 403 /cgi-bin/forbidden.pl?referrer=%{escape:%{HTTP_REFERER}}
     </highlight>
 
     <p>Bunlardan başka, Apache httpd’nin kendi hata iletilerinin kullanılacağı
@@ -1242,7 +1286,7 @@ ErrorDocument 403 "Kusura bakmayın, bugün hizmet veremiyoruz."
     <highlight language="config">
 ErrorDocument 404 /cgi-bin/bad_urls.pl
 
-&lt;Directory /web/docs&gt;
+&lt;Directory "/web/docs"&gt;
   ErrorDocument 404 default
 &lt;/Directory&gt;
     </highlight>
@@ -1327,6 +1371,10 @@ ErrorDocument 404 /cgi-bin/bad_urls.pl
       etkileyecektir.</p>
 
     <highlight language="config">ErrorLog syslog:user</highlight>
+
+    <p>Buna ek olarak, modüller kendi günlük kaydı oluşturucusunu sağlayabilir.
+      Sözdizimi yukarıdaki örnekte kullanılan <code>syslog</code> sözdiziminin
+      benzeridir.</p>
 
     <p>GÜVENLİK: Günlük dosyalarının saklandığı dizin, sunucuyu başlatan
       kullanıcı dışındakiler tarafından yazılabilir olduğu takdirde
@@ -1584,7 +1632,7 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
         On</code> için öntanımlı davranışı değiştirecektir. Böyle modüller,
         tüm evrelerin durumu hakkında ayrıntılı bilgi toplanmasına bel bağlar.
         Öntanımlı değer sürüm 2.3.6 itibariyle <module>mod_status</module>
-        tarafından değiştirilmiştir; önceki sürümlerde öntanımlı değer daima
+        tarafından değiştirilmiştir. Önceki sürümlerde öntanımlı değer daima
         <code>Off</code> idi.</p>
     </note>
 
@@ -1663,7 +1711,7 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
 <name>Files</name>
 <description>Dosya isimleriyle eşleşme halinde uygulanacak yönergeleri
   içerir.</description>
-<syntax>&lt;Files <var>dosya-adı</var>&gt; ... &lt;/Files&gt;</syntax>
+<syntax>&lt;Files "<var>dosya-adı</var>"&gt; ... &lt;/Files&gt;</syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context><context>.htaccess</context>
 </contextlist>
@@ -1755,6 +1803,10 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
 
     <p>satırı en bilinen resim dosyası biçimleriyle eşleşecektir.</p>
 
+    <note>Düzenli ifadenin başlangıcındaki bir <code>.+</code>
+      <code>.png</code>veya <code>.gif</code> dosyalarının, örnek olarak,
+      eşleşmemesini garanti eder.</note>
+
     <p>2.4.8 itibariyle, isimli gruplar ve geriye başvurular elde edilmekte
       olup ilgili isim büyük harfe çevrildikren sonra "MATCH_" ile
       öncelendikten sonra ortama yazılmaktadır. Böylece yol elemanlarına
@@ -1765,7 +1817,7 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
       kullanılmalıdır.</p>
 
 <highlight language="config">
-&lt;FilesMatch ^(?&lt;sitename&gt;[^/]+)&gt;
+&lt;FilesMatch "^(?&lt;sitename&gt;[^/]+)"&gt;
     require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/FilesMatch&gt;
 </highlight>
@@ -1809,12 +1861,12 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
 
     <highlight language="config">
 # tüm dosyaların image/gif olarak sunulması için:
-&lt;Location /images&gt;
+&lt;Location "/images"&gt;
   ForceType image/gif
 &lt;/Location&gt;
 
 # normal MIME-türüne geri dönmek için:
-&lt;Location /images/mixed&gt;
+&lt;Location "/images/mixed"&gt;
   ForceType None
 &lt;/Location&gt;
     </highlight>
@@ -1823,6 +1875,22 @@ ErrorLogFormat connection "[%{uc}t] [C:%{c}L] local\ %a remote\ %A"
       üretilen içerik türlerini geçersiz kılar. Duruk dosyaların haricindeki
       özkaynaklar için yanıt üretecinin genelde bir <code>Content-Type</code>
       belirttiği durumda bu yönerge etkisizdir.</p>
+
+    <note><title>Ek Bilgi</title>
+    <p><directive module="core" >SetHandler</directive> veya
+      <directive module="mod_mime">AddHandler</directive> gibi örtük yönergeler
+      geçerli isteğe uygulanmadığı takdirde, normalde bu yönergeler tarafından
+      belirlenen dahili eylemcinin ismi <directive>ForceType</directive>
+      yönergesi tarafından belirtilen içerik türü ile eşleşecek şekilde
+      belirlenir. Bu, bazı üçüncü parti modüller (mod_php gibi) tarafından
+      kullanılan tarihi bir uygulama olup, bu modüller istekle eşleşecek
+      modüllerin sorumluluğu almasını sağlamak için "sihirli" içerik türleri
+      kullanabilir. Bu tür "sihirli" içerik türlerini kullanan
+      yapılandırmalarda <directive module="core" >SetHandler</directive> veya
+      <directive module="mod_mime">AddHandler</directive> kullanımından
+      kaçınılmalıdır. </p>
+    </note>
+
 </usage>
 </directivesynopsis>
 
@@ -1926,6 +1994,12 @@ takdirde uygulanacak yönergeleri barındırır.</description>
     <p>Bu yapılandırma bölümünün içinde sadece
       <a href="directive-dict.html#Context">dizin bağlamını</a> destekleyen
       yönergeler kullanılabilir.</p>
+
+    <note type="warning">
+    &lt;If&gt; sonrasında atanan <code>CONTENT_TYPE</code> gibi belli
+    değişkenler ve diğer yanıt başlıkları zaten yorumlanmış olacaklarından bu
+    yönerge için kullanılabilir olmayacaktır.
+    </note>
 </usage>
 
 <seealso><a href="../expr.html">Apache HTTP Sunucusundaki
@@ -2204,8 +2278,9 @@ Include conf/vhosts/*.conf
       zaman aşımı, boştaki istemcilerin bulunduğu bağlantıları bekleyen daha
       fazla sunucu sürecini meşgul edecektir.</p>
 
-    <p>İsme dayalı sanal konak bağlamında, yerel IP adresi ve portu ile en iyi
-      eşleşen ilk sanal konağın değeri kullanılır.</p>
+    <p>İsme dayalı sanal konak için <directive>KeepAliveTimeout</directive>
+      atanmamışsa, yerel IP adresi ve portu ile en iyi eşleşen ilk sanal
+      konağın değeri kullanılır.</p>
 </usage>
 </directivesynopsis>
 
@@ -2514,9 +2589,7 @@ sınırlar.</description>
 
     <highlight language="config">LimitRequestLine 4094</highlight>
 
-    <note>Normal şartlar altında öntanımlı değer değiştirilmemelidir. Ayrıca,
-      kaynak kodu değiştirip yeniden derlemeden bu değeri 8190'dan büyük
-      yapamazsınız.</note>
+    <note>Normal şartlar altında öntanımlı değer değiştirilmemelidir.</note>
 
     <note type="warning"><title>Uyarı</title>
     <p>İsme dayalı sanal konaklar kullanıldığında, bu yönergenin değeri,
@@ -2551,7 +2624,7 @@ sınırlar.</description>
 <name>Location</name>
 <description>İçerdiği yönergeler sadece eşleşen URL’lere uygulanır.
 </description>
-<syntax>&lt;Location <var>URL-yolu</var>|<var>URL</var>&gt; ...
+<syntax>&lt;Location "<var>URL-yolu</var>|<var>URL</var>"&gt; ...
 &lt;/Location&gt;</syntax>
 <contextlist><context>server config</context><context>virtual host</context>
 </contextlist>
@@ -2598,7 +2671,7 @@ sınırlar.</description>
       uygulanmayacaktır.</p>
 
     <highlight language="config">
-&lt;Location /private1&gt;
+&lt;Location "/private1"&gt;
     #  ...
 &lt;/Location&gt;
     </highlight>
@@ -2609,7 +2682,7 @@ sınırlar.</description>
       ve <code>/private2other</code> isteklerine uygulanmayacaktır.</p>
 
     <highlight language="config">
-&lt;Location /private2<em>/</em>&gt;
+&lt;Location "/private2<em>/</em>"&gt;
     # ...
 &lt;/Location&gt;
     </highlight>
@@ -2623,7 +2696,7 @@ sınırlar.</description>
       module="core">Directory</directive> ve <directive type="section"
       module="core">Files</directive> bölümlerini kullanın. Bunun istisnası,
       sunucunun tamamına bir yapılandırma uygulamak için kolay bir yol olan
-      <code>&lt;Location /&gt;</code>  kullanımıdır.</p>
+      <code>&lt;Location "/"&gt;</code>  kullanımıdır.</p>
     </note>
 
     <p>Kaynağa yapılan (vekil olmayan) tüm istekler için eşleşecek URL,
@@ -2662,7 +2735,7 @@ sınırlar.</description>
       uygulama yapabilirsiniz:</p>
 
     <highlight language="config">
-&lt;Location /status&gt;
+&lt;Location "/status"&gt;
   SetHandler server-status
   Require host example.com
 &lt;/Location&gt;
@@ -2679,14 +2752,14 @@ sınırlar.</description>
         type="section">Location</directive> yönergesinin düzenli ifadeli
         kullanımında bunu açıkça belirtmeniz gerekir.</p>
 
-      <p>Örneğin, <code>&lt;LocationMatch ^/abc&gt;</code> yönergesi
+      <p>Örneğin, <code>&lt;LocationMatch "^/abc"&gt;</code> yönergesi
         <code>/abc</code> ile eşleşecek ama <code>//abc</code> ile
         eşleşmeyecektir. <directive type="section">Location</directive>
         yönergesinin düzenli ifade içermeyen kullanımındaki davranış vekil
         isteklerinde kullanılana benzer ve doğrudan kaynağa yapılan (vekil
         olmayan) isteklerde çok sayıda bölü çizgisi dolaylı olarak tek bir bölü
         çizgisiyle eşleşecektir. Örneğin, <code>&lt;Location
-        /abc/def&gt;</code> belirtirseniz ve istek <code>/abc//def</code>
+        "/abc/def"&gt;</code> belirtirseniz ve istek <code>/abc//def</code>
         şeklinde olursa bu ikisi eşleşir.</p>
     </note>
 </usage>
@@ -2721,6 +2794,15 @@ uygulanır.</description>
     <p>yönergesi <code>/ek/veri</code> ve <code>/hususi/veri</code> alt
       dizgeleriyle eşleşecektir.</p>
 
+    <note><p>Eğer hedef, <code>/ek/veri</code> içeren değil de
+        <code>/ek/veri</code> ile başlayan bir URL ise düzenli ifadenin önüne
+        <code>^</code> getirmek gerekir.</p>
+
+    <highlight language="config">
+    &lt;LocationMatch "^/(ek|hususi)/veri"&gt;
+    </highlight>
+    </note>
+
     <p>2.4.8 itibariyle, isimli gruplar ve geriye başvurular elde edilmekte
       olup ilgili isim büyük harfe çevrildikren sonra "MATCH_" ile
       öncelendikten sonra ortama yazılmaktadır. Böylece yol elemanlarına
@@ -2731,9 +2813,9 @@ uygulanır.</description>
       kullanılmalıdır.</p>
 
 <highlight language="config">
-&lt;DirectoryMatch ^/var/www/combined/(?&lt;sitename&gt;[^/]+)&gt;
+&lt;LocationMatch "^/combined/(?&lt;sitename&gt;[^/]+)"&gt;
     require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
-&lt;/DirectoryMatch&gt;
+&lt;/LocationMatch&gt;
 </highlight>
 </usage>
 
@@ -3077,7 +3159,7 @@ LogLevel info
       özkaynaklara erişimi dizgeleştirmekte kullandıkları mekanizmanın yanında
       isteğe bağlı olarak kilit dosyasının yerini belirler. İlk değiştirge
       olarak <code>default</code> belirtilirse tüm mutekslerin ayarları
-      değişir; ilk değiştirge olarak bir muteks ismi belirtilirse (aşağıdaki
+      değişir; ikinci değiştirge olarak bir muteks ismi belirtilirse (aşağıdaki
       tabloya bakın) yalnızca bu muteksin öntanımlıları değişir.</p>
 
     <p><directive>Mutex</directive> yönergesi genelde aşağıdaki istisnai
@@ -3311,8 +3393,9 @@ Mutex fcntl:/var/httpd/locks mpm-accept
 <compatibility>2.3.11 sürümünde öntanımlı değer All değiştirilip FollowSymlinks yapıldı.</compatibility>
 
 <usage>
-    <p><directive>Options</directive> yönergesi belli bir dizinde hangi sunucu
-      özelliklerinin etkin olacağını (veya olmayacağını) belirler.</p>
+    <p><directive>Options</directive> yönergesi belli bir dizinde hangi
+       sunucu özelliklerinin etkin olacağını (veya olmayacağını)
+       belirler.</p>
 
     <p><var>seçenek</var> olarak hiçbir ek özellik etkin olmayacaksa
       <code>None</code>, aksi takdirde aşağıdakilerden biri veya bir kaçı
@@ -3330,13 +3413,13 @@ Mutex fcntl:/var/httpd/locks mpm-accept
       <dd>Sunucu bu dizindeki sembolik bağları izler. Bu öntanımlıdır.
       <note>
       <p>Sembolik bağlar izlense bile <directive type="section"
-        module="core">Directory</directive> bölümleriyle eşleşen dosya yolları
-        değiştirilmez.</p>
+        module="core">Directory</directive> bölümleriyle eşleşen dosya
+       yolları değiştirilmez.</p>
       <p><code>FollowSymLinks</code> ve
-      <code>SymLinksIfOwnerMatch</code> <directive
-      module="core">Options</directive> sadece <directive
-      type="section" module="core">Directory</directive> bölümlerinde veya
-      <code>.htaccess</code> dosyaları içinde çalışır.</p>
+        <code>SymLinksIfOwnerMatch</code> <directive
+        module="core">Options</directive> sadece <directive
+        type="section" module="core">Directory</directive> bölümlerinde veya
+        <code>.htaccess</code> dosyaları içinde çalışır.</p>
       <p>Sembolik bağ sınamaları, atlatılabilir yarış koşullarına konu
         olduğundan bu seçeneğin yokluğu bir güvenlik sınırlaması olarak
         değerlendirilmemelidir.</p>
@@ -3468,12 +3551,82 @@ Mutex fcntl:/var/httpd/locks mpm-accept
 
     <highlight language="config">Protocol https</highlight>
 
-    <p>Protokolü <directive module="mpm_common">Listen</directive> yönergesini
-      kullanarak da belirtebilirsiniz.</p>
+    <p>Protokolü <directive module="mpm_common">Listen</directive>
+       yönergesini kullanarak da belirtebilirsiniz.</p>
 </usage>
 <seealso><directive>AcceptFilter</directive></seealso>
 <seealso><directive module="core">AcceptFilter</directive></seealso>
 <seealso><directive module="mpm_common">Listen</directive></seealso>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>Protocols</name>
+<description>Sunucu/sanal konak için kullanılabilecek protokoller</description>
+<syntax>Protocols <var>protokol</var> ...</syntax>
+<default>Protocols http/1.1</default>
+<contextlist><context>server config</context><context>virtual host</context></contextlist>
+<compatibility>Sadece Apache 2.4.17 ve sonrasında kullanılabilir.</compatibility>
+
+<usage>
+    <p>Bu yönerge bir sunucu/sanal konak için kullanılabilecek
+      protokolleri belirtmekte kullanılır. Bu liste, bir istemcinin bir
+      sanal konak veya sunucu ile uzlaşabilmesini sağlayan prokolleri
+      belirler.</p>
+
+    <p>Bir sanal konak veya sunucuda kullanılabilecek protolleri
+      çeşitlendirmek isterseniz bu protokolleri belirtmeniz gerekir.
+      1.0 ve 0.9 istemcilerle uyumlu olan http/1.1 protokolü
+      öntanımlıdır.</p>
+
+    <p>Örneğin, bir sunucunun TLS'li HTTP/2 protokolünü desteklemesini
+      şöyle sağlayabilirsiniz:</p>
+
+    <highlight language="config">
+        Protocols h2 http/1.1
+    </highlight>
+
+    <p>Geçerli protokoller, http ve https bağlantıları için
+       <code>http/1.1</code> htps bağlantıları için <code>h2</code> ve
+       http bağlantıları için <code>h2c</code> protokolleridir. Modüller
+       başka protokollerin de etkinleştirilmesini gerektirebilir.</p>
+
+    <p>Kullanımından vazgeçilmiş protokollerin silinmesi gerekmez. Böyle
+       protokol isimleri basitçe yoksayılır.</p>
+
+    <p>Ana sunucu için belirtilen protokoller, kendi protokol yönergesi
+       olmayan sanal konaklar için de geçerlidir. Diğer yandan sanal
+       konaklarda protokol belirtilmesi ana sunucuda belirtien
+       protollerin bu sanal konaklarda geçersiz olmasına sebep olur.
+    </p>
+
+</usage>
+<seealso><directive module="core">ProtocolsHonorOrder</directive></seealso>
+</directivesynopsis>
+
+
+<directivesynopsis>
+<name>ProtocolsHonorOrder</name>
+<description>Uzlaşma sırasında protokollerin öncelik sırasını belirler</description>
+<syntax>ProtocolsHonorOrder On|Off</syntax>
+<default>ProtocolsHonorOrder On</default>
+<contextlist><context>server config</context><context>virtual host</context></contextlist>
+<compatibility>Sadece Apache 2.4.17 ve sonrasında kullanılabilir.</compatibility>
+
+<usage>
+    <p>Sunucuda <directive>Protocols</directive> yönergesinde listelemiş
+      protokollerin mi yoksa istemcinin protokol listesinin mi öncelikli
+      olacağı bu yönerge ile belirtilir.</p>
+
+    <p>Off belirtilirse, istemcinin protokol listesi sunucu
+      yapılandırmasındaki sıralamanın önüne geçer.</p>
+
+    <p><directive>ProtocolsHonorOrder</directive> yönergesine <code>on</code>
+         belirtilirse (öntanımlıdır), istemicinin protokol sıralaması dikkate
+         alınmaz ve protokol uzlaşımının sonucunu sunucu ayarlarındaki
+         sıralama belirler.</p>
+
+</usage>
+<seealso><directive module="core">Protocols</directive></seealso>
 </directivesynopsis>
 
 <directivesynopsis>
@@ -3775,9 +3928,11 @@ kullanılacak konak adları için başka isimler belirtebilmeyi sağlar.
       herhangi bir yerde görünebilirse de her göründüğü yerde bir öncekini
       iptal eder.</p>
 
-    <p>Bir <directive>ServerName</directive> ataması yapılmamışsa sunucu IP
-      adresine atanmış sunucu ismi için bir ters DNS sorgusu yapacaktır.
-      <directive>ServerName</directive> yönergesinde bir port belirtilmediği
+    <p>Bir <directive>ServerName</directive> ataması yapılmamışsa sunucu
+      istemciye görünen sunucu ismi için IP adresine bir ters DNS sorgusu
+      yapacaktır.</p>
+
+    <p><directive>ServerName</directive> yönergesinde bir port belirtilmediği
       takdirde sunucu, isteğin geldiği portu kullanacaktır. Öngörülebilirlik ve
       güvenilirlik açısından en iyisi <directive>ServerName</directive>
       yönergesini kullanarak açıkça bir konak ismi ve port belirtmektir.</p>
@@ -4001,7 +4156,7 @@ sebep olur.</description>
       bir eylemci atamak için de kullanabilirsiniz. örnek:</p>
 
     <highlight language="config">
-&lt;FilesMatch \.php$&gt;
+&lt;FilesMatch "\.php$"&gt;
     SetHandler application/x-httpd-php
 &lt;/FilesMatch&gt;
     </highlight>
@@ -4159,6 +4314,9 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</description>
       değiştirmek gerekmeksizin <directive module="core" type="section"
       >IfDefine</directive> bölümlerinin kullanımını değiştirmek için
       kullanılabilir.</p>
+    <p>Bu yönerge sanal konak bağlamında desteklenirken, kapsanan sanal
+      konaklar haricinde, değişiklikleri kendisinden sonraki tüm yapılandırma
+      yönergelerinde görünür kılar.</p>
 </usage>
 </directivesynopsis>
 
@@ -4314,10 +4472,10 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</description>
     <highlight language="config">
 &lt;VirtualHost 10.1.2.3:80&gt;
   ServerAdmin webmaster@host.example.com
-  DocumentRoot /www/docs/host.example.com
+  DocumentRoot "/www/docs/host.example.com"
   ServerName host.example.com
-  ErrorLog logs/host.example.com-error_log
-  TransferLog logs/host.example.com-access_log
+  ErrorLog "logs/host.example.com-error_log"
+  TransferLog "logs/host.example.com-access_log"
 &lt;/VirtualHost&gt;
     </highlight>
 
@@ -4329,10 +4487,10 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</description>
     <highlight language="config">
 &lt;VirtualHost [2001:db8::a00:20ff:fea7:ccea]:80&gt;
   ServerAdmin webmaster@host.example.com
-  DocumentRoot /www/docs/host.example.com
+  DocumentRoot "/www/docs/host.example.com"
   ServerName host.example.com
-  ErrorLog logs/host.example.com-error_log
-  TransferLog logs/host.example.com-access_log
+  ErrorLog "logs/host.example.com-error_log"
+  TransferLog "logs/host.example.com-access_log"
 &lt;/VirtualHost&gt;
     </highlight>
 
@@ -4395,14 +4553,14 @@ gerçekleşmesi için sunucunun geçmesini bekleyeceği süre.</description>
 <syntax>MergeTrailers [on|off]</syntax>
 <default>MergeTrailers off</default>
 <contextlist><context>server config</context><context>virtual host</context></contextlist>
-<compatibility>2.4.10 ve sonrası</compatibility>
+<compatibility>2.4.11 ve sonrası</compatibility>
 
 <usage>
     <p>Bu yönerge HTTP Trailer alanlarının dahili HTTP başlıklarına kopyalanıp
       kopyalanmayacağını belirler. Kopyalama işlemi istek gövdesi tamamen
       alındığında gerçekleşir, çoğu başlık işleminin çok sonra istek
       başlıklarını inceleme veya değiştirme şansı olur.</p>
-    <p>Bu seçenek, Trailer alanlarını daima kopyalayan 2.4.10 öncesi
+    <p>Bu seçenek, Trailer alanlarını daima kopyalayan 2.4.11 öncesi
       dağıtımlarla uyumluluk için vardır.</p>
 </usage>
 </directivesynopsis>

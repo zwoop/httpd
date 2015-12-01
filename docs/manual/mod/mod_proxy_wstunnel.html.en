@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -31,7 +33,7 @@
 <tr><th><a href="module-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="module-dict.html#ModuleIdentifier">Module Identifier:</a></th><td>proxy_wstunnel_module</td></tr>
 <tr><th><a href="module-dict.html#SourceFile">Source File:</a></th><td>mod_proxy_wstunnel.c</td></tr>
-<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Available for unix in version 2.4.5 and later</td></tr></table>
+<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>Available in httpd 2.4.5 and later</td></tr></table>
 <h3>Summary</h3>
 
     <p>This module <em>requires</em> the service of <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code>. It provides support for the tunnelling of web
@@ -43,8 +45,8 @@ Connection: Upgrade</pre>
 
 
 
-    <div class="example"><h3>Proxying requests to websockets server</h3><pre class="prettyprint lang-config">ProxyPass /ws2/  ws://echo.websocket.org/
-ProxyPass /wss2/ wss://echo.websocket.org/</pre>
+    <div class="example"><h3>Proxying requests to websockets server</h3><pre class="prettyprint lang-config">ProxyPass "/ws2/"  "ws://echo.websocket.org/"
+ProxyPass "/wss2/" "wss://echo.websocket.org/"</pre>
 </div>
 
 </div>

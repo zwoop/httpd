@@ -90,10 +90,10 @@ static int proxy_wstunnel_canon(request_rec *r, char *url)
 }
 
 
-static int proxy_wstunnel_transfer(request_rec *r, conn_rec *c_i, conn_rec *c_o,
-                                     apr_bucket_brigade *bb, char *name)
+static apr_status_t proxy_wstunnel_transfer(request_rec *r, conn_rec *c_i, conn_rec *c_o,
+                                     apr_bucket_brigade *bb, char *name, int *sent)
 {
-    int rv;
+    apr_status_t rv;
 #ifdef DEBUGGING
     apr_off_t len;
 #endif
@@ -116,6 +116,9 @@ static int proxy_wstunnel_transfer(request_rec *r, conn_rec *c_i, conn_rec *c_o,
                           "read %" APR_OFF_T_FMT
                           " bytes from %s", len, name);
 #endif
+            if (sent) {
+                *sent = 1;
+            }
             rv = ap_pass_brigade(c_o->output_filters, bb);
             if (rv == APR_SUCCESS) {
                 ap_fflush(c_o->output_filters, bb);
@@ -137,7 +140,7 @@ static int proxy_wstunnel_transfer(request_rec *r, conn_rec *c_i, conn_rec *c_o,
     if (APR_STATUS_IS_EAGAIN(rv)) {
         rv = APR_SUCCESS;
     }
-   
+
     return rv;
 }
 
@@ -167,6 +170,7 @@ static int proxy_wstunnel_request(apr_pool_t *p, request_rec *r,
     char *old_te_val = NULL;
     apr_bucket_brigade *bb = apr_brigade_create(p, c->bucket_alloc);
     apr_socket_t *client_socket = ap_get_conn_socket(c);
+    int done = 0, replied = 0;
 
     header_brigade = apr_brigade_create(p, backconn->bucket_alloc);
 
@@ -179,7 +183,7 @@ static int proxy_wstunnel_request(apr_pool_t *p, request_rec *r,
         return rv;
     }
 
-    buf = apr_pstrcat(p, "Upgrade: WebSocket", CRLF, "Connection: Upgrade", CRLF, CRLF, NULL);
+    buf = apr_pstrdup(p, "Upgrade: WebSocket" CRLF "Connection: Upgrade" CRLF CRLF);
     ap_xlate_proto_to_ascii(buf, strlen(buf));
     e = apr_bucket_pool_create(buf, strlen(buf), p, c->bucket_alloc);
     APR_BRIGADE_INSERT_TAIL(header_brigade, e);
@@ -224,9 +228,9 @@ static int proxy_wstunnel_request(apr_pool_t *p, request_rec *r,
      * nothing else is attempted on the connection after returning. */
     c->keepalive = AP_CONN_CLOSE;
 
-    while (1) { /* Infinite loop until error (one side closes the connection) */
-        if ((rv = apr_pollset_poll(pollset, -1, &pollcnt, &signalled))
-            != APR_SUCCESS) {
+    do { /* Loop until done (one side closes the connection, or an error) */
+        rv = apr_pollset_poll(pollset, -1, &pollcnt, &signalled);
+        if (rv != APR_SUCCESS) {
             if (APR_STATUS_IS_EINTR(rv)) {
                 continue;
             }
@@ -244,18 +248,19 @@ static int proxy_wstunnel_request(apr_pool_t *p, request_rec *r,
                 if (pollevent & (APR_POLLIN | APR_POLLHUP)) {
                     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, APLOGNO(02446)
                                   "sock was readable");
-                    rv = proxy_wstunnel_transfer(r, backconn, c, bb, "sock");
+                    done |= proxy_wstunnel_transfer(r, backconn, c, bb,
+                                                    "sock", NULL) != APR_SUCCESS;
                 }
                 else if (pollevent & APR_POLLERR) {
-                    rv = APR_EPIPE;
-                    backconn->aborted = 1;
                     ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(02447)
                             "error on backconn");
+                    backconn->aborted = 1;
+                    done = 1;
                 }
                 else { 
-                    rv = APR_EGENERAL;
                     ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(02605)
                             "unknown event on backconn %d", pollevent);
+                    done = 1;
                 }
             }
             else if (cur->desc.s == client_socket) {
@@ -263,34 +268,39 @@ static int proxy_wstunnel_request(apr_pool_t *p, request_rec *r,
                 if (pollevent & (APR_POLLIN | APR_POLLHUP)) {
                     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, APLOGNO(02448)
                                   "client was readable");
-                    rv = proxy_wstunnel_transfer(r, c, backconn, bb, "client");
+                    done |= proxy_wstunnel_transfer(r, c, backconn, bb,
+                                                    "client", &replied) != APR_SUCCESS;
                 }
                 else if (pollevent & APR_POLLERR) {
-                    rv = APR_EPIPE;
-                    c->aborted = 1;
                     ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, r, APLOGNO(02607)
                             "error on client conn");
+                    c->aborted = 1;
+                    done = 1;
                 }
                 else { 
-                    rv = APR_EGENERAL;
                     ap_log_rerror(APLOG_MARK, APLOG_NOTICE, 0, r, APLOGNO(02606)
                             "unknown event on client conn %d", pollevent);
+                    done = 1;
                 }
             }
             else {
-                rv = APR_EBADF;
                 ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(02449)
                               "unknown socket in pollset");
+                done = 1;
             }
 
         }
-        if (rv != APR_SUCCESS) {
-            break;
-        }
-    }
+    } while (!done);
 
     ap_log_rerror(APLOG_MARK, APLOG_TRACE2, 0, r,
                   "finished with poll() - cleaning up");
+
+    if (!replied) {
+        return HTTP_BAD_GATEWAY;
+    }
+    else {
+        return OK;
+    }
 
     return OK;
 }
@@ -305,6 +315,7 @@ static int proxy_wstunnel_handler(request_rec *r, proxy_worker *worker,
     int status;
     char server_portstr[32];
     proxy_conn_rec *backend = NULL;
+    const char *upgrade;
     char *scheme;
     int retry;
     conn_rec *c = r->connection;
@@ -321,6 +332,13 @@ static int proxy_wstunnel_handler(request_rec *r, proxy_worker *worker,
     }
     else {
         ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02450) "declining URL %s", url);
+        return DECLINED;
+    }
+
+    upgrade = apr_table_get(r->headers_in, "Upgrade");
+    if (!upgrade || strcasecmp(upgrade, "WebSocket") != 0) {
+        ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, APLOGNO(02900)
+                      "declining URL %s  (not WebSocket)", url);
         return DECLINED;
     }
 

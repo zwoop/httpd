@@ -168,6 +168,18 @@
             <xsl:if test="not($is-chm) or seealso">
                 <div id="quickview">
                     <xsl:if test="not($is-chm)">
+                        <xsl:if test="section">
+                            <h3>
+                                <xsl:value-of select="$message
+                                                      [@id='topics']" />
+                            </h3>&lf;
+
+                            <ul id="topics">&lf;
+                            <xsl:apply-templates
+                                select="section" mode="index" />
+                            </ul>
+                        </xsl:if>
+
                         <h3 class="directives">
                             <xsl:value-of select="$message
                                                   [@id='directives']" />
@@ -230,18 +242,6 @@
                             </p>&lf;
                         </xsl:otherwise>
                         </xsl:choose>
-
-                        <xsl:if test="section">
-                            <h3>
-                                <xsl:value-of select="$message
-                                                      [@id='topics']" />
-                            </h3>&lf;
-
-                            <ul id="topics">&lf;
-                            <xsl:apply-templates
-                                select="section" mode="index" />
-                            </ul>
-                        </xsl:if>
                     </xsl:if> <!-- /!is-chm -->
 
                     <xsl:if test="seealso">
@@ -313,26 +313,54 @@
         <!-- Directive heading gets both mixed case and lowercase      -->
         <!-- anchors, and includes lt/gt only for "section" directives -->
         <h2>
-            <a id="{name}" name="{name}">
-                <xsl:if test="@type='section'">&lt;</xsl:if>
-                <xsl:value-of select="name" />
-                <xsl:if test="@type='section'">&gt;</xsl:if>
-            </a>
-
             <xsl:choose>
             <xsl:when test="$message
-                            [@id='directive']/@replace-space-with">
-                <xsl:value-of select="$message
-                                      [@id='directive']/@replace-space-with"/>
+                            [@id='directive']/@before-name = 'yes'">
+                <a id="{$lowername}" name="{$lowername}">
+                    <xsl:value-of select="$message[@id='directive']" />
+                </a>
+
+                <xsl:choose>
+                <xsl:when test="$message
+                                [@id='directive']/@replace-space-with">
+                    <xsl:value-of select="$message
+                                         [@id='directive']/@replace-space-with"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text> </xsl:text>
+                </xsl:otherwise>
+                </xsl:choose>
+
+                <a id="{name}" name="{name}">
+                    <xsl:if test="@type='section'">&lt;</xsl:if>
+                    <xsl:value-of select="name" />
+                    <xsl:if test="@type='section'">&gt;</xsl:if>
+                </a>
             </xsl:when>
+
             <xsl:otherwise>
-                <xsl:text> </xsl:text>
+                <a id="{name}" name="{name}">
+                    <xsl:if test="@type='section'">&lt;</xsl:if>
+                    <xsl:value-of select="name" />
+                    <xsl:if test="@type='section'">&gt;</xsl:if>
+                </a>
+
+                <xsl:choose>
+                <xsl:when test="$message
+                                [@id='directive']/@replace-space-with">
+                    <xsl:value-of select="$message
+                                         [@id='directive']/@replace-space-with"/>
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:text> </xsl:text>
+                </xsl:otherwise>
+                </xsl:choose>
+
+                <a id="{$lowername}" name="{$lowername}">
+                    <xsl:value-of select="$message[@id='directive']" />
+                </a>
             </xsl:otherwise>
             </xsl:choose>
-
-            <a id="{$lowername}" name="{$lowername}">
-                <xsl:value-of select="$message[@id='directive']" />
-            </a>
         </h2>&lf;
 
         <!-- Directive header -->

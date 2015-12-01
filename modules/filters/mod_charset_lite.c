@@ -984,6 +984,11 @@ static apr_status_t xlate_in_filter(ap_filter_t *f, apr_bucket_brigade *bb,
     apr_size_t buffer_size;
     int hit_eos;
 
+    /* just get out of the way of things we don't want. */
+    if (mode != AP_MODE_READBYTES) {
+        return ap_get_brigade(f->next, bb, mode, block, readbytes);
+    }
+
     if (!ctx) {
         /* this is SetInputFilter path; grab the preallocated context,
          * if any; note that if we decided not to do anything in an earlier
@@ -1021,7 +1026,7 @@ static apr_status_t xlate_in_filter(ap_filter_t *f, apr_bucket_brigade *bb,
              * Content-Length can't be unset here because that would break
              * being able to read the request body.
              * Processing of chunked request bodies is not impacted by this
-             * filter since the the length was not declared anyway.
+             * filter since the length was not declared anyway.
              */
             ap_log_rerror(APLOG_MARK, APLOG_TRACE1, 0, f->r,
                           "Request body length may change, resulting in "

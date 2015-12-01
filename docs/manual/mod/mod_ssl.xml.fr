@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1631887:1652074 (outdated) -->
+<!-- English Revision: 1706008:1707123 (outdated) -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -100,6 +100,13 @@ export&eacute;</td></tr>
 <td>Le DN sujet du certificat client</td></tr>
 <tr><td><code>SSL_CLIENT_S_DN_</code><em>x509</em></td> <td>cha&icirc;ne</td>
 <td>El&eacute;ment du DN sujet du client</td></tr>
+<tr><td><code>SSL_CLIENT_SAN_Email_</code><em>n</em></td> <td>cha&icirc;ne</td>
+<td>Les entr&eacute;es d'extension subjectAltName du certificat client de type rfc822Name</td></tr>
+<tr><td><code>SSL_CLIENT_SAN_DNS_</code><em>n</em></td> <td>cha&icirc;ne</td>
+<td>Les entr&eacute;es d'extension subjectAltName du certificat client de type dNSName</td></tr>
+<tr><td><code>SSL_CLIENT_SAN_OTHER_msUPN_</code><em>n</em></td>
+<td>cha&icirc;ne</td>    <td>Extensions subjectAltName de type otherName du
+certificat client, forme Microsoft du nom principal de l'utilisateur (OID 1.3.6.1.4.1.311.20.2.3)</td></tr>
 <tr><td><code>SSL_CLIENT_I_DN</code></td>               <td>cha&icirc;ne</td>
 <td>DN de l'&eacute;metteur du certificat du client</td></tr>
 <tr><td><code>SSL_CLIENT_I_DN_</code><em>x509</em></td> <td>cha&icirc;ne</td>
@@ -119,6 +126,9 @@ export&eacute;</td></tr>
 <tr><td><code>SSL_CLIENT_CERT_CHAIN_</code><em>n</em></td>
 <td>cha&icirc;ne</td>    <td>Certificats de la cha&icirc;ne de certification du
 client au format PEM</td></tr>
+<tr><td><code>SSL_CLIENT_CERT_RFC4523_CEA</code></td>   <td>cha&icirc;ne</td>
+<td>Num&eacute;ro de s&eacute;rie et fournisseur du certificat. le format correspond &agrave;
+celui de la CertificateExactAssertion dans la RFC4523</td></tr>
 <tr><td><code>SSL_CLIENT_VERIFY</code></td>             <td>cha&icirc;ne</td>
 <td><code>NONE</code>, <code>SUCCESS</code>, <code>GENEROUS</code> ou
 <code>FAILED:</code><em>raison</em></td></tr>
@@ -131,6 +141,15 @@ The serial of the server certificate</td></tr>
 <td>DN sujet du certificat du serveur</td></tr>
 <tr><td><code>SSL_SERVER_S_DN_</code><em>x509</em></td> <td>cha&icirc;ne</td>
 <td>El&eacute;ment du DN sujet du certificat du serveur</td></tr>
+<tr><td><code>SSL_SERVER_SAN_Email_</code><em>n</em></td>
+<td>cha&icirc;ne</td>  <td>Les entr&eacute;es d'extension subjectAltName du
+certificat de serveur de type rfc822Name</td></tr>
+<tr><td><code>SSL_SERVER_SAN_DNS_</code><em>n</em></td> <td>cha&icirc;ne</td>
+<td>Les entr&eacute;es d'extension subjectAltName du
+certificat de serveur de type dNSName</td></tr>
+<tr><td><code>SSL_SERVER_SAN_OTHER_dnsSRV_</code><em>n</em></td>
+<td>cha&icirc;ne</td>    <td>Extensions subjectAltName de type otherName du
+certificat serveur, sous la forme SRVName (OID 1.3.6.1.5.5.7.8.7, RFC 4985)</td></tr>
 <tr><td><code>SSL_SERVER_I_DN</code></td>               <td>cha&icirc;ne</td>
 <td>DN de l'&eacute;metteur du certificat du serveur</td></tr>
 <tr><td><code>SSL_SERVER_I_DN_</code><em>x509</em></td> <td>cha&icirc;ne</td>
@@ -233,7 +252,7 @@ les informations &agrave; propos de cette fonction dans le chapitre <a
 href="../ssl/ssl_compat.html">Compatibilit&eacute;</a>.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-CustomLog logs/ssl_request_log "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+CustomLog "logs/ssl_request_log" "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
 </highlight>
 </example>
 </section>
@@ -402,7 +421,7 @@ cette demande peut &ecirc;tre formul&eacute;e parmi les trois suivantes :</p>
 </ul>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLPassPhraseDialog exec:/usr/local/apache/sbin/pp-filter
+SSLPassPhraseDialog "exec:/usr/local/apache/sbin/pp-filter"
 </highlight>
 </example>
 </usage>
@@ -498,12 +517,12 @@ Les diff&eacute;rentes valeurs de <em>source</em> disponibles sont :</p>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLRandomSeed startup builtin
-SSLRandomSeed startup file:/dev/random
-SSLRandomSeed startup file:/dev/urandom 1024
-SSLRandomSeed startup exec:/usr/local/bin/truerand 16
+SSLRandomSeed startup "file:/dev/random"
+SSLRandomSeed startup "file:/dev/urandom" 1024
+SSLRandomSeed startup "exec:/usr/local/bin/truerand" 16
 SSLRandomSeed connect builtin
-SSLRandomSeed connect file:/dev/random
-SSLRandomSeed connect file:/dev/urandom 1024
+SSLRandomSeed connect "file:/dev/random"
+SSLRandomSeed connect "file:/dev/urandom" 1024
 </highlight>
 </example>
 </usage>
@@ -584,8 +603,8 @@ support&eacute;s :</p>
 
 <example><title>Exemples</title>
 <highlight language="config">
-SSLSessionCache dbm:/usr/local/apache/logs/ssl_gcache_data
-SSLSessionCache shmcb:/usr/local/apache/logs/ssl_gcache_data(512000)
+SSLSessionCache "dbm:/usr/local/apache/logs/ssl_gcache_data"
+SSLSessionCache "shmcb:/usr/local/apache/logs/ssl_gcache_data(512000)"
 </highlight>
 </example>
 
@@ -690,7 +709,7 @@ applicable.
 <description>Indique les versions du protocole SSL/TLS
 disponibles</description>
 <syntax>SSLProtocol [+|-]<em>protocole</em> ...</syntax>
-<default>SSLProtocol all</default>
+<default>SSLProtocol all -SSLv3 (jusqu'&agrave; la version 2.4.16 : all)</default>
 <contextlist><context>server config</context>
 <context>virtual host</context></contextlist>
 
@@ -706,7 +725,9 @@ casse) :</p>
     <p>
     Il s'agit du protocole Secure Sockets Layer (SSL) version 3.0 de
     Netscape Corporation. C'est le successeur de SSLv2 et le
-    pr&eacute;d&eacute;cesseur de TLSv1.</p></li>
+    pr&eacute;d&eacute;cesseur de TLSv1, mais est consid&eacute;r&eacute; comme
+    obsol&egrave;te dans la <a href="http://www.ietf.org/rfc/rfc7568.txt">RFC
+    7568</a></p></li>
 
 <li><code>TLSv1</code>
     <p>
@@ -728,7 +749,10 @@ casse) :</p>
 <li><code>all</code>
     <p>
     C'est un raccourci pour ``<code>+SSLv3 +TLSv1</code>'' ou - &agrave; partir
-    de la version 1.0.1 d'OpenSSL - ``<code>+SSLv3 +TLSv1 +TLSv1.1 +TLSv1.2</code>.</p></li>
+    de la version 1.0.1 d'OpenSSL - ``<code>+SSLv3 +TLSv1 +TLSv1.1
+    +TLSv1.2</code>'' (sauf si OpenSSL a &eacute;t&eacute; compil&eacute; avec l'option
+    ``no-ssl3'', auquel cas <code>all</code> n'inclura pas
+    <code>+SSLv3</code>).</p></li>
 </ul>
 <example><title>Exemple</title>
 <highlight language="config">
@@ -884,9 +908,9 @@ peut <strong>plus</strong> y &ecirc;tre rajout&eacute; plus tard)</li>
 <code>EXP</code> sont toujours d&eacute;sactiv&eacute;s</title>
 <p>Depuis la version 2.4.7, les
 algorithmes de type null ou destin&eacute;s &agrave; l'exportation sont toujours
-d&eacute;sactiv&eacute;s car mod_ssl fait
-obligatoirement pr&eacute;c&eacute;der toute cha&icirc;ne de suite d'algorithmes par
-<code>!aNULL:!eNULL:!EXP:</code> &agrave; l'initialisation.</p>
+d&eacute;sactiv&eacute;s car mod_ssl ajoute obligatoirement
+<code>!aNULL:!eNULL:!EXP</code> &agrave; toute cha&icirc;ne d'algorithme de
+chiffrement &agrave; l'initialisation.</p>
 </note>
 
 <p>Pour vous simplifier la vie, vous pouvez utiliser la commande
@@ -968,37 +992,46 @@ PEM</description>
 <p>Cette directive permet de d&eacute;finir le fichier de donn&eacute;es contenant
 les informations de certificat
 X.509 du serveur cod&eacute;es au format PEM. Ce fichier doit contenir
-au minimum un certificat d'entit&eacute; finale (feuille). Depuis la version
-2.4.8, il peut aussi contenir des certificats de CA
-interm&eacute;diaires tri&eacute;s des feuilles &agrave; la racine, ainsi que des
-<directive module="mod_ssl">SSLCertificateChainFile</directive>
-(obsol&egrave;tes).
+au minimum un certificat d'entit&eacute; finale (feuille). 
+La directive peut &ecirc;tre utilis&eacute;e plusieurs fois (elle r&eacute;f&eacute;rence des
+fichiers diff&eacute;rents) pour accepter plusieurs algorithmes
+d'authentification au niveau du serveur - souvent RSA, DSA et ECC. Le
+nombre d'algorithmes support&eacute;s d&eacute;pend de la version d'OpenSSL utilis&eacute;e
+avec mod_ssl : &agrave; partir de la version 1.0.0, la commande <code>openssl
+list-public-key-algorithms</code> affiche la liste des algorithmes
+support&eacute;s.
 </p>
 
-<p>Des &eacute;l&eacute;ments additionnels peuvent &ecirc;tre pr&eacute;sents, comme des param&egrave;tres
-DH et/ou le nom EC curve pour les cl&eacute;s eph&eacute;m&egrave;res, respectivement g&eacute;n&eacute;r&eacute;s
-par <code>openssl dhparam</code> et <code>openssl ecparam</code>
-(support&eacute; &agrave; partir de la version 2.4.7), et
-enfin la cl&eacute; priv&eacute;e du certificat d'entit&eacute; finale. Si la cl&eacute; priv&eacute;e est
-chiffr&eacute;e, une bo&icirc;te de dialogue demandant le mot de passe s'ouvre au
-d&eacute;marrage.</p>
+<p>Les fichiers peuvent aussi contenir des certificats de CA
+interm&eacute;diaires tri&eacute;s depuis la feuille vers la racine. Cette
+fonctionnalit&eacute; est disponible depuis la version 2.4.8 du serveur HTTP
+Apache, et rend obsol&egrave;te la directive <directive
+module="mod_ssl">SSLCertificateChainFile</directive>. A partir de la
+version 1.0.2 d'OpenSSL, il est alors possible de configurer la cha&icirc;ne
+de certification en fonction du certificat.</p>
 
-<p>
-Cette directive peut &ecirc;tre utilis&eacute;e plusieurs fois pour r&eacute;f&eacute;rencer
-diff&eacute;rents noms de fichiers, afin de supporter plusieurs algorithmes
-pour l'authentification du serveur - en g&eacute;n&eacute;ral RSA, DSA et ECC. Le
-nombre d'algorithmes support&eacute;s d&eacute;pend de la version d'OpenSSL utilis&eacute;e
-pour mod_ssl : &agrave; partir de la version 1.0.0, la commande <code>openssl
-list-public-key-algorithms</code> renvoie la liste de ces algorithmes.</p>
+<p>Depuis la version 2.4.7 du serveur HTTP Apache, on peut aussi ajouter
+des param&egrave;tres DH personnalis&eacute;s et un nom EC
+curve pour les cl&eacute;s &eacute;ph&eacute;m&egrave;res &agrave; la fin du premier fichier d&eacute;fini par la
+directive <directive module="mod_ssl">SSLCertificateFile</directive>.
+Ces param&egrave;tres peuvent &ecirc;tre g&eacute;n&eacute;r&eacute;s avec les commandes <code>openssl
+dhparam</code> et <code>openssl ecparam</code>, et ils peuvent &ecirc;tre
+ajout&eacute;s tel quel &agrave; la fin du premier fichier de certificat. En effet,
+seul le premier fichier de certificat d&eacute;fini peut &ecirc;tre utilis&eacute; pour
+enregistrer des param&egrave;tres personnalis&eacute;s, car ces derniers s'appliquent
+ind&eacute;pendamment de l'algorithme d'authentification utilis&eacute;.
+</p>
 
-<p>
-A partir de la version 1.0.2 d'OpenSSL, cette directive permet de
-configurer la cha&icirc;ne de certification en fonction du certificat, ce qui
-supprime une limitation de la directive obsol&egrave;te <directive
-module="mod_ssl">SSLCertificateChainFile</directive>. Cependant, les
-param&egrave;tres DH et ECDH ne sont lus que depuis la premi&egrave;re directive
-<directive>SSLCertificateFile</directive> car ils s'appliquent
-ind&eacute;pendamment du type d'algorithme d'authentification.</p>
+<p>Enfin, il est aussi possible d'ajouter la cl&eacute; priv&eacute;e du certificat de
+l'entit&eacute; finale au fichier de certificat, ce qui permet de se passer
+d'une directive <directive
+module="mod_ssl">SSLCertificateKeyFile</directive> s&eacute;par&eacute;e. Cette
+pratique est cependant fortement d&eacute;conseill&eacute;e. En effet, les fichiers de
+certificats qui contiennent de tels cl&eacute;s embarqu&eacute;es doivent &ecirc;tre d&eacute;finis
+avant les certificats en utilisant un fichier de cl&eacute; s&eacute;par&eacute;. En outre,
+si la cl&eacute; est chiffr&eacute;e, une bo&icirc;te de dialogue pour entrer le mot de
+passe de la cl&eacute; s'ouvre au d&eacute;marrage du serveur.
+</p>
 
 <note>
 <title>Interop&eacute;rabilit&eacute; des param&egrave;tres DH avec les nombres premiers de
@@ -1019,7 +1052,7 @@ contourner les probl&egrave;mes de ce genre.
 
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCertificateFile /usr/local/apache2/conf/ssl.crt/server.crt
+SSLCertificateFile "/usr/local/apache2/conf/ssl.crt/server.crt"
 </highlight>
 </example>
 </usage>
@@ -1035,10 +1068,7 @@ PEM</description>
 
 <usage>
 <p>Cette directive permet de d&eacute;finir le fichier contenant la cl&eacute; priv&eacute;e du
-serveur cod&eacute;e en PEM (la cl&eacute; priv&eacute;e peut &ecirc;tre associ&eacute;e au certificat
-dans le fichier d&eacute;fini par la directive
-<directive>SSLCertificateFile</directive>, mais cette pratique est
-d&eacute;conseill&eacute;e). Si la cl&eacute; priv&eacute;e est
+serveur cod&eacute;e en PEM. Si la cl&eacute; priv&eacute;e est
 chiffr&eacute;e, une bo&icirc;te de dialogue demandant le mot de passe s'ouvre au
 d&eacute;marrage.</p>
 
@@ -1049,9 +1079,17 @@ pour l'authentification du serveur. A chaque directive <directive
 module="mod_ssl">SSLCertificateKeyFile</directive> doit &ecirc;tre associ&eacute;e
 une directive <directive>SSLCertificateFile</directive> correspondante.
 </p>
+
+<p>
+La cl&eacute; priv&eacute; peut aussi &ecirc;tre ajout&eacute;e au fichier d&eacute;fini par la directive
+<directive module="mod_ssl">SSLCertificateFile</directive>, mais cette
+pratique est fortement d&eacute;conseill&eacute;e. En effet, les fichiers de
+certificats qui comportent une telle cl&eacute; doivent &ecirc;tre d&eacute;finis apr&egrave;s les
+certificats en utilisant un fichier de cl&eacute; s&eacute;par&eacute;.</p>
+
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCertificateKeyFile /usr/local/apache2/conf/ssl.key/server.key
+SSLCertificateKeyFile "/usr/local/apache2/conf/ssl.key/server.key"
 </highlight>
 </example>
 </usage>
@@ -1104,7 +1142,7 @@ contraire, la confusion risque de s'installer au niveau des
 navigateurs.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCertificateChainFile /usr/local/apache2/conf/ssl.crt/ca.crt
+SSLCertificateChainFile "/usr/local/apache2/conf/ssl.crt/ca.crt"
 </highlight>
 </example>
 </usage>
@@ -1133,7 +1171,7 @@ suffit donc pas de placer les fichiers de certificats dans ce r&eacute;pertoire
 assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;s.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCACertificatePath /usr/local/apache2/conf/ssl.crt/
+SSLCACertificatePath "/usr/local/apache2/conf/ssl.crt/"
 </highlight>
 </example>
 </usage>
@@ -1159,7 +1197,7 @@ en compl&eacute;ment de la directive <directive
 module="mod_ssl">SSLCACertificatePath</directive>.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCACertificateFile /usr/local/apache2/conf/ssl.crt/ca-bundle-client.crt
+SSLCACertificateFile "/usr/local/apache2/conf/ssl.crt/ca-bundle-client.crt"
 </highlight>
 </example>
 </usage>
@@ -1207,7 +1245,7 @@ certificats de CA cod&eacute;s en PEM.</p>
 
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCADNRequestFile /usr/local/apache2/conf/ca-names.crt
+SSLCADNRequestFile "/usr/local/apache2/conf/ca-names.crt"
 </highlight>
 </example>
 </usage>
@@ -1237,7 +1275,7 @@ suffit donc pas de placer les fichiers de certificats dans ce r&eacute;pertoire
 assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;s.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCADNRequestPath /usr/local/apache2/conf/ca-names.crt/
+SSLCADNRequestPath "/usr/local/apache2/conf/ca-names.crt/"
 </highlight>
 </example>
 </usage>
@@ -1267,7 +1305,7 @@ suffit donc pas de placer les fichiers de CRL dans ce r&eacute;pertoire
 assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;s.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCARevocationPath /usr/local/apache2/conf/ssl.crl/
+SSLCARevocationPath "/usr/local/apache2/conf/ssl.crl/"
 </highlight>
 </example>
 </usage>
@@ -1293,7 +1331,8 @@ place et/ou en compl&eacute;ment de la directive <directive
 module="mod_ssl">SSLCARevocationPath</directive>.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLCARevocationFile /usr/local/apache2/conf/ssl.crl/ca-bundle-client.crl
+SSLCARevocationFile
+"/usr/local/apache2/conf/ssl.crl/ca-bundle-client.crl"
 </highlight>
 </example>
 </usage>
@@ -1887,7 +1926,7 @@ assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;
 </note>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLProxyMachineCertificatePath /usr/local/apache2/conf/proxy.crt/
+SSLProxyMachineCertificatePath "/usr/local/apache2/conf/proxy.crt/"
 </highlight>
 </example>
 </usage>
@@ -1919,7 +1958,8 @@ directive s'utilise &agrave; la place ou en compl&eacute;ment de la directive
 </note>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLProxyMachineCertificateFile /usr/local/apache2/conf/ssl.crt/proxy.pem
+SSLProxyMachineCertificateFile
+"/usr/local/apache2/conf/ssl.crt/proxy.pem"
 </highlight>
 </example>
 </usage>
@@ -1955,7 +1995,8 @@ module="mod_ssl">SSLProxyCACertificateFile</directive>.</p>
 </note>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLProxyMachineCertificateChainFile /usr/local/apache2/conf/ssl.crt/proxyCA.pem
+SSLProxyMachineCertificateChainFile
+"/usr/local/apache2/conf/ssl.crt/proxyCA.pem"
 </highlight>
 </example>
 </usage>
@@ -2172,7 +2213,7 @@ un serveur mandataire direct pour les requ&ecirc;tes SSL/TLS.</p>
 <description>D&eacute;finit les protocoles SSL disponibles pour la fonction de
 mandataire</description>
 <syntax>SSLProxyProtocol [+|-]<em>protocole</em> ...</syntax>
-<default>SSLProxyProtocol all</default>
+<default>SSLProxyProtocol all -SSLv3 (jusqu'&agrave; la version 2.4.16: all)</default>
 <contextlist><context>server config</context>
 <context>virtual host</context></contextlist>
 <override>Options</override>
@@ -2234,7 +2275,7 @@ suffit donc pas de placer les fichiers de certificats dans ce r&eacute;pertoire
 assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;s.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLProxyCACertificatePath /usr/local/apache2/conf/ssl.crt/
+SSLProxyCACertificatePath "/usr/local/apache2/conf/ssl.crt/"
 </highlight>
 </example>
 </usage>
@@ -2261,7 +2302,7 @@ module="mod_ssl">SSLProxyCACertificatePath</directive>.</p>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLProxyCACertificateFile
-/usr/local/apache2/conf/ssl.crt/ca-bundle-serveur.distant.crt
+"/usr/local/apache2/conf/ssl.crt/ca-bundle-serveur.distant.crt"
 </highlight>
 </example>
 </usage>
@@ -2291,7 +2332,7 @@ suffit donc pas de placer les fichiers de CRL dans ce r&eacute;pertoire
 assurer que ce r&eacute;pertoire contient les liens symboliques appropri&eacute;s.</p>
 <example><title>Exemple</title>
 <highlight language="config">
-SSLProxyCARevocationPath /usr/local/apache2/conf/ssl.crl/
+SSLProxyCARevocationPath "/usr/local/apache2/conf/ssl.crl/"
 </highlight>
 </example>
 </usage>
@@ -2319,7 +2360,7 @@ module="mod_ssl">SSLProxyCARevocationPath</directive>.</p>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLProxyCARevocationFile
-/usr/local/apache2/conf/ssl.crl/ca-bundle-serveur.distant.crl
+"/usr/local/apache2/conf/ssl.crl/ca-bundle-serveur.distant.crl"
 </highlight>
 </example>
 </usage>
@@ -2479,7 +2520,7 @@ module="mod_ssl">SSLOCSPOverrideResponder</directive>.</p>
 <highlight language="config">
 SSLVerifyClient on
 SSLOCSPEnable on
-SSLOCSPDefaultResponder http://responder.example.com:8888/responder
+SSLOCSPDefaultResponder "http://responder.example.com:8888/responder"
 SSLOCSPOverrideResponder on
 </highlight>
 </example>
@@ -2644,6 +2685,14 @@ actuelle de l'agrafage OCSP n'atteint que partiellement l'objectif d'
 voir la <a href="http://www.ietf.org/rfc/rfc6961.txt">RFC 6961</a> (TLS
 Multiple Certificate Status Extension).
 </p>
+
+<p>Lorsque l'agrafage OCSP est activ&eacute;, le mutex
+<code>ssl-stapling</code> contr&ocirc;le l'acc&egrave;s au cache de l'agrafage OCSP
+afin de pr&eacute;venir toute corruption, et le mutex
+<code>sss-stapling-refresh</code> contr&ocirc;le le raffra&icirc;chissement des
+r&eacute;ponses OCSP. Ces mutex peuvent &ecirc;tre configur&eacute;s via la directive
+<directive module="core">Mutex</directive>.
+</p>
 </usage>
 </directivesynopsis>
 
@@ -2663,10 +2712,6 @@ l'exception de <code>none</code> et <code>nonenotnull</code>, cette
 directive supporte les m&ecirc;mes types de stockage que la directive
 <directive module="mod_ssl">SSLSessionCache</directive>.</p>
 
-<p>Le mutex <code>ssl-stapling</code> permet de s&eacute;rialiser l'acc&egrave;s au
-cache d'agrafage OCSP afin d'en pr&eacute;venir la corruption. Ce mutex peut
-&ecirc;tre configur&eacute; via la directive <directive
-module="core">Mutex</directive>.</p>
 </usage>
 </directivesynopsis>
 
@@ -2853,7 +2898,10 @@ dd if=/dev/random of=/chemin/vers/fichier.tkey bs=1 count=48
 
 <p>Ces cl&eacute;s doivent &ecirc;tre renouvel&eacute;es fr&eacute;quemment, car il s'agit du seul
 moyen d'invalider un ticket de session existant - OpenSSL ne permet pas
-actuellement de sp&eacute;cifier une limite &agrave; la dur&eacute;e de vie des tickets.</p>
+actuellement de sp&eacute;cifier une limite &agrave; la dur&eacute;e de
+vie des tickets. Une nouvelle cl&eacute; ne peut &ecirc;tre utilis&eacute;e qu'apr&egrave;s avoir
+red&eacute;marr&eacute; le serveur. Tous les tickets de session existants deviennent
+invalides apr&egrave;s le red&eacute;marrage du serveur.</p>
 
 <note type="warning">
 <p>Ce fichier contient des donn&eacute;es sensibles et doit donc &ecirc;tre prot&eacute;g&eacute;
@@ -2886,6 +2934,28 @@ s&eacute;curit&eacute; dans la plupart des configurations (l'attaque nomm&eacute
 </directivesynopsis>
 
 <directivesynopsis>
+<name>SSLSessionTickets</name>
+<description>Active ou d&eacute;sactive les tickets de session TLS</description>
+<syntax>SSLSessionTickets on|off</syntax>
+<default>SSLSessionTickets on</default>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Disponible &agrave; partir de la version 2.4.11 du serveur HTTP
+Apache, sous r&eacute;serve d'utiliser OpenSSL version 0.9.8f ou sup&eacute;rieure.
+</compatibility>
+
+<usage>
+<p>Cette directive permet d'activer ou de d&eacute;sactiver l'utilisation des
+tickets de session TLS (RFC 5077).</p>
+<note type="warning">
+<p>Les tickets de session TLS sont activ&eacute;s par d&eacute;faut. Les utiliser sans
+red&eacute;marrer le serveur selon une p&eacute;riodicit&eacute; appropri&eacute;e (par exemple
+quotidiennement) compromet cependant le niveau de confidentialit&eacute;.</p>
+</note>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
 <name>SSLOpenSSLConfCmd</name>
 <description>Configuration des param&egrave;tres d'OpenSSL via son API <em>SSL_CONF</em></description>
 <syntax>SSLOpenSSLConfCmd <em>commande</em> <em>valeur</em></syntax>
@@ -2906,9 +2976,8 @@ ce dernier beaucoup plus souple.</p>
 utilis&eacute;e pour <module>mod_ssl</module> (la version minimale 1.0.2 est un
 pr&eacute;requis). Pour obtenir la liste des commandes support&eacute;es, voir la
 section <em>Supported configuration file commands</em> de la page de
-manuel <a
-href="http://www.openssl.org/docs/ssl/SSL_CONF_cmd.html#SUPPORTED_CONFIGURATION_FILE_COM">SSL_CONF_cmd(3)</a>
-d'OpenSSL.</p>
+manuel d'OpenSSL <a
+href="http://www.openssl.org/docs/man1.0.2/ssl/SSL_CONF_cmd.html#SUPPORTED-CONFIGURATION-FILE-COMMANDS">SSL_CONF_cmd(3)</a>.</p>
 
 <p>Certaines commandes peuvent remplacer des directives existantes
 (comme <directive module="mod_ssl">SSLCipherSuite</directive> ou
@@ -2919,7 +2988,8 @@ que la syntaxe et/ou les valeurs possibles peuvent diff&eacute;rer.</p>
 <highlight language="config">
 SSLOpenSSLConfCmd Options -SessionTicket,ServerPreference
 SSLOpenSSLConfCmd ECDHParameters brainpoolP256r1
-SSLOpenSSLConfCmd ServerInfoFile /usr/local/apache2/conf/server-info.pem
+SSLOpenSSLConfCmd ServerInfoFile
+"/usr/local/apache2/conf/server-info.pem"
 SSLOpenSSLConfCmd Protocol "-ALL, TLSv1.2"
 SSLOpenSSLConfCmd SignatureAlgorithms RSA+SHA384:ECDSA+SHA256
 </highlight>

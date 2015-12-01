@@ -196,7 +196,7 @@ static authz_status authz_alias_check_authorization(request_rec *r,
     authz_status ret = AUTHZ_DENIED;
 
     /* Look up the provider alias in the alias list.
-     * Get the the dir_config and call ap_Merge_per_dir_configs()
+     * Get the dir_config and call ap_Merge_per_dir_configs()
      * Call the real provider->check_authorization() function
      * return the result of the above function call
      */
@@ -1068,6 +1068,16 @@ static const char *expr_parse_config(cmd_parms *cmd, const char *require_line,
 {
     const char *expr_err = NULL;
     struct require_expr_info *info = apr_pcalloc(cmd->pool, sizeof(*info));
+
+    /* if the expression happens to be surrounded by quotes, skip them */
+    if (require_line[0] == '"') {
+        apr_size_t len = strlen(require_line);
+
+        if (require_line[len-1] == '"')
+            require_line = apr_pstrndup(cmd->temp_pool,
+                                        require_line + 1,
+                                        len - 2);
+    }
 
     apr_pool_userdata_setn(info, REQUIRE_EXPR_NOTE, apr_pool_cleanup_null,
                           cmd->temp_pool);

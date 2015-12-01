@@ -29,6 +29,7 @@
                                   time I was too famous.''
                                             -- Unknown                */
 #include "ssl_private.h"
+#include "mod_ssl.h"
 #include "util_md5.h"
 
 static void ssl_configure_env(request_rec *r, SSLConnRec *sslconn);
@@ -80,7 +81,8 @@ static apr_status_t upgrade_connection(request_rec *r)
 
     if (SSL_get_state(ssl) != SSL_ST_OK) {
         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02030)
-                      "TLS upgrade handshake failed: not accepted by client!?");
+                      "TLS upgrade handshake failed");
+        ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
 
         return APR_ECONNABORTED;
     }
@@ -131,7 +133,7 @@ int ssl_hook_ReadReq(request_rec *r)
         && (upgrade = apr_table_get(r->headers_in, "Upgrade")) != NULL
         && ap_find_token(r->pool, upgrade, "TLS/1.0")) {
         if (upgrade_connection(r)) {
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return AP_FILTER_ERROR;
         }
     }
 
@@ -170,19 +172,18 @@ int ssl_hook_ReadReq(request_rec *r)
      * original problem.
      */
     if (r->proxyreq != PROXYREQ_PROXY && ap_is_initial_req(r)) {
-        if ((servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name))) {
-            char *host, *scope_id;
-            apr_port_t port;
-            apr_status_t rv;
+        server_rec *handshakeserver = sslconn->server;
+        SSLSrvConfigRec *hssc = mySrvConfig(handshakeserver);
 
+        if ((servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name))) {
             /*
              * The SNI extension supplied a hostname. So don't accept requests
-             * with either no hostname or a different hostname as this could
-             * cause us to end up in a different virtual host as the one that
-             * was used for the handshake causing different SSL parameters to
-             * be applied as SSLProtocol, SSLCACertificateFile/Path and
-             * SSLCADNRequestFile/Path cannot be renegotiated (SSLCA* due
-             * to current limitations in OpenSSL, see
+             * with either no hostname or a hostname that selected a different
+             * virtual host than the one used for the handshake, causing
+             * different SSL parameters to be applied, such as SSLProtocol,
+             * SSLCACertificateFile/Path and SSLCADNRequestFile/Path which
+             * cannot be renegotiated (SSLCA* due to current limitations in
+             * OpenSSL, see:
              * http://mail-archives.apache.org/mod_mbox/httpd-dev/200806.mbox/%3C48592955.2090303@velox.ch%3E
              * and
              * http://mail-archives.apache.org/mod_mbox/httpd-dev/201312.mbox/%3CCAKQ1sVNpOrdiBm-UPw1hEdSN7YQXRRjeaT-MCWbW_7mN%3DuFiOw%40mail.gmail.com%3E
@@ -194,20 +195,21 @@ int ssl_hook_ReadReq(request_rec *r)
                             " provided in HTTP request", servername);
                 return HTTP_BAD_REQUEST;
             }
-            rv = apr_parse_addr_port(&host, &scope_id, &port, r->hostname, r->pool);
-            if (rv != APR_SUCCESS || scope_id) {
-                return HTTP_BAD_REQUEST;
-            }
-            if (strcasecmp(host, servername)) {
+            if (r->server != handshakeserver) {
+                /* 
+                 * We are really not in Kansas anymore...
+                 * The request does not select the virtual host that was
+                 * selected by the SNI.
+                 */
                 ap_log_error(APLOG_MARK, APLOG_ERR, 0, r->server, APLOGNO(02032)
-                            "Hostname %s provided via SNI and hostname %s provided"
-                            " via HTTP are different", servername, host);
-                return HTTP_BAD_REQUEST;
+                             "Hostname %s provided via SNI and hostname %s provided"
+                             " via HTTP select a different server",
+                             servername, r->hostname);
+                return HTTP_MISDIRECTED_REQUEST;
             }
         }
         else if (((sc->strict_sni_vhost_check == SSL_ENABLED_TRUE)
-                 || (mySrvConfig(sslconn->server))->strict_sni_vhost_check
-                    == SSL_ENABLED_TRUE)
+                  || hssc->strict_sni_vhost_check == SSL_ENABLED_TRUE)
                  && r->connection->vhost_lookup_data) {
             /*
              * We are using a name based configuration here, but no hostname was
@@ -227,7 +229,7 @@ int ssl_hook_ReadReq(request_rec *r)
         }
     }
 #endif
-    SSL_set_app_data2(ssl, r);
+    modssl_set_app_data2(ssl, r);
 
     /*
      * Log information about incoming HTTPS requests
@@ -314,6 +316,16 @@ int ssl_hook_Access(request_rec *r)
     int depth, verify_old, verify, n;
 
     if (ssl) {
+        /*
+         * We should have handshaken here (on handshakeserver),
+         * otherwise we are being redirected (ErrorDocument) from
+         * a renegotiation failure below. The access is still 
+         * forbidden in the latter case, let ap_die() handle
+         * this recursive (same) error.
+         */
+        if (SSL_get_state(ssl) != SSL_ST_OK) {
+            return HTTP_FORBIDDEN;
+        }
         ctx = SSL_get_SSL_CTX(ssl);
     }
 
@@ -828,12 +840,17 @@ int ssl_hook_Access(request_rec *r)
 
             if (SSL_get_state(ssl) != SSL_ST_OK) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02261)
-                              "Re-negotiation handshake failed: "
-                              "Not accepted by client!?");
+                              "Re-negotiation handshake failed");
+                ssl_log_ssl_error(SSLLOG_MARK, APLOG_ERR, r->server);
 
                 r->connection->keepalive = AP_CONN_CLOSE;
                 return HTTP_FORBIDDEN;
             }
+
+            /* Full renegotiation successfull, we now have handshaken with
+             * this server's parameters.
+             */
+            sslconn->server = r->server;
         }
 
         /*
@@ -1112,6 +1129,7 @@ static const char *ssl_hook_Fixup_vars[] = {
     "SSL_CLIENT_I_DN",
     "SSL_CLIENT_A_KEY",
     "SSL_CLIENT_A_SIG",
+    "SSL_CLIENT_CERT_RFC4523_CEA",
     "SSL_SERVER_M_VERSION",
     "SSL_SERVER_M_SERIAL",
     "SSL_SERVER_V_START",
@@ -1175,6 +1193,7 @@ int ssl_hook_Fixup(request_rec *r)
     /* standard SSL environment variables */
     if (dc->nOptions & SSL_OPT_STDENVVARS) {
         modssl_var_extract_dns(env, sslconn->ssl, r->pool);
+        modssl_var_extract_san_entries(env, sslconn->ssl, r->pool);
 
         for (i = 0; ssl_hook_Fixup_vars[i]; i++) {
             var = (char *)ssl_hook_Fixup_vars[i];
@@ -1359,7 +1378,7 @@ int ssl_callback_SSLVerify(int ok, X509_STORE_CTX *ctx)
     SSL *ssl = X509_STORE_CTX_get_ex_data(ctx,
                                           SSL_get_ex_data_X509_STORE_CTX_idx());
     conn_rec *conn      = (conn_rec *)SSL_get_app_data(ssl);
-    request_rec *r      = (request_rec *)SSL_get_app_data2(ssl);
+    request_rec *r      = (request_rec *)modssl_get_app_data2(ssl);
     server_rec *s       = r ? r->server : mySrvFromConn(conn);
 
     SSLSrvConfigRec *sc = mySrvConfig(s);
@@ -1628,7 +1647,7 @@ static void ssl_session_log(server_rec *s,
                             const char *result,
                             long timeout)
 {
-    char buf[SSL_SESSION_ID_STRING_LEN];
+    char buf[MODSSL_SESSION_ID_STRING_LEN];
     char timeout_str[56] = {'\0'};
 
     if (!APLOGdebug(s)) {
@@ -1644,7 +1663,7 @@ static void ssl_session_log(server_rec *s,
                  "Inter-Process Session Cache: "
                  "request=%s status=%s id=%s %s(session %s)",
                  request, status,
-                 SSL_SESSION_id2sz(id, idlen, buf, sizeof(buf)),
+                 modssl_SSL_SESSION_id2sz(id, idlen, buf, sizeof(buf)),
                  timeout_str, result);
 }
 
@@ -1736,7 +1755,7 @@ SSL_SESSION *ssl_callback_GetSessionCacheEntry(SSL *ssl,
 
 /*
  *  This callback function is executed by OpenSSL whenever a
- *  SSL_SESSION is removed from the the internal OpenSSL cache.
+ *  SSL_SESSION is removed from the internal OpenSSL cache.
  *  We use this to remove the SSL_SESSION in the inter-process
  *  disk-cache, too.
  */
@@ -1785,32 +1804,32 @@ static void log_tracing_state(const SSL *ssl, conn_rec *c,
      */
     if (where & SSL_CB_HANDSHAKE_START) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
-                      "%s: Handshake: start", SSL_LIBRARY_NAME);
+                      "%s: Handshake: start", MODSSL_LIBRARY_NAME);
     }
     else if (where & SSL_CB_HANDSHAKE_DONE) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
-                      "%s: Handshake: done", SSL_LIBRARY_NAME);
+                      "%s: Handshake: done", MODSSL_LIBRARY_NAME);
     }
     else if (where & SSL_CB_LOOP) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Loop: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_READ) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Read: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_WRITE) {
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Write: %s",
-                      SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                      MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
     }
     else if (where & SSL_CB_ALERT) {
         char *str = (where & SSL_CB_READ) ? "read" : "write";
         ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                       "%s: Alert: %s:%s:%s",
-                      SSL_LIBRARY_NAME, str,
+                      MODSSL_LIBRARY_NAME, str,
                       SSL_alert_type_string_long(rc),
                       SSL_alert_desc_string_long(rc));
     }
@@ -1818,12 +1837,12 @@ static void log_tracing_state(const SSL *ssl, conn_rec *c,
         if (rc == 0) {
             ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                           "%s: Exit: failed in %s",
-                          SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                          MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
         }
         else if (rc < 0) {
             ap_log_cerror(APLOG_MARK, APLOG_TRACE3, 0, c,
                           "%s: Exit: error in %s",
-                          SSL_LIBRARY_NAME, SSL_state_string_long(ssl));
+                          MODSSL_LIBRARY_NAME, SSL_state_string_long(ssl));
         }
     }
 
@@ -1890,23 +1909,29 @@ void ssl_callback_Info(const SSL *ssl, int where, int rc)
 
 #ifdef HAVE_TLSEXT
 /*
- * This callback function is executed when OpenSSL encounters an extended
+ * This function sets the virtual host from an extended
  * client hello with a server name indication extension ("SNI", cf. RFC 6066).
  */
-int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
+static apr_status_t init_vhost(conn_rec *c, SSL *ssl)
 {
-    const char *servername =
-                SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-    conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
-
+    const char *servername;
+    
     if (c) {
+        SSLConnRec *sslcon = myConnConfig(c);
+        
+        if (sslcon->server != c->base_server) {
+            /* already found the vhost */
+            return APR_SUCCESS;
+        }
+        
+        servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
         if (servername) {
             if (ap_vhost_iterate_given_conn(c, ssl_find_vhost,
                                             (void *)servername)) {
                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02043)
                               "SSL virtual host for servername %s found",
                               servername);
-                return SSL_TLSEXT_ERR_OK;
+                return APR_SUCCESS;
             }
             else {
                 ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, APLOGNO(02044)
@@ -1936,8 +1961,20 @@ int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
                           "(using default/first virtual host)");
         }
     }
+    
+    return APR_NOTFOUND;
+}
 
-    return SSL_TLSEXT_ERR_NOACK;
+/*
+ * This callback function is executed when OpenSSL encounters an extended
+ * client hello with a server name indication extension ("SNI", cf. RFC 6066).
+ */
+int ssl_callback_ServerNameIndication(SSL *ssl, int *al, modssl_ctx_t *mctx)
+{
+    conn_rec *c = (conn_rec *)SSL_get_app_data(ssl);
+    apr_status_t status = init_vhost(c, ssl);
+    
+    return (status == APR_SUCCESS)? SSL_TLSEXT_ERR_OK : SSL_TLSEXT_ERR_NOACK;
 }
 
 /*
@@ -1949,50 +1986,10 @@ static int ssl_find_vhost(void *servername, conn_rec *c, server_rec *s)
 {
     SSLSrvConfigRec *sc;
     SSL *ssl;
-    BOOL found = FALSE;
-    apr_array_header_t *names;
-    int i;
+    BOOL found;
     SSLConnRec *sslcon;
 
-    /* check ServerName */
-    if (!strcasecmp(servername, s->server_hostname)) {
-        found = TRUE;
-    }
-
-    /*
-     * if not matched yet, check ServerAlias entries
-     * (adapted from vhost.c:matches_aliases())
-     */
-    if (!found) {
-        names = s->names;
-        if (names) {
-            char **name = (char **)names->elts;
-            for (i = 0; i < names->nelts; ++i) {
-                if (!name[i])
-                    continue;
-                if (!strcasecmp(servername, name[i])) {
-                    found = TRUE;
-                    break;
-                }
-            }
-        }
-    }
-
-    /* if still no match, check ServerAlias entries with wildcards */
-    if (!found) {
-        names = s->wild_names;
-        if (names) {
-            char **name = (char **)names->elts;
-            for (i = 0; i < names->nelts; ++i) {
-                if (!name[i])
-                    continue;
-                if (!ap_strcasecmp_match(servername, name[i])) {
-                    found = TRUE;
-                    break;
-                }
-            }
-        }
-    }
+    found = ssl_util_vhost_matches(servername, s);
 
     /* set SSL_CTX (if matched) */
     sslcon = myConnConfig(c);
@@ -2135,6 +2132,80 @@ int ssl_callback_SessionTicket(SSL *ssl,
     return -1;
 }
 #endif /* HAVE_TLS_SESSION_TICKETS */
+
+#ifdef HAVE_TLS_ALPN
+
+/*
+ * This callback function is executed when the TLS Application-Layer
+ * Protocol Negotiation Extension (ALPN, RFC 7301) is triggered by the Client
+ * Hello, giving a list of desired protocol names (in descending preference) 
+ * to the server.
+ * The callback has to select a protocol name or return an error if none of
+ * the clients preferences is supported.
+ * The selected protocol does not have to be on the client list, according
+ * to RFC 7301, so no checks are performed.
+ * The client protocol list is serialized as length byte followed by ASCII
+ * characters (not null-terminated), followed by the next protocol name.
+ */
+int ssl_callback_alpn_select(SSL *ssl,
+                             const unsigned char **out, unsigned char *outlen,
+                             const unsigned char *in, unsigned int inlen,
+                             void *arg)
+{
+    conn_rec *c = (conn_rec*)SSL_get_app_data(ssl);
+    SSLConnRec *sslconn = myConnConfig(c);
+    apr_array_header_t *client_protos;
+    const char *proposed;
+    size_t len;
+    int i;
+
+    /* If the connection object is not available,
+     * then there's nothing for us to do. */
+    if (c == NULL) {
+        return SSL_TLSEXT_ERR_OK;
+    }
+
+    if (inlen == 0) {
+        /* someone tries to trick us? */
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02837)
+                      "ALPN client protocol list empty");
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    client_protos = apr_array_make(c->pool, 0, sizeof(char *));
+    for (i = 0; i < inlen; /**/) {
+        unsigned int plen = in[i++];
+        if (plen + i > inlen) {
+            /* someone tries to trick us? */
+            ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02838)
+                          "ALPN protocol identifier too long");
+            return SSL_TLSEXT_ERR_ALERT_FATAL;
+        }
+        APR_ARRAY_PUSH(client_protos, char *) =
+            apr_pstrndup(c->pool, (const char *)in+i, plen);
+        i += plen;
+    }
+
+    /* The order the callbacks are invoked from TLS extensions is, unfortunately
+     * not defined and older openssl versions do call ALPN selection before
+     * they callback the SNI. We need to make sure that we know which vhost
+     * we are dealing with so we respect the correct protocols.
+     */
+    init_vhost(c, ssl);
+    
+    proposed = ap_select_protocol(c, NULL, sslconn->server, client_protos);
+    *out = (const unsigned char *)(proposed? proposed : ap_get_protocol(c));
+    len = strlen((const char*)*out);
+    if (len > 255) {
+        ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(02840)
+                      "ALPN negotiated protocol name too long");
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+    *outlen = (unsigned char)len;
+
+    return SSL_TLSEXT_ERR_OK;
+}
+#endif /* HAVE_TLS_ALPN */
 
 #ifdef HAVE_SRP
 

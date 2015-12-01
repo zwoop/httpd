@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja"><head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -43,7 +45,12 @@
     出力フィルタを提供します。これはサーバからの出力を、ネットワークを
     通してクライアントに送る前に圧縮することを可能にします。</p>
 </div>
-<div id="quickview"><h3 class="directives">ディレクティブ</h3>
+<div id="quickview"><h3>トピック</h3>
+<ul id="topics">
+<li><img alt="" src="../images/down.gif" /> <a href="#recommended">サンプル設定</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#enable">圧縮を有効にする</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#proxies">Proxy サーバでの扱い</a></li>
+</ul><h3 class="directives">ディレクティブ</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatebuffersize">DeflateBufferSize</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatecompressionlevel">DeflateCompressionLevel</a></li>
@@ -54,12 +61,7 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatememlevel">DeflateMemLevel</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#deflatewindowsize">DeflateWindowSize</a></li>
 </ul>
-<h3>トピック</h3>
-<ul id="topics">
-<li><img alt="" src="../images/down.gif" /> <a href="#recommended">サンプル設定</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#enable">圧縮を有効にする</a></li>
-<li><img alt="" src="../images/down.gif" /> <a href="#proxies">Proxy サーバでの扱い</a></li>
-</ul><h3>参照</h3>
+<h3>参照</h3>
 <ul class="seealso">
 <li><a href="../filter.html">Filters</a></li>
 </ul><ul class="seealso"><li><a href="#comments_section">コメント</a></li></ul></div>

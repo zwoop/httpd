@@ -191,7 +191,6 @@ static apr_status_t read_table(cache_handle_t *handle, request_rec *r,
         apr_size_t *slider)
 {
     apr_size_t key = *slider, colon = 0, len = 0;
-    ;
 
     while (*slider < buffer_len) {
         if (buffer[*slider] == ':') {
@@ -1387,13 +1386,18 @@ static int socache_status_hook(request_rec *r, int flags)
         return DECLINED;
     }
 
-    ap_rputs("<hr>\n"
-             "<table cellspacing=0 cellpadding=0>\n"
-             "<tr><td bgcolor=\"#000000\">\n"
-             "<b><font color=\"#ffffff\" face=\"Arial,Helvetica\">"
-             "mod_cache_socache Status:</font></b>\n"
-             "</td></tr>\n"
-             "<tr><td bgcolor=\"#ffffff\">\n", r);
+    if (!(flags & AP_STATUS_SHORT)) {
+        ap_rputs("<hr>\n"
+                 "<table cellspacing=0 cellpadding=0>\n"
+                 "<tr><td bgcolor=\"#000000\">\n"
+                 "<b><font color=\"#ffffff\" face=\"Arial,Helvetica\">"
+                 "mod_cache_socache Status:</font></b>\n"
+                 "</td></tr>\n"
+                 "<tr><td bgcolor=\"#ffffff\">\n", r);
+    }
+    else {
+        ap_rputs("ModCacheSocacheStatus\n", r);
+    }
 
     if (socache_mutex) {
         status = apr_global_mutex_lock(socache_mutex);
@@ -1404,7 +1408,12 @@ static int socache_status_hook(request_rec *r, int flags)
     }
 
     if (status != APR_SUCCESS) {
-        ap_rputs("No cache status data available\n", r);
+        if (!(flags & AP_STATUS_SHORT)) {
+            ap_rputs("No cache status data available\n", r);
+        }
+        else {
+            ap_rputs("NotAvailable\n", r);
+        }
     } else {
         conf->provider->socache_provider->status(conf->provider->socache_instance,
                                                  r, flags);
@@ -1418,7 +1427,9 @@ static int socache_status_hook(request_rec *r, int flags)
         }
     }
 
-    ap_rputs("</td></tr>\n</table>\n", r);
+    if (!(flags & AP_STATUS_SHORT)) {
+        ap_rputs("</td></tr>\n</table>\n", r);
+    }
     return OK;
 }
 

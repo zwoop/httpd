@@ -47,6 +47,7 @@ httpd authentication and authorization</description>
 and Access Control</a></seealso>
 <seealso><module>mod_auth_basic</module></seealso>
 <seealso><program>fcgistarter</program></seealso>
+<seealso><module>mod_proxy_fcgi</module></seealso>
 
 <section id="invocations"><title>Invocation modes</title>
 
@@ -109,7 +110,7 @@ while (FCGI::accept >= 0) {
       Example configuration:
 <highlight language="config">
 AuthnzFcgiDefineProvider authn FooAuthn fcgi://localhost:10102/
-&lt;Location /protected/&gt;
+&lt;Location "/protected/"&gt;
   AuthType Basic
   AuthName "Restricted"
   AuthBasicProvider FooAuthn
@@ -152,7 +153,7 @@ while (FCGI::accept >= 0) {
       Example configuration:
 <highlight language="config">
 AuthnzFcgiDefineProvider authz FooAuthz fcgi://localhost:10103/
-&lt;Location /protected/&gt;
+&lt;Location "/protected/"&gt;
   AuthType ...
   AuthName ...
   AuthBasicProvider ...
@@ -205,7 +206,7 @@ while (FCGI::accept >= 0) {
       Example configuration:
 <highlight language="config">
 AuthnzFcgiDefineProvider authnz FooAuthnz fcgi://localhost:10103/
-&lt;Location /protected/&gt;
+&lt;Location "/protected/"&gt;
   AuthType Basic
   AuthName "Restricted"
   AuthBasicProvider FooAuthnz
@@ -256,7 +257,7 @@ while (FCGI::accept >= 0) {
       Example configuration:
 <highlight language="config">
 AuthnzFcgiDefineProvider authn FooAuthn fcgi://localhost:10103/
-&lt;Location /protected/&gt;
+&lt;Location "/protected/"&gt;
   AuthType ...
   AuthName ...
   AuthnzFcgiCheckAuthnProvider FooAuthn \

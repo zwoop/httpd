@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -238,6 +240,7 @@ log_server_status</a></li>
 <li><a href="mod/mod_headers.html">Apache Module mod_headers</a></li>
 <li><a href="mod/mod_heartbeat.html">Apache Module mod_heartbeat</a></li>
 <li><a href="mod/mod_heartmonitor.html">Apache Module mod_heartmonitor</a></li>
+<li><a href="mod/mod_http2.html">Apache Module mod_http2</a></li>
 <li><a href="mod/mod_ident.html">Apache Module mod_ident</a></li>
 <li><a href="mod/mod_imagemap.html">Apache Module mod_imagemap</a></li>
 <li><a href="mod/mod_include.html">Apache Module mod_include</a></li>

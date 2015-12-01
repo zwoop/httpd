@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -41,7 +43,7 @@
     <code class="directive"><a href="../mod/mpm_common.html#startservers">StartServers</a></code> processes
     accepting connections.</p>
 
-    <p>Each child process consists of a a pool of worker threads and a
+    <p>Each child process consists of a pool of worker threads and a
     main thread that accepts connections and passes them to the workers via
     a work queue. The worker thread pool is dynamic, managed by a
     maintenance thread so that the number of idle threads is kept between

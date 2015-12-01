@@ -78,7 +78,7 @@
 
       <li>configure: By default, only a basic set of modules is loaded. The
       other <directive>LoadModule</directive> directives are commented
-      out.</li>
+      out in the configuration file.</li>
 
       <li>configure: the "most" module set gets built by default</li>
 
@@ -295,6 +295,13 @@ Allow from example.org
         option has been removed in favour of per-module <directive
         module="core">LogLevel</directive> configuration.
         </li>
+
+        <li><module>mod_proxy_scgi</module>: The default setting for
+        <code>PATH_INFO</code> has changed from httpd 2.2, and
+        some web applications will no longer operate properly with
+        the new <code>PATH_INFO</code> setting.  The previous setting
+        can be restored by configuring the <code>proxy-scgi-pathinfo</code>
+        variable.</li>
 
         <li><module>mod_ssl</module>: CRL based revocation checking
         now needs to be explicitly configured through <directive

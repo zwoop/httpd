@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -52,12 +54,12 @@ d'Apache</td></tr></table>
     méthodes sans protection, en plaçant les directives dans une section
     <code class="directive"><a href="../mod/core.html#limit">&lt;Limit&gt;</a></code>.</p>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
-<p>Ce module ne fournit aucune directive.</p>
-<h3>Sujets</h3>
+<div id="quickview"><h3>Sujets</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#requiredirectives">Les directives Require</a></li>
-</ul><h3>Voir aussi</h3>
+</ul><h3 class="directives">Directives</h3>
+<p>Ce module ne fournit aucune directive.</p>
+<h3>Voir aussi</h3>
 <ul class="seealso">
 <li><a href="../howto/auth.html">Authentification, autorisation et
 contrôle d'accès</a></li>
@@ -128,7 +130,9 @@ Require ip 10 172.20 192.168.2</pre>
     suit :</p>
 
     <pre class="prettyprint lang-config">Require ip 2001:db8::a00:20ff:fea7:ccea
-Require ip 2001:db8::a00:20ff:fea7:ccea/10</pre>
+Require ip 2001:db8:1:1::a
+Require ip 2001:db8:2:1::/64
+Require ip 2001:db8:3::/48</pre>
 
 
     <p>Note: comme les adresses IP sont lues au démarrage, les

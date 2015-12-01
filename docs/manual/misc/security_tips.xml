@@ -122,7 +122,7 @@
       uses asynchronous processing to avoid devoting a thread to each
       connection. Due to the nature of the OpenSSL library the
       <module>event</module> mpm is currently incompatible with
-	  <module>mod_ssl</module> and other input filters. In these
+      <module>mod_ssl</module> and other input filters. In these
       cases it falls back to the behaviour of the
       <module>worker</module> mpm.</li>
 
@@ -328,13 +328,15 @@
     <p>In the server configuration file, put</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
     AllowOverride None
 &lt;/Directory&gt;
     </highlight>
 
     <p>This prevents the use of <code>.htaccess</code> files in all
     directories apart from those specifically enabled.</p>
+
+    <p>Note that this setting is the default since Apache 2.3.9.</p>
 
   </section>
 
@@ -359,7 +361,7 @@
     configuration:</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
     Require all denied
 &lt;/Directory&gt;
     </highlight>
@@ -369,10 +371,10 @@
     allow access only in those areas you wish. For example,</p>
 
     <highlight language="config">
-&lt;Directory /usr/users/*/public_html&gt;
+&lt;Directory "/usr/users/*/public_html"&gt;
     Require all granted
 &lt;/Directory&gt;
-&lt;Directory /usr/local/httpd&gt;
+&lt;Directory "/usr/local/httpd"&gt;
     Require all granted
 &lt;/Directory&gt;
     </highlight>
@@ -380,8 +382,8 @@
     <p>Pay particular attention to the interactions of <directive
     module="core">Location</directive> and <directive
     module="core">Directory</directive> directives; for instance, even
-    if <code>&lt;Directory /&gt;</code> denies access, a <code>
-    &lt;Location /&gt;</code> directive might overturn it.</p>
+    if <code>&lt;Directory "/"&gt;</code> denies access, a <code>
+    &lt;Location "/"&gt;</code> directive might overturn it.</p>
 
     <p>Also be wary of playing games with the <directive
     module="mod_userdir">UserDir</directive> directive; setting it to

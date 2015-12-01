@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -37,8 +39,8 @@
 by the various old modem standards. So, you can browse your site with a 56k
 V.92 modem, by adding something like this:</p>
 
-<pre class="prettyprint lang-config">&lt;Location /mysite&gt;
-    ModemStandard V.92
+<pre class="prettyprint lang-config">&lt;Location "/mysite"&gt;
+    ModemStandard "V.92"
 &lt;/Location&gt;</pre>
 
 
@@ -65,8 +67,8 @@ once the timer hits.  From there the handler can continue to send data to the cl
 </table>
 <p>Specify what modem standard you wish to simulate.</p>
 
-<pre class="prettyprint lang-config">&lt;Location /mysite&gt;
-    ModemStandard V.26bis
+<pre class="prettyprint lang-config">&lt;Location "/mysite"&gt;
+    ModemStandard "V.26bis"
 &lt;/Location&gt;</pre>
 
 

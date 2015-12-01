@@ -76,10 +76,10 @@
       <example><title>Basic example</title>
       <highlight language="config">
 AuthFormProvider file
-AuthUserFile conf/passwd
+AuthUserFile "conf/passwd"
 AuthType form
 AuthName realm
-AuthFormLoginRequiredLocation http://example.com/login.html
+AuthFormLoginRequiredLocation "http://example.com/login.html"
 Session On
 SessionCookieName session path=/
 SessionCryptoPassphrase secret
@@ -133,12 +133,12 @@ SessionCryptoPassphrase secret
 
       <example><title>Form login handler example</title>
       <highlight language="config">
-&lt;Location /dologin.html&gt;
+&lt;Location "/dologin.html"&gt;
     SetHandler form-login-handler
-    AuthFormLoginRequiredLocation http://example.com/login.html
-    AuthFormLoginSuccessLocation http://example.com/success.html
+    AuthFormLoginRequiredLocation "http://example.com/login.html"
+    AuthFormLoginSuccessLocation "http://example.com/success.html"
     AuthFormProvider file
-    AuthUserFile conf/passwd
+    AuthUserFile "conf/passwd"
     AuthType form
     AuthName realm
     Session On
@@ -201,11 +201,11 @@ SessionCryptoPassphrase secret
       <example><title>Basic inline example</title>
       <highlight language="config">
 AuthFormProvider file
-ErrorDocument 401 /login.shtml
-AuthUserFile conf/passwd
+ErrorDocument 401 "/login.shtml"
+AuthUserFile "conf/passwd"
 AuthType form
 AuthName realm
-AuthFormLoginRequiredLocation http://example.com/login.html
+AuthFormLoginRequiredLocation "http://example.com/login.html"
 Session On
 SessionCookieName session path=/
 SessionCryptoPassphrase secret
@@ -280,7 +280,7 @@ SessionCryptoPassphrase secret
       <example><title>CGI example</title>
       <highlight language="config">
         AuthFormProvider file
-        ErrorDocument 401 /cgi-bin/login.cgi
+        ErrorDocument 401 "/cgi-bin/login.cgi"
         ...
         </highlight>
       </example>
@@ -304,7 +304,7 @@ SessionCryptoPassphrase secret
       <highlight language="config">
 SetHandler form-logout-handler
 AuthName realm
-AuthFormLogoutLocation http://example.com/loggedout.html
+AuthFormLogoutLocation "http://example.com/loggedout.html"
 Session On
 SessionCookieName session path=/
 SessionCryptoPassphrase secret
@@ -322,7 +322,7 @@ SessionCryptoPassphrase secret
       <example><title>Basic session expiry example</title>
       <highlight language="config">
 SetHandler form-logout-handler
-AuthFormLogoutLocation http://example.com/loggedout.html
+AuthFormLogoutLocation "http://example.com/loggedout.html"
 Session On
 SessionMaxAge 1
 SessionCookieName session path=/
@@ -358,12 +358,12 @@ SessionCryptoPassphrase secret
 
     <example><title>Example</title>
     <highlight language="config">
-&lt;Location /secure&gt;
+&lt;Location "/secure"&gt;
     AuthType form
     AuthName "private area"
     AuthFormProvider  dbm
     AuthDBMType        SDBM
-    AuthDBMUserFile    /www/etc/dbmpasswd
+    AuthDBMUserFile    "/www/etc/dbmpasswd"
     Require            valid-user
     #...
 &lt;/Location&gt;
@@ -487,7 +487,7 @@ lower level modules</description>
 <usage>
     <p>The <directive module="mod_auth_form">AuthFormMethod</directive> directive specifies
     the name of an HTML field which, if present, will contain the
-    mimetype of the request to to submit should login be successful.</p>
+    mimetype of the request to submit should login be successful.</p>
 
     <p>By populating the form with fields described by
     <directive module="mod_auth_form">AuthFormMethod</directive>,
@@ -555,7 +555,7 @@ lower level modules</description>
 <contextlist><context>directory</context>
 </contextlist>
 <compatibility>Available in Apache HTTP Server 2.3.0 and later. The use of the expression
-parser hass been added in 2.4.4.</compatibility>
+parser has been added in 2.4.4.</compatibility>
 
 <usage>
     <p>The <directive module="mod_auth_form">AuthFormLoginRequiredLocation</directive> directive
@@ -579,7 +579,7 @@ parser hass been added in 2.4.4.</compatibility>
 <contextlist><context>directory</context>
 </contextlist>
 <compatibility>Available in Apache HTTP Server 2.3.0 and later. The use of the expression
-parser hass been added in 2.4.4.</compatibility>
+parser has been added in 2.4.4.</compatibility>
 
 <usage>
     <p>The <directive module="mod_auth_form">AuthFormLoginSuccessLocation</directive> directive
@@ -621,7 +621,7 @@ parser hass been added in 2.4.4.</compatibility>
 <contextlist><context>directory</context>
 </contextlist>
 <compatibility>Available in Apache HTTP Server 2.3.0 and later. The use of the expression
-parser hass been added in 2.4.4.</compatibility>
+parser has been added in 2.4.4.</compatibility>
 
 <usage>
     <p>The <directive module="mod_auth_form">AuthFormLogoutLocation</directive> directive
@@ -634,9 +634,9 @@ parser hass been added in 2.4.4.</compatibility>
 
     <example><title>Example</title>
     <highlight language="config">
-&lt;Location /logout&gt;
+&lt;Location "/logout"&gt;
     SetHandler form-logout-handler
-    AuthFormLogoutLocation http://example.com/loggedout.html
+    AuthFormLogoutLocation "http://example.com/loggedout.html"
     Session on
     #...
 &lt;/Location&gt;

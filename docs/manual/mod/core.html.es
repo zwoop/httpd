@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -48,6 +50,7 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#allowoverride">AllowOverride</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#allowoverridelist">AllowOverrideList</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#cgimapextension">CGIMapExtension</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#cgipassauth">CGIPassAuth</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#contentdigest">ContentDigest</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#defaultruntimedir">DefaultRuntimeDir</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#defaulttype">DefaultType</a></li>
@@ -97,6 +100,8 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#namevirtualhost">NameVirtualHost</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#options">Options</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#protocol">Protocol</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#protocols">Protocols</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#protocolshonororder">ProtocolsHonorOrder</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitcpu">RLimitCPU</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitmem">RLimitMEM</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#rlimitnproc">RLimitNPROC</a></li>
@@ -546,6 +551,21 @@ scripts</td></tr>
     be passed to the FOO interpreter.</p>
 
 </div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="CGIPassAuth" id="CGIPassAuth">CGIPassAuth</a> <a name="cgipassauth" id="cgipassauth">Directiva</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Descripción:</a></th><td>Enables passing HTTP authorization headers to scripts as CGI
+variables</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sintaxis:</a></th><td><code>CGIPassAuth On|Off</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Valor por defecto:</a></th><td><code>CGIPassAuth Off</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Contexto:</a></th><td>directory, .htaccess</td></tr>
+<tr><th><a href="directive-dict.html#Override">Prevalece sobre:</a></th><td>AuthConfig</td></tr>
+<tr><th><a href="directive-dict.html#Status">Estado:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Módulo:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilidad:</a></th><td>Available in Apache HTTP Server 2.4.13 and later</td></tr>
+</table><p>The documentation for this directive has
+            not been translated yet. Please have a look at the English
+            version.</p></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="ContentDigest" id="ContentDigest">ContentDigest</a> <a name="contentdigest" id="contentdigest">Directiva</a></h2>
 <table class="directive">
@@ -2833,13 +2853,13 @@ resource </td></tr>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="MergeTrailers" id="MergeTrailers">MergeTrailers</a> <a name="mergetrailers" id="mergetrailers">Directiva</a></h2>
 <table class="directive">
-<tr><th><a href="directive-dict.html#Description">Descripción:</a></th><td>Determins whether trailers are merged into headers</td></tr>
+<tr><th><a href="directive-dict.html#Description">Descripción:</a></th><td>Determines whether trailers are merged into headers</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Sintaxis:</a></th><td><code>MergeTrailers [on|off]</code></td></tr>
 <tr><th><a href="directive-dict.html#Default">Valor por defecto:</a></th><td><code>MergeTrailers off</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Contexto:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Status">Estado:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Módulo:</a></th><td>core</td></tr>
-<tr><th><a href="directive-dict.html#Compatibility">Compatibilidad:</a></th><td>2.4.10 and later</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilidad:</a></th><td>2.4.11 and later</td></tr>
 </table><p>The documentation for this directive has
             not been translated yet. Please have a look at the English
             version.</p></div>
@@ -3350,6 +3370,40 @@ On Windows from Apache 2.3.3 and later.</td></tr>
 <ul>
 <li><code class="directive">AcceptFilter</code></li>
 <li><code class="directive"><a href="../mod/mpm_common.html#listen">Listen</a></code></li>
+</ul>
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="Protocols" id="Protocols">Protocols</a> <a name="protocols" id="protocols">Directiva</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Descripción:</a></th><td>Protocols available for a server/virtual host</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sintaxis:</a></th><td><code>Protocols <var>protocol</var> ...</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Valor por defecto:</a></th><td><code>Protocols http/1.1</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Contexto:</a></th><td>server config, virtual host</td></tr>
+<tr><th><a href="directive-dict.html#Status">Estado:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Módulo:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilidad:</a></th><td>Only available from Apache 2.4.17 and later.</td></tr>
+</table><p>The documentation for this directive has
+            not been translated yet. Please have a look at the English
+            version.</p><h3>Consulte también</h3>
+<ul>
+<li><code class="directive"><a href="#protocolshonororder">ProtocolsHonorOrder</a></code></li>
+</ul>
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="ProtocolsHonorOrder" id="ProtocolsHonorOrder">ProtocolsHonorOrder</a> <a name="protocolshonororder" id="protocolshonororder">Directiva</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Descripción:</a></th><td>Determines if order of Protocols determines precedence during negotiation</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Sintaxis:</a></th><td><code>ProtocolsHonorOrder On|Off</code></td></tr>
+<tr><th><a href="directive-dict.html#Default">Valor por defecto:</a></th><td><code>ProtocolsHonorOrder On</code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Contexto:</a></th><td>server config, virtual host</td></tr>
+<tr><th><a href="directive-dict.html#Status">Estado:</a></th><td>Core</td></tr>
+<tr><th><a href="directive-dict.html#Module">Módulo:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilidad:</a></th><td>Only available from Apache 2.4.17 and later.</td></tr>
+</table><p>The documentation for this directive has
+            not been translated yet. Please have a look at the English
+            version.</p><h3>Consulte también</h3>
+<ul>
+<li><code class="directive"><a href="#protocols">Protocols</a></code></li>
 </ul>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>

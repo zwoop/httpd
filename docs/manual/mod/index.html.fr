@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -162,6 +164,7 @@ contexte</dd>
 HTTP</dd>
 <dt><a href="mod_heartbeat.html">mod_heartbeat</a></dt><dd>Envoie des messages d'état au mandataire frontal</dd>
 <dt><a href="mod_heartmonitor.html">mod_heartmonitor</a></dt><dd>Moniteur centralisé pour les serveurs d'origine mod_heartbeat</dd>
+<dt><a href="mod_http2.html">mod_http2</a></dt><dd>Support for the HTTP/2 transport layer</dd>
 <dt><a href="mod_ident.html" id="I" name="I">mod_ident</a></dt><dd>Recherche d'identité conformément à la RFC
 1413</dd>
 <dt><a href="mod_imagemap.html">mod_imagemap</a></dt><dd>Traitement des cartes des zones interactives d'une image

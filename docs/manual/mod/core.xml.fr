@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1647230 -->
+<!-- English Revision: 1705784 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -224,7 +224,7 @@ host</context>
     d&eacute;sactiv&eacute;es avec</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
     AllowOverride None
 &lt;/Directory&gt;
     </highlight>
@@ -519,7 +519,7 @@ All pour les versions ant&eacute;rieures</default>
 
     <note><p>Pour des raisons de s&eacute;curit&eacute; et de performance, ne
     d&eacute;finissez pas <code>AllowOverride</code> &agrave; autre chose que
-    <code>None</code> dans votre bloc <code>&lt;Directory /&gt;</code>.
+    <code>None</code> dans votre bloc <code>&lt;Directory "/"&gt;</code>.
     Recherchez plut&ocirc;t (ou cr&eacute;ez) le bloc <code>&lt;Directory&gt;</code>
     qui se r&eacute;f&egrave;re au r&eacute;pertoire o&ugrave; vous allez pr&eacute;cis&eacute;ment placer un
     fichier <code>.htaccess</code>.</p>
@@ -608,6 +608,47 @@ scripts CGI</description>
     la d&eacute;finition <code>CGIMapExtension sys:\foo.nlm .foo</code>, tous
     les fichiers scripts CGI poss&eacute;dant une extension <code>.foo</code>
     seront pass&eacute;s &agrave; l'interpr&eacute;teur FOO.</p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>CGIPassAuth</name>
+<description>Active la transmission d'en-t&ecirc;tes d'autorisation HTTP aux scripts en
+tant que variables CGI</description>
+<syntax>CGIPassAuth On|Off</syntax>
+<default>CGIPassAuth Off</default>
+<contextlist><context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>AuthConfig</override>
+<compatibility>Disponible &agrave; partir de la version 2.4.13 du serveur HTTP
+Apache</compatibility>
+
+<usage>
+    <p>La directive <directive>CGIPassAuth</directive> permet aux
+    scripts d'acc&eacute;der aux en-t&ecirc;tes d'autorisation HTTP tels que
+    <code>Authorization</code>, en-t&ecirc;te n&eacute;cessaire aux scripts qui
+    impl&eacute;mente une authentification HTTP de base. Normalement, ces
+    en-t&ecirc;tes HTTP sont invisibles pour les scripts car ils leurs
+    permettraient de voir les identifiants et mots de passe
+    utilis&eacute;s pour acc&eacute;der au serveur lorsque l'authentification HTTP de
+    base est activ&eacute;e au niveau du serveur web. Cette directive doit &ecirc;tre
+    d&eacute;finie &agrave; "On" lorsque des scripts sont autoris&eacute;s &agrave; impl&eacute;menter une
+    authentification HTTP de base.</p>
+
+    <p>Cette directive constitue une alternative &agrave; l'option de
+    compilation <code>SECURITY_HOLE_PASS_AUTHORIZATION</code> qui &eacute;tait
+    d&eacute;j&agrave; disponible dans les versions pr&eacute;c&eacute;dentes du serveur HTTP
+    Apache.</p>
+
+    <p>Cette option est prise en compte par tout module qui utilise
+    <code>ap_add_common_vars()</code>, comme <module>mod_cgi</module>,
+    <module>mod_cgid</module>, <module>mod_proxy_fcgi</module>,
+    <module>mod_proxy_scgi</module>, etc... En particulier, elle affecte
+    les modules qui ne traitent pas &agrave; proprement parler les requ&ecirc;tes,
+    mais utilisent quand-m&ecirc;me cette API, comme
+    <module>mod_include</module> ou <module>mod_ext_filter</module>. Les
+    modules tiers qui n'utilisent pas <code>ap_add_common_vars()</code>
+    peuvent aussi choisir de prendre en compte cette option.</p>
 </usage>
 </directivesynopsis>
 
@@ -765,7 +806,7 @@ DESACTIV&Eacute;S &agrave; partir des version 2.3.x.</compatibility>
   Define SSL
 &lt;/IfDefine&gt;
 
-DocumentRoot /var/www/${servername}/htdocs
+DocumentRoot "/var/www/${servername}/htdocs"
     </highlight>
 
     <p>Le caract&egrave;re ":" est interdit dans les noms de variables afin
@@ -779,7 +820,7 @@ DocumentRoot /var/www/${servername}/htdocs
 <description>Regroupe un ensemble de directives qui ne s'appliquent
 qu'au r&eacute;pertoire concern&eacute; du syst&egrave;me de fichiers, &agrave; ses
 sous-r&eacute;pertoires, et &agrave; leur contenu.</description>
-<syntax>&lt;Directory <var>chemin r&eacute;pertoire</var>&gt;
+<syntax>&lt;Directory "<var>chemin r&eacute;pertoire</var>"&gt;
 ... &lt;/Directory&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
@@ -800,15 +841,19 @@ host</context>
     caract&egrave;res. Les intervalles de caract&egrave;res <code>[]</code> sont aussi
     autoris&eacute;s. Aucun caract&egrave;re g&eacute;n&eacute;rique ne peut remplacer le caract&egrave;re
     `/', si bien que l'expression <code>&lt;Directory
-    /*/public_html&gt;</code> ne conviendra pas pour le chemin
+    "/*/public_html"&gt;</code> ne conviendra pas pour le chemin
      * <code>/home/user/public_html</code>, alors que <code>&lt;Directory
-    /home/*/public_html&gt;</code> conviendra. Exemple :</p>
+    "/home/*/public_html"&gt;</code> conviendra. Exemple :</p>
 
     <highlight language="config">
 &lt;Directory "/usr/local/httpd/htdocs"&gt;
   Options Indexes FollowSymLinks
 &lt;/Directory&gt;
     </highlight>
+
+    <p>Les chemins de r&eacute;pertoires contenant des espaces <em>doivent</em> &ecirc;tre
+    entour&eacute;s de guillemets afin d'emp&ecirc;cher l'interpr&eacute;tation de ces
+    espaces comme fins d'arguments.</p>
 
     <note>
       <p>Soyez prudent avec l'argument <var>chemin r&eacute;pertoire</var> : il
@@ -843,7 +888,7 @@ host</context>
     exemple, avec</p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
   AllowOverride None
 &lt;/Directory&gt;
 
@@ -890,13 +935,13 @@ host</context>
     correspondante s'appliquera.</p>
 
    <p><strong>Notez que la politique d'acc&egrave;s par d&eacute;faut
-   dans les sections <code>&lt;Directory /&gt;</code> consiste &agrave;
+   dans les sections <code>&lt;Directory "/"&gt;</code> consiste &agrave;
    autoriser tout acc&egrave;s sans restriction. Ceci signifie qu'Apache httpd va servir tout fichier
    correspondant &agrave; une URL. Il est recommand&eacute; de modifier cette
    situation &agrave; l'aide d'un bloc du style</strong></p>
 
     <highlight language="config">
-&lt;Directory /&gt;
+&lt;Directory "/"&gt;
   Require all denied
 &lt;/Directory&gt;
     </highlight>
@@ -939,12 +984,12 @@ du syst&egrave;me de fichiers correspondant &agrave; une expression rationnelle<
     ref="regex">expression rationnelle</glossary>. Par exemple :</p>
 
     <highlight language="config">
-&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}"&gt;
+&lt;DirectoryMatch "^/www/(.+/)?[0-9]{3}/"&gt;
     # ...
 &lt;/DirectoryMatch&gt;
 </highlight>
 
-    <p>conviendrait pour les sous-r&eacute;pertoires de <code>/www/</code> dont
+    <p>convient pour les sous-r&eacute;pertoires de <code>/www/</code> dont
     le nom se compose de trois chiffres.</p>
 
     <note><title>Compatibilit&eacute;</title>
@@ -974,8 +1019,8 @@ du syst&egrave;me de fichiers correspondant &agrave; une expression rationnelle<
     nomm&eacute;s.</p>
 
 <highlight language="config">
-&lt;DirectoryMatch ^/var/www/combined/(?&lt;sitename&gt;[^/]+)&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+&lt;DirectoryMatch "^/var/www/combined/(?&lt;sitename&gt;[^/]+)"&gt;
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/DirectoryMatch&gt;
 </highlight>    
 
@@ -996,7 +1041,7 @@ combinent entre elles &agrave; la r&eacute;ception d'une requ&ecirc;te</seealso>
 <description>Racine principale de l'arborescence des documents visible
 depuis Internet</description>
 <syntax>DocumentRoot <var>chemin r&eacute;pertoire</var></syntax>
-<default>DocumentRoot /usr/local/apache/htdocs</default>
+<default>DocumentRoot "/usr/local/apache/htdocs"</default>
 <contextlist><context>server config</context><context>virtual
 host</context>
 </contextlist>
@@ -1321,12 +1366,18 @@ host</context>
     httpd fournit parfois des informations suppl&eacute;mentaires &agrave; propos du
     probl&egrave;me ou de l'erreur.</p>
 
+    <p>A partir de la version 2.4.13, il est possible d'utiliser la <a
+    href="../expr.html">syntaxe des expressions</a> dans cette directive
+    afin de g&eacute;n&eacute;rer des cha&icirc;nes et URLs dynamiques.</p>
+
     <p>Les URLs peuvent commencer par un slash (/) pour les chemins web
     locaux (relatifs au r&eacute;pertoire d&eacute;fini par la directive <directive
     module="core">DocumentRoot</directive>), ou se pr&eacute;senter sous la
     forme d'une URL compl&egrave;te que le client pourra r&eacute;soudre.
     Alternativement, un message &agrave; afficher par le navigateur pourra &ecirc;tre
-    fourni. Exemples :</p>
+    fourni. Notez que la d&eacute;cision de consid&eacute;rer le param&egrave;tre comme URL,
+    chemin ou message intervient avant toute interpr&egrave;tation
+    d'expression. Exemples :</p>
 
     <highlight language="config">
 ErrorDocument 500 http://foo.example.com/cgi-bin/tester
@@ -1334,6 +1385,7 @@ ErrorDocument 404 /cgi-bin/bad_urls.pl
 ErrorDocument 401 /subscription_info.html
 ErrorDocument 403 "Sorry can't allow you access today"
 ErrorDocument 403 Forbidden!
+ErrorDocument 403 /cgi-bin/forbidden.pl?referrer=%{escape:%{HTTP_REFERER}}
     </highlight>
 
     <p>De plus, on peut sp&eacute;cifier la valeur sp&eacute;ciale <code>default</code>
@@ -1347,7 +1399,7 @@ ErrorDocument 403 Forbidden!
     <highlight language="config">
 ErrorDocument 404 /cgi-bin/bad_urls.pl
 
-&lt;Directory /web/docs&gt;
+&lt;Directory "/web/docs"&gt;
   ErrorDocument 404 default
 &lt;/Directory&gt;
     </highlight>
@@ -1443,6 +1495,10 @@ host</context>
     final sp&eacute;cifi&eacute; affecte l'ensemble du serveur</p>
 
     <highlight language="config">ErrorLog syslog:user</highlight>
+
+    <p>Des modules supplémentaires peuvent fournir leurs propres
+    fournisseurs ErrorLog. La syntaxe est similaire à celle de
+    l'exemple <code>syslog</code> ci-dessus.</p>
 
     <p>SECURITE : Voir le document <a
     href="../misc/security_tips.html#serverroot">conseils &agrave; propos de
@@ -1706,7 +1762,7 @@ requ&ecirc;te</description>
 
 	<p>Cette option permet d'extraire des donn&eacute;es suppl&eacute;mentaires
 	concernant la requ&ecirc;te en cours de traitement pour un processus
-	donn&eacute;, ainsi qu'un r&eacute;sum&eacute; d'utilisation ; vous pouvez acc&eacute;der &agrave;
+	donn&eacute;, et crée un r&eacute;sum&eacute; d'utilisation ; vous pouvez acc&eacute;der &agrave;
 	ces variables pendant l'ex&eacute;cution en configurant
 	<module>mod_status</module>. Notez que d'autres modules sont
 	susceptibles de s'appuyer sur ce tableau de bord.</p>
@@ -1816,7 +1872,7 @@ dans les versions 2.3.14 et ant&eacute;rieures.</compatibility>
 <name>Files</name>
 <description>Contient des directives qui s'appliquent aux fichiers
 pr&eacute;cis&eacute;s</description>
-<syntax>&lt;Files <var>nom fichier</var>&gt; ... &lt;/Files&gt;</syntax>
+<syntax>&lt;Files "<var>nom fichier</var>"&gt; ... &lt;/Files&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
 <context>directory</context><context>.htaccess</context>
@@ -1909,13 +1965,18 @@ host</context>
     exemple :</p>
 
     <highlight language="config">
-&lt;FilesMatch "\.(gif|jpe?g|png)$"&gt;
+&lt;FilesMatch ".+\.(gif|jpe?g|png)$"&gt;
     # ...
 &lt;/FilesMatch&gt;
 </highlight>
 
     <p>correspondrait &agrave; la plupart des formats graphiques de
     l'Internet.</p>
+
+    <note>Les caract&egrave;res <code>.+</code> au d&eacute;but de l'expression
+    rationnelle permettent de s'assurer que les fichiers de nom
+    <code>.png</code>, ou <code>.gif</code>, par exemple, ne seront pas
+    pris en compte.</note>
 
     <p>A partir de la version 2.4.8, les groupes nomm&eacute;s et les
     r&eacute;f&eacute;rences arri&egrave;res sont extraits et enregistr&eacute;s dans
@@ -1928,7 +1989,7 @@ host</context>
     nomm&eacute;s.</p>
 
 <highlight language="config">
-&lt;FilesMatch ^(?&lt;sitename&gt;[^/]+)&gt;
+&lt;FilesMatch "^(?&lt;sitename&gt;[^/]+)"&gt;
     require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/FilesMatch&gt;
 </highlight>
@@ -1974,13 +2035,13 @@ HTTP Content-Type pour les fichiers correspondants</description>
 
     <highlight language="config">
 # force le type MIME de tous les fichiers &agrave; image/gif:
-&lt;Location /images&gt;
+&lt;Location "/images"&gt;
   ForceType image/gif
 &lt;/Location&gt;
 
 # mais utilise les m&eacute;thodes classiques d'attribution du type MIME
 # dans le sous-r&eacute;pertoire suivant :
-&lt;Location /images/mixed&gt;
+&lt;Location "/images/mixed"&gt;
   ForceType None
 &lt;/Location&gt;
     </highlight>
@@ -1990,6 +2051,23 @@ HTTP Content-Type pour les fichiers correspondants</description>
     les ressources autres que les fichiers statiques pour lesquels le
     g&eacute;n&eacute;rateur de r&eacute;ponse sp&eacute;cifie en g&eacute;n&eacute;ral un type de contenu, cette
     directive est ignor&eacute;e.</p>
+
+    <note><title>Note</title>
+    <p>Lorsque des directives explicites comme <directive
+    module="core">SetHandler</directive> ou
+    <directive>module="mod_mime">AddHandler</directive> ne s'appliquent
+    pas &agrave; la requ&ecirc;te courante, le nom du gestionnaire interne
+    normalement d&eacute;fini par ces directives correspondra alors au type de
+    contenu sp&eacute;cifi&eacute; par cette directive. Il s'agit d'un
+    comportement historique que certains modules
+    tiers, comme mod_php, peuvent interpr&eacute;ter comme un type de contenu
+    artificiel ne servant qu'&agrave; indiquer le module qui doit prendre en
+    compte la requ&ecirc;te consid&eacute;r&eacute;e. Dans la mesure du
+    possible, il est conseill&eacute; d'&eacute;viter les
+    configurations qui comportent de tels types artificiels en utilisant
+    les directives <directive module="core" >SetHandler</directive> ou
+    <directive module="mod_mime">AddHandler</directive>.</p>
+    </note>
 
 </usage>
 </directivesynopsis>
@@ -2108,6 +2186,13 @@ host</context>
     <p>Cette section de configuration ne peut contenir que des
     directives qui supportent le <a
     href="directive-dict.html#Context">contexte de r&eacute;pertoire</a>.</p>
+
+    <note type="warning">
+    Certain variables, such as <code>CONTENT_TYPE</code> and other
+    response headers, are set after &lt;If&gt; conditions have already
+    been evaluated, and so will not be available to use in this
+    directive.
+    </note>
 
 </usage>
 
@@ -2413,7 +2498,8 @@ host</context>
     est &eacute;l&eacute;v&eacute;, plus nombreux seront les processus serveur en attente de
     requ&ecirc;tes de la part de clients inactifs.</p>
 
-    <p>Dans un contexte de serveur virtuel &agrave; base de nom, c'est
+    <p>Si la directive <directive>KeepAliveTimeout</directive> n'est
+    <strong>pas</strong> d&eacute;finie pour un serveur virtuel &agrave; base de nom, c'est
     la valeur de la paire adresse IP/port du serveur virtuel qui
     correspond le mieux qui sera utilis&eacute;e.</p>
 </usage>
@@ -2791,7 +2877,7 @@ host</context>
 <description>N'applique les directives contenues qu'aux URLs
 sp&eacute;cifi&eacute;es</description>
 <syntax>&lt;Location
-    <var>chemin URL</var>|<var>URL</var>&gt; ... &lt;/Location&gt;</syntax>
+    "<var>chemin URL</var>|<var>URL</var>"&gt; ... &lt;/Location&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
 </contextlist>
@@ -2841,7 +2927,7 @@ host</context>
     /private1/ et /private1/file.txt, mais pas &agrave; /private1other. 
     </p>
     <highlight language="config">
-&lt;Location /private1&gt;
+&lt;Location "/private1"&gt;
     #  ...
 &lt;/Location&gt;
     </highlight>
@@ -2851,7 +2937,7 @@ host</context>
     &agrave; /private2/file.txt, mais pas &agrave; /private2other.
     </p>
     <highlight language="config">
-&lt;Location /private2<em>/</em>&gt;
+&lt;Location "/private2<em>/</em>"&gt;
     # ...
 &lt;/Location&gt;
     </highlight>
@@ -2866,7 +2952,7 @@ host</context>
     plut&ocirc;t les sections <directive
     type="section" module="core">Directory</directive> et <directive
     type="section" module="core">Files</directive>. <code>&lt;Location
-    /&gt;</code> constitue une exception et permet d'appliquer ais&eacute;ment
+    "/"&gt;</code> constitue une exception et permet d'appliquer ais&eacute;ment
     une configuration &agrave; l'ensemble du serveur.</p>
     </note>
 
@@ -2912,7 +2998,7 @@ host</context>
     utiliser :</p>
 
     <highlight language="config">
-&lt;Location /status&gt;
+&lt;Location "/status"&gt;
   SetHandler server-status
   Require host example.com
 &lt;/Location&gt;
@@ -2932,7 +3018,7 @@ host</context>
       explicitement les slashes multiples si telle est votre
       intention.</p>
 
-      <p>Par exemple, <code>&lt;LocationMatch ^/abc&gt;</code> va
+      <p>Par exemple, <code>&lt;LocationMatch "^/abc"&gt;</code> va
       correspondre &agrave; l'URL <code>/abc</code> mais pas &agrave; l'URL <code>
       //abc</code>. La directive <directive type="section"
       >Location</directive> sans expression rationnelle se comporte de
@@ -2942,7 +3028,7 @@ host</context>
       est utilis&eacute;e pour des requ&ecirc;tes non mandat&eacute;es, elle fera
       correspondre implicitement les slashes multiples &agrave; des slashes
       uniques. Par exemple, si vous sp&eacute;cifiez <code>&lt;Location
-      /abc/def&gt;</code>, une requ&ecirc;te de la forme
+      "/abc/def"&gt;</code>, une requ&ecirc;te de la forme
       <code>/abc//def</code> correspondra.</p>
     </note>
 </usage>
@@ -2980,6 +3066,15 @@ host</context>
     <p>correspondrait &agrave; toute URL contenant les sous-cha&icirc;nes
     <code>/extra/data</code> ou <code>/special/data</code>.</p>
 
+    <note><p>Si vous recherchez une URL <strong>commen&ccedil;ant par</strong>
+    plut&ocirc;t que seulement contenant <code>/extra/data</code>, pr&eacute;fixez
+    l'expression rationnelle avec un <code>^</code>.</p>
+
+    <highlight language="config">
+    &lt;LocationMatch "^/(extra|special)/data"&gt;
+    </highlight>
+    </note>
+
     <p>A partir de la version 2.4.8, les groupes nomm&eacute;s et les
     r&eacute;f&eacute;rences arri&egrave;res sont extraits et enregistr&eacute;s dans
     l'environnement avec leur nom en majuscules et pr&eacute;fix&eacute;
@@ -2991,7 +3086,7 @@ host</context>
     nomm&eacute;s.</p>
 
 <highlight language="config">
-&lt;LocationMatch ^/combined/(?&lt;sitename&gt;[^/]+)&gt;
+&lt;LocationMatch "^/combined/(?&lt;sitename&gt;[^/]+)"&gt;
     require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/LocationMatch&gt;
 </highlight>
@@ -3369,9 +3464,9 @@ verrou pour tous les mutex ou seulement les mutex sp&eacute;cifi&eacute;s</descr
     <p>La directive <directive>Mutex</directive> permet de d&eacute;finir le
     m&eacute;canisme de mutex, et &eacute;ventuellement le r&eacute;pertoire du fichier
     verrou que les modules et httpd utilisent pour s&eacute;rialiser l'acc&egrave;s aux
-    ressources. Sp&eacute;cifiez <code>default</code> comme premier argument
+    ressources. Sp&eacute;cifiez <code>default</code> comme second argument
     pour modifier la configuration de tous les mutex ; sp&eacute;cifiez un nom
-    de mutex (voir la table ci-dessous) comme premier argument pour
+    de mutex (voir la table ci-dessous) comme second argument pour
     ne modifier que la configuration de ce mutex.</p>
 
     <p>La directive <directive>Mutex</directive> est typiquement
@@ -3841,6 +3936,84 @@ seulement depuis la version 2.3.3 sous Windows.</compatibility>
 <seealso><directive module="mpm_common">Listen</directive></seealso>
 </directivesynopsis>
 
+<directivesynopsis>
+    <name>Protocols</name>
+    <description>Protocoles disponibles pour un serveur virtuel ou non</description>
+    <syntax>Protocols <var>protocole</var> ...</syntax>
+    <default>Protocols http/1.1</default>
+    <contextlist><context>server config</context><context>virtual host</context></contextlist>
+    <compatibility>Disponible &agrave; partir de la version 2.4.17 du serveur
+    HTTP Apache.</compatibility>
+    
+    <usage>
+        <p>Cette directive permet de sp&eacute;cifier la liste des protocoles
+	support&eacute;s par un serveur virtuel ou non. Cette liste &eacute;num&egrave;re les
+	protocoles qu'un client sera autoris&eacute; &agrave; n&eacute;gocier avec ce
+	serveur.</p>
+        
+        <p>Par d&eacute;faut,
+	seul le	protocole http/1.1 est disponible (compatible avec les
+	clients http/1.0 et http/0.9). Par cons&eacute;quent, vous devez
+	fournir cette liste si vous voulez &eacute;tendre les protocoles
+	disponibles pour le serveur.</p>
+        
+        <p>Par exemple, si vous voulez autoriser le protocole
+	HTTP/2 pour un serveur avec TLS, utilisez
+	cette directive comme suit :</p>
+        
+        <highlight language="config">
+            Protocols h2 http/1.1
+        </highlight>
+
+        <p>Les protocoles valides sont <code>http/1.1</code> pour les
+	connexions http et https, <code>h2</code> pour les connections
+	https et <code>h2c</code> pour les connexions http. D'autres
+	modules peuvent fournir d'autres protocoles.</p>
+        
+        <p>Sp&eacute;cifier des protocoles non disponibles ou d&eacute;sactiv&eacute;s n'aura
+	aucun effet, et ceux-ci seront simplement ignor&eacute;s.</p>
+        
+        <p>Si un serveur virtuel ne poss&egrave;de pas de directive Protocols
+	propre, il h&eacute;rite des protocoles sp&eacute;cifi&eacute;s pour le serveur
+	principal. Autrement dit, les directives Protocols d&eacute;finies au
+	niveau d'un serveur virtuel remplacent celles d&eacute;finies au niveau
+	du serveur principal.
+        </p>
+
+    </usage>
+    <seealso><directive module="core">ProtocolsHonorOrder</directive></seealso>
+</directivesynopsis>
+
+
+<directivesynopsis>
+    <name>ProtocolsHonorOrder</name>
+    <description>D&eacute;termine qui du client ou du serveur d&eacute;termine l'ordre
+    des protocoles au cours de la n&eacute;gociation de la connexion</description>
+    <syntax>ProtocolsHonorOrder On|Off</syntax>
+    <default>ProtocolsHonorOrder On</default>
+    <contextlist><context>server config</context><context>virtual host</context></contextlist>
+    <compatibility>Disponible &agrave; partir de la version 2.4.17 du serveur
+    HTTP Apache.</compatibility>
+    
+    <usage>
+        <p>Cette directive permet de d&eacute;finir si le serveur doit tenir
+	compte de l'ordre des protocoles d&eacute;finis par la directive
+	<directive>Protocols</directive>.</p>
+        
+        <p>Si cette directive est d&eacute;finie &agrave; Off, l'ordre de la liste des
+	protocoles fournie par le client l'emporte sur l'ordre d&eacute;fini
+	dans la configuration du serveur.</p>
+        
+        <p>Si la directive <directive>ProtocolsHonorOrder</directive>
+	est d&eacute;finie &agrave; <code>on</code> (valeur par d&eacute;faut),
+	il n'est pas tenu compte de l'ordre de la liste des protocoles
+	fournie par le client, et seul l'ordre de la liste des protocles
+	d&eacute;finie au niveau du serveur influera la
+	n&eacute;gociation du protocole.</p>
+        
+    </usage>
+    <seealso><directive module="core">Protocols</directive></seealso>
+</directivesynopsis>
 
 <directivesynopsis>
 <name>RLimitCPU</name>
@@ -4444,7 +4617,7 @@ host</context>
     fichier particuli&egrave;re. Par exemple :</p>
 
     <highlight language="config">
-&lt;FilesMatch \.php$&gt;
+&lt;FilesMatch "\.php$"&gt;
     SetHandler application/x-httpd-php
 &lt;/FilesMatch&gt;
     </highlight>
@@ -4617,6 +4790,9 @@ host</context></contextlist>
     section <directive module="core" type="section">IfDefine</directive>
     sans avoir &agrave; modifier les arguments <code>-D</code> dans les scripts
     de d&eacute;marrage.</p>
+    <p>Si cette directive est d&eacute;finie au sein d'un bloc VirtualHost, les
+    changements qu'elle induit sont visibles de toute directive
+    ult&eacute;rieure, au del&agrave; de tout bloc VirtualHost.</p>
 </usage>
 </directivesynopsis>
 
@@ -4785,10 +4961,10 @@ d'h&ocirc;te sp&eacute;cifique ou &agrave; une adresse IP</description>
     <highlight language="config">
 &lt;VirtualHost 10.1.2.3:80&gt;
   ServerAdmin webmaster@host.example.com
-  DocumentRoot /www/docs/host.example.com
+  DocumentRoot "/www/docs/host.example.com"
   ServerName host.example.com
-  ErrorLog logs/host.example.com-error_log
-  TransferLog logs/host.example.com-access_log
+  ErrorLog "logs/host.example.com-error_log"
+  TransferLog "logs/host.example.com-access_log"
 &lt;/VirtualHost&gt;
     </highlight>
 
@@ -4801,10 +4977,10 @@ d'h&ocirc;te sp&eacute;cifique ou &agrave; une adresse IP</description>
     <highlight language="config">
 &lt;VirtualHost [2001:db8::a00:20ff:fea7:ccea]:80&gt;
   ServerAdmin webmaster@host.example.com
-  DocumentRoot /www/docs/host.example.com
+  DocumentRoot "/www/docs/host.example.com"
   ServerName host.example.com
-  ErrorLog logs/host.example.com-error_log
-  TransferLog logs/host.example.com-access_log
+  ErrorLog "logs/host.example.com-error_log"
+  TransferLog "logs/host.example.com-access_log"
 &lt;/VirtualHost&gt;
     </highlight>
 
@@ -4877,7 +5053,7 @@ fusionn&eacute;es avec les en-t&ecirc;tes</description>
 <syntax>MergeTrailers [on|off]</syntax>
 <default>MergeTrailers off</default>
 <contextlist><context>server config</context><context>virtual host</context></contextlist>
-<compatibility>Disponible &agrave; partir de la version 2.4.10 du serveur HTTP
+<compatibility>Disponible &agrave; partir de la version 2.4.11 du serveur HTTP
 Apache</compatibility>
 
 <usage>
@@ -4888,7 +5064,7 @@ Apache</compatibility>
     traitement des en-t&ecirc;tes ait une chance de pouvoir examiner ou
     modifier les en-t&ecirc;tes de la requ&ecirc;te.</p>
     <p>Cette option a &eacute;t&eacute; introduite dans un souci de compatibilit&eacute; avec
-    les versions ant&eacute;rieures &agrave; 2.4.10, o&ugrave; les donn&eacute;es suppl&eacute;mentaires
+    les versions ant&eacute;rieures &agrave; 2.4.11, o&ugrave; les donn&eacute;es suppl&eacute;mentaires
     &eacute;taient syst&eacute;matiquement fusionn&eacute;es avec les en-t&ecirc;tes de la requ&ecirc;te.</p>
 </usage>
 </directivesynopsis>

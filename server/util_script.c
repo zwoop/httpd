@@ -140,6 +140,8 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_t *e;
     server_rec *s = r->server;
     conn_rec *c = r->connection;
+    core_dir_config *conf =
+        (core_dir_config *)ap_get_core_module_config(r->per_dir_config);
     const char *env_temp;
     const apr_array_header_t *hdrs_arr = apr_table_elts(r->headers_in);
     const apr_table_entry_t *hdrs = (const apr_table_entry_t *) hdrs_arr->elts;
@@ -188,7 +190,9 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
 #ifndef SECURITY_HOLE_PASS_AUTHORIZATION
         else if (!strcasecmp(hdrs[i].key, "Authorization")
                  || !strcasecmp(hdrs[i].key, "Proxy-Authorization")) {
-            continue;
+            if (conf->cgi_pass_auth == AP_CGI_PASS_AUTH_ON) {
+                add_unless_null(e, http2env(r, hdrs[i].key), hdrs[i].val);
+            }
         }
 #endif
         else
@@ -278,12 +282,25 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     /* Apache custom error responses. If we have redirected set two new vars */
 
     if (r->prev) {
+        /* PR#57785: reconstruct full URL here */
+        apr_uri_t *uri = &r->prev->parsed_uri;
+        if (!uri->scheme) {
+            uri->scheme = (char*)ap_http_scheme(r->prev);
+        }
+        if (!uri->port) {
+            uri->port = ap_get_server_port(r->prev);
+            uri->port_str = apr_psprintf(r->pool, "%u", uri->port);
+        }
+        if (!uri->hostname) {
+            uri->hostname = (char*)ap_get_server_name_for_url(r->prev);
+        }
         add_unless_null(e, "REDIRECT_QUERY_STRING", r->prev->args);
-        add_unless_null(e, "REDIRECT_URL", r->prev->uri);
+        add_unless_null(e, "REDIRECT_URL",
+                        apr_uri_unparse(r->pool, uri, 0));
     }
 
     if (e != r->subprocess_env) {
-      apr_table_overlap(r->subprocess_env, e, APR_OVERLAP_TABLES_SET);
+        apr_table_overlap(r->subprocess_env, e, APR_OVERLAP_TABLES_SET);
     }
 }
 

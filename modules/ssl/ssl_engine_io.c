@@ -28,6 +28,7 @@
                                   core keeps dumping.''
                                             -- Unknown    */
 #include "ssl_private.h"
+#include "mod_ssl.h"
 #include "apr_date.h"
 
 /*  _________________________________________________________________
@@ -297,6 +298,9 @@ typedef struct {
     apr_pool_t *pool;
     char buffer[AP_IOBUFSIZE];
     ssl_filter_ctx_t *filter_ctx;
+#ifdef HAVE_TLS_ALPN
+    int alpn_finished;  /* 1 if ALPN has finished, 0 otherwise */
+#endif
 } bio_filter_in_ctx_t;
 
 /*
@@ -317,7 +321,7 @@ static int char_buffer_read(char_buffer_t *buffer, char *in, int inl)
     }
 
     if (buffer->length > inl) {
-        /* we have have enough to fill the caller's buffer */
+        /* we have enough to fill the caller's buffer */
         memmove(in, buffer->value, inl);
         buffer->value += inl;
         buffer->length -= inl;
@@ -992,7 +996,7 @@ static void ssl_filter_io_shutdown(ssl_filter_ctx_t *filter_ctx,
     }
 
     SSL_set_shutdown(ssl, shutdown_type);
-    SSL_smart_shutdown(ssl);
+    modssl_smart_shutdown(ssl);
 
     /* and finally log the fact that we've closed the connection */
     if (APLOG_CS_IS_LEVEL(c, mySrvFromConn(c), loglevel)) {
@@ -1077,7 +1081,9 @@ static apr_status_t ssl_io_filter_handshake(ssl_filter_ctx_t *filter_ctx)
          * IPv4 and IPv6 addresses are not permitted".)
          */
         if (hostname_note &&
+#ifndef OPENSSL_NO_SSL3
             sc->proxy->protocol != SSL_PROTOCOL_SSLV3 &&
+#endif
             apr_ipsubnet_create(&ip, hostname_note, NULL,
                                 c->pool) != APR_SUCCESS) {
             if (SSL_set_tlsext_host_name(filter_ctx->pssl, hostname_note)) {
@@ -1120,8 +1126,8 @@ static apr_status_t ssl_io_filter_handshake(ssl_filter_ctx_t *filter_ctx)
             hostname_note) {
             apr_table_unset(c->notes, "proxy-request-hostname");
             if (!cert
-                || SSL_X509_match_name(c->pool, cert, hostname_note,
-                                       TRUE, server) == FALSE) {
+                || modssl_X509_match_name(c->pool, cert, hostname_note,
+                                          TRUE, server) == FALSE) {
                 proxy_ssl_check_peer_ok = FALSE;
                 ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, c, APLOGNO(02411)
                               "SSL Proxy: Peer certificate does not match "
@@ -1411,6 +1417,41 @@ static apr_status_t ssl_io_filter_input(ap_filter_t *f,
             apr_bucket_transient_create(start, len, f->c->bucket_alloc);
         APR_BRIGADE_INSERT_TAIL(bb, bucket);
     }
+
+#ifdef HAVE_TLS_ALPN
+    /* By this point, Application-Layer Protocol Negotiation (ALPN) should be 
+     * completed (if our version of OpenSSL supports it). If we haven't already, 
+     * find out which protocol was decided upon and inform other modules 
+     * by calling alpn_proto_negotiated_hook. 
+     */
+    if (!inctx->alpn_finished) {
+        SSLConnRec *sslconn = myConnConfig(f->c);
+        const unsigned char *next_proto = NULL;
+        unsigned next_proto_len = 0;
+        const char *protocol;
+
+        SSL_get0_alpn_selected(inctx->ssl, &next_proto, &next_proto_len);
+        if (next_proto && next_proto_len) {
+            protocol = apr_pstrmemdup(f->c->pool, (const char *)next_proto,
+                                       next_proto_len);
+            ap_log_cerror(APLOG_MARK, APLOG_DEBUG, APR_SUCCESS, f->c,
+                          APLOGNO(02836) "ALPN selected protocol: '%s'",
+                          protocol);
+            
+            if (strcmp(protocol, ap_get_protocol(f->c))) {
+                status = ap_switch_protocol(f->c, NULL, sslconn->server,
+                                            protocol);
+                if (status != APR_SUCCESS) {
+                    ap_log_cerror(APLOG_MARK, APLOG_ERR, status, f->c,
+                                  APLOGNO(02908) "protocol switch to '%s' failed",
+                                  protocol);
+                    return status;
+                }
+            }
+        }
+        inctx->alpn_finished = 1;
+    }
+#endif
 
     return APR_SUCCESS;
 }
@@ -1705,7 +1746,7 @@ int ssl_io_buffer_fill(request_rec *r, apr_size_t maxlen)
         if (rv) {
             ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(02015)
                           "could not read request body for SSL buffer");
-            return HTTP_INTERNAL_SERVER_ERROR;
+            return ap_map_http_request_error(rv, HTTP_INTERNAL_SERVER_ERROR);
         }
 
         /* Iterate through the returned brigade: setaside each bucket
@@ -1893,6 +1934,9 @@ static void ssl_io_input_add_filter(ssl_filter_ctx_t *filter_ctx, conn_rec *c,
     inctx->block = APR_BLOCK_READ;
     inctx->pool = c->pool;
     inctx->filter_ctx = filter_ctx;
+#ifdef HAVE_TLS_ALPN
+    inctx->alpn_finished = 0;
+#endif
 }
 
 /* The request_rec pointer is passed in here only to ensure that the
@@ -2043,7 +2087,7 @@ long ssl_io_data_cb(BIO *bio, int cmd,
         if (rc >= 0) {
             ap_log_cserror(APLOG_MARK, APLOG_TRACE4, 0, c, s,
                     "%s: %s %ld/%d bytes %s BIO#%pp [mem: %pp] %s",
-                    SSL_LIBRARY_NAME,
+                    MODSSL_LIBRARY_NAME,
                     (cmd == (BIO_CB_WRITE|BIO_CB_RETURN) ? "write" : "read"),
                     rc, argi, (cmd == (BIO_CB_WRITE|BIO_CB_RETURN) ? "to" : "from"),
                     bio, argp,
@@ -2054,7 +2098,7 @@ long ssl_io_data_cb(BIO *bio, int cmd,
         else {
             ap_log_cserror(APLOG_MARK, APLOG_TRACE4, 0, c, s,
                     "%s: I/O error, %d bytes expected to %s on BIO#%pp [mem: %pp]",
-                    SSL_LIBRARY_NAME, argi,
+                    MODSSL_LIBRARY_NAME, argi,
                     (cmd == (BIO_CB_WRITE|BIO_CB_RETURN) ? "write" : "read"),
                     bio, argp);
         }

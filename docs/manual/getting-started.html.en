@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -191,7 +193,7 @@ problem without the error log is like driving with your eyes closed.</p>
 <p>The location of the error log is defined by the <code class="directive"><a href="./mod/core.html#errorlog">ErrorLog</a></code> directive, which may be set globally,
 or per virtual host. Entries in the error log tell you what went wrong,
 and when. They often also tell you how to fix it. Each error log message
-contains a error code, which you can search for online for even more
+contains an error code, which you can search for online for even more
 detailed descriptions of how to address the problem. You can also
 configure your error log to contain a log ID which you can then
 correlate to an access log entry, so that you can determine what request

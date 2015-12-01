@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8' ?>
 <!DOCTYPE manualpage SYSTEM "./style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="./style/manual.tr.xsl"?>
-<!-- English Revision: 1502534:1642311 (outdated) -->
+<!-- English Revision: 1685413 -->
 <!-- =====================================================
  Translated by: Nilgün Belma Bugüner <nilgun belgeler.gen.tr>
    Reviewed by: Orhan Berent <berent belgeler.gen.tr>
@@ -43,7 +43,7 @@
       Kaynak Kodlu projenin yaptığı gibi <code>libtool</code> ve
       <code>autoconf</code> kullanır.</p>
 
-    <p>Eğer sadece sürüm yükseltiyorsanız (2.2.50’den 2.2.51’e yükseltmek
+    <p>Eğer sadece sürüm yükseltiyorsanız (2.4.9’dan 2.4.10’a yükseltmek
       gibi) lütfen doğrudan <a href="#upgrading">Yükseltme</a> bölümüne
       atlayınız.</p>
 
@@ -126,10 +126,12 @@
         istemiyorsanız APR ve APR-Util'in ikisini birden <a
         href="http://apr.apache.org/">Apache APR</a>'den indirin ve onları
         Apache httpd dağıtımını açtığınız dizinin altında
-        <code>./srclib/apr</code> ve <code>./srclib/apr-util</code> dizinlerine
+        <code>/httpd_kaynakkod_kök_dizini/srclib/apr</code> ve
+        <code>/httpd_kaynakkod_kök_dizini/srclib/apr-util</code> dizinlerine
         açın (Dizin isimlerinin sürüm numarası içermemesine dikkat edin,
-        örneğin, APR dağıtımı ./srclib/apr/ altında olsun.) ve
-        <code>./configure</code> betiğinin <code>--with-included-apr</code>
+        örneğin, APR dağıtımı
+        <code>/httpd_kaynakkod_kök_dizini/srclib/apr/</code> altında olsun.)
+        ve <code>./configure</code> betiğinin <code>--with-included-apr</code>
         seçeneğini kullanın. Bazı platformlarda, httpd'nin, kurulu APR ve
         APR-Util kopyanıza karşın derlenmesini sağlamak için ilgili
         <code>-dev</code> paketlerini kurmanız gerekebilir.</dd>
@@ -176,12 +178,8 @@
       <dd>Perl ile yazılmış <program>apxs</program> veya
         <program>dbmmanage</program> gibi bazı betikleri desteklemek için
         Perl 5 yorumlayıcısı gerekir (5.003 veya daha yeni sürümleri
-        yeterlidir). Eğer sisteminizde birden fazla Perl yorumlayıcı
-        kuruluysa (örneğin, sistem geneli için Perl 4, kendi kullanımızı için
-        Perl 5 kurulu olabilir), doğru sürümün kullanılacağından emin olmak
-        bunu <program>configure</program> betiğine <code>--with-perl</code>
-        seçeneğini kullanarak belirtmeniz önerilir. Eğer
-        <program>configure</program> betiği sisteminizde Perl 5 yorumlayıcısı
+        yeterlidir). Eğer <program>configure</program> betiği sisteminizde
+        Perl 5 yorumlayıcısı
         bulamazsa bu betikleri kullanamazsınız. Ancak, bu durum Apache
         HTTPd’nin derlenip kurulmasına engel değildir.</dd>
     </dl>

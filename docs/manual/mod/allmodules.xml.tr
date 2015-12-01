@@ -54,6 +54,7 @@
   <modulefile>mod_headers.xml</modulefile>
   <modulefile>mod_heartbeat.xml</modulefile>
   <modulefile>mod_heartmonitor.xml</modulefile>
+  <modulefile>mod_http2.xml</modulefile>
   <modulefile>mod_ident.xml</modulefile>
   <modulefile>mod_imagemap.xml</modulefile>
   <modulefile>mod_include.xml</modulefile>

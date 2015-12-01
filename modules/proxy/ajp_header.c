@@ -37,7 +37,7 @@ static const char *long_res_header_for_sc(int sc)
 {
     const char *rc = NULL;
     sc = sc & 0X00FF;
-    if(sc <= SC_RES_HEADERS_NUM && sc > 0) {
+    if (sc <= SC_RES_HEADERS_NUM && sc > 0) {
         rc = response_trans_headers[sc - 1];
     }
 
@@ -89,39 +89,39 @@ static int sc_for_req_header(const char *header_name)
                 return UNKNOWN_METHOD;
         break;
         case 'C':
-            if(strcmp(p, "OOKIE2") == 0)
+            if (strcmp(p, "OOKIE2") == 0)
                 return SC_COOKIE2;
             else if (strcmp(p, "OOKIE") == 0)
                 return SC_COOKIE;
-            else if(strcmp(p, "ONNECTION") == 0)
+            else if (strcmp(p, "ONNECTION") == 0)
                 return SC_CONNECTION;
-            else if(strcmp(p, "ONTENT-TYPE") == 0)
+            else if (strcmp(p, "ONTENT-TYPE") == 0)
                 return SC_CONTENT_TYPE;
-            else if(strcmp(p, "ONTENT-LENGTH") == 0)
+            else if (strcmp(p, "ONTENT-LENGTH") == 0)
                 return SC_CONTENT_LENGTH;
             else
                 return UNKNOWN_METHOD;
         break;
         case 'H':
-            if(strcmp(p, "OST") == 0)
+            if (strcmp(p, "OST") == 0)
                 return SC_HOST;
             else
                 return UNKNOWN_METHOD;
         break;
         case 'P':
-            if(strcmp(p, "RAGMA") == 0)
+            if (strcmp(p, "RAGMA") == 0)
                 return SC_PRAGMA;
             else
                 return UNKNOWN_METHOD;
         break;
         case 'R':
-            if(strcmp(p, "EFERER") == 0)
+            if (strcmp(p, "EFERER") == 0)
                 return SC_REFERER;
             else
                 return UNKNOWN_METHOD;
         break;
         case 'U':
-            if(strcmp(p, "SER-AGENT") == 0)
+            if (strcmp(p, "SER-AGENT") == 0)
                 return SC_USER_AGENT;
             else
                 return UNKNOWN_METHOD;
@@ -415,6 +415,26 @@ static apr_status_t ajp_marshal_into_msgb(ajp_msg_t *msg,
             return AJP_EOVERFLOW;
         }
     }
+    /* Forward the SSL protocol name.
+     * Modern Tomcat versions know how to retrieve
+     * the protocol name from this attribute.
+     */
+    if (is_ssl) {
+        if ((envvar = ap_proxy_ssl_val(r->pool, r->server, r->connection, r,
+                                       AJP13_SSL_PROTOCOL_INDICATOR))
+            && envvar[0]) {
+            const char *key = SC_A_SSL_PROTOCOL;
+            if (ajp_msg_append_uint8(msg, SC_A_REQ_ATTRIBUTE) ||
+                ajp_msg_append_string(msg, key)   ||
+                ajp_msg_append_string(msg, envvar)) {
+                ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(02830)
+                        "ajp_marshal_into_msgb: "
+                        "Error appending attribute %s=%s",
+                        key, envvar);
+                return AJP_EOVERFLOW;
+            }
+        }
+    }
     /* Forward the remote port information, which was forgotten
      * from the builtin data of the AJP 13 protocol.
      * Since the servlet spec allows to retrieve it via getRemotePort(),
@@ -528,7 +548,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t *msg,
     rc = ajp_msg_get_uint16(msg, &status);
 
     if (rc != APR_SUCCESS) {
-         ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00983)
+        ap_log_rerror(APLOG_MARK, APLOG_ERR, 0, r, APLOGNO(00983)
                 "ajp_unmarshal_response: Null status");
         return rc;
     }
@@ -541,7 +561,8 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t *msg,
         ap_xlate_proto_from_ascii(ptr, strlen(ptr));
 #endif
         r->status_line =  apr_psprintf(r->pool, "%d %s", status, ptr);
-    } else {
+    }
+    else {
         r->status_line = NULL;
     }
 
@@ -561,7 +582,8 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t *msg,
         apr_table_do(addit_dammit, save_table, r->headers_out,
                      "Set-Cookie", NULL);
         r->headers_out = save_table;
-    } else {
+    }
+    else {
         r->headers_out = NULL;
         num_headers = 0;
     }
@@ -570,7 +592,7 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t *msg,
            "ajp_unmarshal_response: Number of headers is = %d",
            num_headers);
 
-    for(i = 0 ; i < (int) num_headers ; i++) {
+    for (i = 0; i < (int)num_headers; i++) {
         apr_uint16_t name;
         const char *stringname;
         const char *value;
@@ -589,7 +611,8 @@ static apr_status_t ajp_unmarshal_response(ajp_msg_t *msg,
                        name);
                 return AJP_EBAD_HEADER;
             }
-        } else {
+        }
+        else {
             name = 0;
             rc = ajp_msg_get_string(msg, &stringname);
             if (rc != APR_SUCCESS) {

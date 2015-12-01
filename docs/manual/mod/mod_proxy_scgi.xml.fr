@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision : 1589417 -->
+<!-- English Revision: 1678234 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -73,10 +73,10 @@
 
     <example><title>Passerelle &agrave; r&eacute;partition de charge</title>
     <highlight language="config">
-ProxyPass /scgi-bin/ balancer://somecluster/
-&lt;Proxy balancer://somecluster&gt;
-    BalancerMember scgi://localhost:4000
-    BalancerMember scgi://localhost:4001
+ProxyPass "/scgi-bin/" "balancer://somecluster/"
+&lt;Proxy "balancer://somecluster"&gt;
+    BalancerMember "scgi://localhost:4000"
+    BalancerMember "scgi://localhost:4001"
 &lt;/Proxy&gt;
     </highlight>
     </example>
@@ -84,8 +84,8 @@ ProxyPass /scgi-bin/ balancer://somecluster/
 
 <section id="env"><title>Variables d'environnement</title>
     <p>En plus des directives de configuration qui permettent de
-    contr&ocirc;ler le comportement de <module>mod_proxy</module>, de
-    nombreuses <dfn>variables d'environnement</dfn> permettent de
+    contr&ocirc;ler le comportement de <module>mod_proxy</module>, une
+    <dfn>variable d'environnement</dfn> peut aussi
     contr&ocirc;ler le fournisseur de protocole SCGI :</p>
     <dl>
         <dt>proxy-scgi-pathinfo</dt>
@@ -97,7 +97,12 @@ ProxyPass /scgi-bin/ balancer://somecluster/
 	3.3 de la RFC 3875. Si au contraire vous souhaitez que
 	<module>mod_proxy_scgi</module> g&eacute;n&egrave;re une estimation la plus
 	pr&eacute;cise possible de <var>PATH_INFO</var>, d&eacute;finissez cette
-	variable d'environnement.</dd>
+	variable d'environnement. La variable doit &ecirc;tre d&eacute;finie avant
+	que la directive <directive
+	module="env">SetEnv</directive> ne soit effective. Il est possible
+	d'utiliser &agrave; la	place la directive <directive
+	module="setenv">SetEnvIf</directive> : <code>SetEnvIf Request_URI . proxy-scgi-pathinfo</code>
+	</dd>
     </dl>
 </section>
 
@@ -156,10 +161,12 @@ ProxyPass /scgi-bin/ balancer://somecluster/
 <name>ProxySCGIInternalRedirect</name>
 <description>Active ou d&eacute;sactive les r&eacute;ponses de redirection interne en
 provenance du serveur cible.</description>
-<syntax>ProxySCGIInternalRedirect On|Off</syntax>
+<syntax>ProxySCGIInternalRedirect On|Off|<var>Headername</var></syntax>
 <default>ProxySCGIInternalRedirect On</default>
 <contextlist><context>server config</context><context>virtual host</context>
 <context>directory</context></contextlist>
+<compatibility>Le paramètre <var>Headername</var> est disponible depuis
+la version 2.4.13 du serveur HTTP Apache.</compatibility>
 
 <usage>
     <p>La directive <directive>ProxySCGIInternalRedirect</directive>
@@ -167,18 +174,27 @@ provenance du serveur cible.</description>
     une URL diff&eacute;rente. Cette fonctionnalit&eacute; trouve son origine dans
     <module>mod_cgi</module> qui redirige la r&eacute;ponse en interne si
     l'&eacute;tat de la r&eacute;ponse est <code>OK</code> (<code>200</code>), et si
-    la r&eacute;ponse contient un en-t&ecirc;te <code>Location</code> dont la valeur
+    la r&eacute;ponse contient un en-t&ecirc;te <code>Location</code>
+    (ou un autre en-t&ecirc;te défini) dont la valeur
     d&eacute;bute par un slash (<code>/</code>). Cette valeur est interpr&eacute;t&eacute;e
     comme une nouvelle URL locale vers laquelle Apache httpd effectue sa
     redirection.</p>
 
     <p>De ce point de vue, <module>mod_proxy_scgi</module> fait la m&ecirc;me
     chose que <module>mod_cgi</module>, mais vous pouvez en plus
-    d&eacute;sactiver la fonctionnalit&eacute;.</p>
+    d&eacute;sactiver la fonctionnalit&eacute; ou sp&eacute;cifier
+    l'utilisation d'un en-t&ecirc;te autre que <code>Location</code>.</p>
 
     <example><title>Exemple</title>
     <highlight language="config">
     ProxySCGIInternalRedirect Off
+# Django et certains autres frameworks qualifient pleinement les "URLs
+# locales" d&eacute;finies par l'application ; il faut donc utiliser un autre
+# en-t&ecirc;te.
+&lt;Location /django-app/&gt;
+    ProxySCGIInternalRedirect X-Location
+&lt;/Location&gt;
+    
     </highlight>
     </example>
 </usage>

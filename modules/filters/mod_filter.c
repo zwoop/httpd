@@ -351,7 +351,7 @@ static const char *filter_protocol(cmd_parms *cmd, void *CFG, const char *fname,
     }
     else {
         /* Find provider */
-        for (provider = filter->providers; provider; provider = provider->next){
+        for (provider = filter->providers; provider; provider = provider->next) {
             if (!strcasecmp(provider->frec->name, pname)) {
                 break;
             }
@@ -362,7 +362,7 @@ static const char *filter_protocol(cmd_parms *cmd, void *CFG, const char *fname,
     }
 
     /* Now set flags from our args */
-    for (arg = apr_strtok(apr_pstrdup(cmd->pool, proto), sep, &tok);
+    for (arg = apr_strtok(apr_pstrdup(cmd->temp_pool, proto), sep, &tok);
          arg; arg = apr_strtok(NULL, sep, &tok)) {
 
         if (!strcasecmp(arg, "change=yes")) {

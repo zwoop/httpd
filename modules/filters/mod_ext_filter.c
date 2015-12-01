@@ -635,7 +635,7 @@ static apr_status_t init_filter_instance(ap_filter_t *f)
 /* drain_available_output():
  *
  * if any data is available from the filter, read it and append it
- * to the the bucket brigade
+ * to the bucket brigade
  */
 static apr_status_t drain_available_output(ap_filter_t *f,
                                            apr_bucket_brigade *bb)
@@ -890,6 +890,11 @@ static apr_status_t ef_input_filter(ap_filter_t *f, apr_bucket_brigade *bb,
 {
     ef_ctx_t *ctx = f->ctx;
     apr_status_t rv;
+
+    /* just get out of the way of things we don't want. */
+    if (mode != AP_MODE_READBYTES) {
+        return ap_get_brigade(f->next, bb, mode, block, readbytes);
+    }
 
     if (!ctx) {
         if ((rv = init_filter_instance(f)) != APR_SUCCESS) {

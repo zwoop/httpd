@@ -324,7 +324,7 @@ static int stream_reqbody_chunked(apr_pool_t *p,
                           " from %s (%s)", p_conn->addr,
                           p_conn->hostname ? p_conn->hostname: "",
                           c->client_ip, c->remote_host ? c->remote_host: "");
-            return HTTP_BAD_REQUEST;
+            return ap_map_http_request_error(status, HTTP_BAD_REQUEST);
         }
     }
 
@@ -475,7 +475,7 @@ static int stream_reqbody_cl(apr_pool_t *p,
                           " from %s (%s)", p_conn->addr,
                           p_conn->hostname ? p_conn->hostname: "",
                           c->client_ip, c->remote_host ? c->remote_host: "");
-            return HTTP_BAD_REQUEST;
+            return ap_map_http_request_error(status, HTTP_BAD_REQUEST);
         }
     }
 
@@ -624,7 +624,7 @@ static int spool_reqbody_cl(apr_pool_t *p,
                           " from %s (%s)", p_conn->addr,
                           p_conn->hostname ? p_conn->hostname: "",
                           c->client_ip, c->remote_host ? c->remote_host: "");
-            return HTTP_BAD_REQUEST;
+            return ap_map_http_request_error(status, HTTP_BAD_REQUEST);
         }
     }
 
@@ -759,7 +759,7 @@ int ap_proxy_http_request(apr_pool_t *p, request_rec *r,
 
     /* WE only understand chunked.  Other modules might inject
      * (and therefore, decode) other flavors but we don't know
-     * that the can and have done so unless they they remove
+     * that the can and have done so unless they remove
      * their decoding from the headers_in T-E list.
      * XXX: Make this extensible, but in doing so, presume the
      * encoding has been done by the extensions' handler, and
@@ -800,7 +800,7 @@ int ap_proxy_http_request(apr_pool_t *p, request_rec *r,
                           " from %s (%s)",
                           p_conn->addr, p_conn->hostname ? p_conn->hostname: "",
                           c->client_ip, c->remote_host ? c->remote_host: "");
-            return HTTP_BAD_REQUEST;
+            return ap_map_http_request_error(status, HTTP_BAD_REQUEST);
         }
 
         apr_brigade_length(temp_brigade, 1, &bytes);
@@ -922,7 +922,7 @@ skip_body:
      * otherwise sent Connection: Keep-Alive.
      */
     if (!force10) {
-        if (p_conn->close) {
+        if (!ap_proxy_connection_reusable(p_conn)) {
             buf = apr_pstrdup(p, "Connection: close" CRLF);
         }
         else {
@@ -951,7 +951,7 @@ skip_body:
         break;
     default:
         /* shouldn't be possible */
-        rv = HTTP_INTERNAL_SERVER_ERROR ;
+        rv = HTTP_INTERNAL_SERVER_ERROR;
         break;
     }
 
@@ -1117,7 +1117,7 @@ static void ap_proxy_read_headers(request_rec *r, request_rec *rr,
                 if (psc->badopt == bad_error) {
                     /* Nope, it wasn't even an extra HTTP header. Give up. */
                     r->headers_out = NULL;
-                    return ;
+                    return;
                 }
                 else if (psc->badopt == bad_body) {
                     /* if we've already started loading headers_out, then
@@ -1131,12 +1131,12 @@ static void ap_proxy_read_headers(request_rec *r, request_rec *rr,
                                       "in headers returned by %s (%s)",
                                       r->uri, r->method);
                         *pread_len = len;
-                        return ;
+                        return;
                     } else {
                          ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, APLOGNO(01099)
                                        "No HTTP headers returned by %s (%s)",
                                        r->uri, r->method);
-                        return ;
+                        return;
                     }
                 }
             }
@@ -1156,15 +1156,14 @@ static void ap_proxy_read_headers(request_rec *r, request_rec *rr,
             ++value;            /* Skip to start of value   */
 
         /* should strip trailing whitespace as well */
-        for (end = &value[strlen(value)-1]; end > value && apr_isspace(*end); --
-end)
+        for (end = &value[strlen(value)-1]; end > value && apr_isspace(*end); --end)
             *end = '\0';
 
         /* make sure we add so as not to destroy duplicated headers
          * Modify headers requiring canonicalisation and/or affected
          * by ProxyPassReverse and family with process_proxy_header
          */
-        process_proxy_header(r, dconf, buffer, value) ;
+        process_proxy_header(r, dconf, buffer, value);
         saw_headers = 1;
 
         /* the header was too long; at the least we should skip extra data */
@@ -1383,6 +1382,7 @@ apr_status_t ap_proxy_http_process_response(apr_pool_t * p, request_rec *r,
          */
         if (apr_date_checkmask(buffer, "HTTP/#.# ###*")) {
             int major, minor;
+            int toclose;
 
             major = buffer[5] - '0';
             minor = buffer[7] - '0';
@@ -1491,7 +1491,10 @@ apr_status_t ap_proxy_http_process_response(apr_pool_t * p, request_rec *r,
             te = apr_table_get(r->headers_out, "Transfer-Encoding");
 
             /* strip connection listed hop-by-hop headers from response */
-            backend->close = ap_proxy_clear_connection_fn(r, r->headers_out);
+            toclose = ap_proxy_clear_connection_fn(r, r->headers_out);
+            if (toclose) {
+                backend->close = 1;
+            }
 
             if ((buf = apr_table_get(r->headers_out, "Content-Type"))) {
                 ap_set_content_type(r, apr_pstrdup(p, buf));
@@ -1658,6 +1661,11 @@ apr_status_t ap_proxy_http_process_response(apr_pool_t * p, request_rec *r,
                 }
                 ap_discard_request_body(backend->r);
             }
+            /*
+             * prevent proxy_handler() from treating this as an
+             * internal error.
+             */
+            apr_table_setn(r->notes, "proxy-error-override", "1");
             return proxy_status;
         }
 

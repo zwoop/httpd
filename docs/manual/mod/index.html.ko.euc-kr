@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="EUC-KR"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head>
+<meta content="text/html; charset=EUC-KR" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -132,6 +134,7 @@ index 파일을 서비스한다</dd>
 <dt><a href="mod_headers.html" id="H" name="H">mod_headers</a></dt><dd>HTTP 요청 헤더와 응답 헤더 수정</dd>
 <dt><a href="mod_heartbeat.html">mod_heartbeat</a></dt><dd>Sends messages with server status to frontend proxy</dd>
 <dt><a href="mod_heartmonitor.html">mod_heartmonitor</a></dt><dd>Centralized monitor for mod_heartbeat origin servers</dd>
+<dt><a href="mod_http2.html">mod_http2</a></dt><dd>Support for the HTTP/2 transport layer</dd>
 <dt><a href="mod_ident.html" id="I" name="I">mod_ident</a></dt><dd>RFC 1413 ident 검색</dd>
 <dt><a href="mod_imagemap.html">mod_imagemap</a></dt><dd>서버측 이미지맵(imagemap) 처리</dd>
 <dt><a href="mod_include.html">mod_include</a></dt><dd>Server-parsed html documents (Server Side Includes)</dd>

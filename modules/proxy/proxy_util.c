@@ -1159,7 +1159,7 @@ PROXY_DECLARE(char *) ap_proxy_define_balancer(apr_pool_t *p,
 
     c = strchr(uri, ':');
     if (c == NULL || c[1] != '/' || c[2] != '/' || c[3] == '\0')
-        return "Bad syntax for a balancer name";
+        return apr_psprintf(p, "Bad syntax for a balancer name (%s)", uri);
     /* remove path from uri */
     if ((q = strchr(c + 3, '/')))
         *q = '\0';
@@ -1320,6 +1320,14 @@ PROXY_DECLARE(apr_status_t) ap_proxy_initialize_balancer(proxy_balancer *balance
  * CONNECTION related...
  */
 
+static void socket_cleanup(proxy_conn_rec *conn)
+{
+    conn->sock = NULL;
+    conn->connection = NULL;
+    conn->ssl_hostname = NULL;
+    apr_pool_clear(conn->scpool);
+}
+
 static apr_status_t conn_pool_cleanup(void *theworker)
 {
     proxy_worker *worker = (proxy_worker *)theworker;
@@ -1351,6 +1359,13 @@ static void init_conn_pool(apr_pool_t *p, proxy_worker *worker)
     worker->cp = cp;
 }
 
+PROXY_DECLARE(int) ap_proxy_connection_reusable(proxy_conn_rec *conn)
+{
+    proxy_worker *worker = conn->worker;
+
+    return ! (conn->close || !worker->s->is_address_reusable || worker->s->disablereuse);
+}
+
 static apr_status_t connection_cleanup(void *theconn)
 {
     proxy_conn_rec *conn = (proxy_conn_rec *)theconn;
@@ -1379,7 +1394,7 @@ static apr_status_t connection_cleanup(void *theconn)
     }
 
     /* determine if the connection need to be closed */
-    if (conn->close || !worker->s->is_address_reusable || worker->s->disablereuse) {
+    if (!worker->s->is_address_reusable || worker->s->disablereuse) {
         apr_pool_t *p = conn->pool;
         apr_pool_clear(p);
         conn = apr_pcalloc(p, sizeof(proxy_conn_rec));
@@ -1387,6 +1402,12 @@ static apr_status_t connection_cleanup(void *theconn)
         conn->worker = worker;
         apr_pool_create(&(conn->scpool), p);
         apr_pool_tag(conn->scpool, "proxy_conn_scpool");
+    }
+    else if (conn->close
+                || (conn->connection
+                    && conn->connection->keepalive == AP_CONN_CLOSE)) {
+        socket_cleanup(conn);
+        conn->close = 0;
     }
 
     if (worker->s->hmax && worker->cp->res) {
@@ -1400,14 +1421,6 @@ static apr_status_t connection_cleanup(void *theconn)
 
     /* Always return the SUCCESS */
     return APR_SUCCESS;
-}
-
-static void socket_cleanup(proxy_conn_rec *conn)
-{
-    conn->sock = NULL;
-    conn->connection = NULL;
-    conn->ssl_hostname = NULL;
-    apr_pool_clear(conn->scpool);
 }
 
 PROXY_DECLARE(apr_status_t) ap_proxy_ssl_connection_cleanup(proxy_conn_rec *conn,
@@ -2069,7 +2082,14 @@ PROXY_DECLARE(int) ap_proxy_connect_to_backend(apr_socket_t **newsock,
                       proxy_function, backend_addr->family, backend_name);
 
         if (conf->source_address) {
-            rv = apr_socket_bind(*newsock, conf->source_address);
+            apr_sockaddr_t *local_addr;
+            /* Make a copy since apr_socket_bind() could change
+             * conf->source_address, which we don't want.
+             */
+            local_addr = apr_pmemdup(r->pool, conf->source_address,
+                                     sizeof(apr_sockaddr_t));
+            local_addr->pool = r->pool;
+            rv = apr_socket_bind(*newsock, local_addr);
             if (rv != APR_SUCCESS) {
                 ap_log_rerror(APLOG_MARK, APLOG_ERR, rv, r, APLOGNO(00938)
                               "%s: failed to bind socket to local address",
@@ -2197,8 +2217,12 @@ ap_proxy_determine_connection(apr_pool_t *p, request_rec *r,
      * The scheme handler decides if this is permanent or
      * short living pool.
      */
-    /* are we connecting directly, or via a proxy? */
-    if (!proxyname) {
+    /* Unless we are connecting the backend via a (forward Proxy)Remote, we
+     * have to use the original form of the URI (non absolute), but this is
+     * also the case via a remote proxy using the CONNECT method since the
+     * original request (and URI) is to be embedded in the body.
+     */
+    if (!proxyname || conn->is_ssl) {
         *url = apr_pstrcat(p, uri->path, uri->query ? "?" : "",
                            uri->query ? uri->query : "",
                            uri->fragment ? "#" : "",
@@ -2372,6 +2396,10 @@ ap_proxy_determine_connection(apr_pool_t *p, request_rec *r,
         dconf = ap_get_module_config(r->per_dir_config, &proxy_module);
         if (dconf->preserve_host) {
             ssl_hostname = r->hostname;
+        }
+        else if (conn->forward
+                 && ((forward_info *)(conn->forward))->use_http_connect) {
+            ssl_hostname = ((forward_info *)conn->forward)->target_host;
         }
         else {
             ssl_hostname = conn->hostname;
@@ -2737,9 +2765,9 @@ PROXY_DECLARE(int) ap_proxy_connect_backend(const char *proxy_function,
                          proxy_function, backend_addr->family, worker->s->hostname);
 
             if (conf->source_address_set) {
-                local_addr = apr_pmemdup(conn->pool, conf->source_address,
+                local_addr = apr_pmemdup(conn->scpool, conf->source_address,
                                          sizeof(apr_sockaddr_t));
-                local_addr->pool = conn->pool;
+                local_addr->pool = conn->scpool;
                 rv = apr_socket_bind(newsock, local_addr);
                 if (rv != APR_SUCCESS) {
                     ap_log_error(APLOG_MARK, APLOG_ERR, rv, s, APLOGNO(00956)
@@ -2811,33 +2839,47 @@ PROXY_DECLARE(int) ap_proxy_connect_backend(const char *proxy_function,
 
         connected    = 1;
     }
-    /*
-     * Put the entire worker to error state if
-     * the PROXY_WORKER_IGNORE_ERRORS flag is not set.
-     * Altrough some connections may be alive
-     * no further connections to the worker could be made
-     */
-    if (!connected && PROXY_WORKER_IS_USABLE(worker) &&
-        !(worker->s->status & PROXY_WORKER_IGNORE_ERRORS)) {
-        worker->s->error_time = apr_time_now();
-        worker->s->status |= PROXY_WORKER_IN_ERROR;
-        ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(00959)
-            "ap_proxy_connect_backend disabling worker for (%s) for %"
-            APR_TIME_T_FMT "s",
-            worker->s->hostname, apr_time_sec(worker->s->retry));
+    if (PROXY_WORKER_IS_USABLE(worker)) {
+        /*
+         * Put the entire worker to error state if
+         * the PROXY_WORKER_IGNORE_ERRORS flag is not set.
+         * Although some connections may be alive
+         * no further connections to the worker could be made
+         */
+        if (!connected) {
+            if (!(worker->s->status & PROXY_WORKER_IGNORE_ERRORS)) {
+                worker->s->error_time = apr_time_now();
+                worker->s->status |= PROXY_WORKER_IN_ERROR;
+                ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(00959)
+                    "ap_proxy_connect_backend disabling worker for (%s) for %"
+                    APR_TIME_T_FMT "s",
+                    worker->s->hostname, apr_time_sec(worker->s->retry));
+            }
+        }
+        else {
+            if (worker->s->retries) {
+                /*
+                 * A worker came back. So here is where we need to
+                 * either reset all params to initial conditions or
+                 * apply some sort of aging
+                 */
+            }
+            worker->s->error_time = 0;
+            worker->s->retries = 0;
+        }
+        return connected ? OK : DECLINED;
     }
     else {
-        if (worker->s->retries) {
-            /*
-             * A worker came back. So here is where we need to
-             * either reset all params to initial conditions or
-             * apply some sort of aging
-             */
+        /*
+         * The worker is in error likely done by a different thread / process
+         * e.g. for a timeout or bad status. We should respect this and should
+         * not continue with a connection via this worker even if we got one.
+         */
+        if (connected) {
+            socket_cleanup(conn);
         }
-        worker->s->error_time = 0;
-        worker->s->retries = 0;
+        return DECLINED;
     }
-    return connected ? OK : DECLINED;
 }
 
 static apr_status_t connection_shutdown(void *theconn)

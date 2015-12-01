@@ -68,8 +68,8 @@ for HTTP Basic authentication.</description>
 <section id="contents"><title>Contents</title>
 
     <ul>
-      <li>
-        <a href="#operation">Operation</a>
+      <li> <a href="#gcaveats">General caveats</a> </li>
+      <li> <a href="#operation">Operation</a>
 
         <ul>
           <li><a href="#authenphase">The Authentication
@@ -107,6 +107,16 @@ for HTTP Basic authentication.</description>
         </ul>
       </li>
     </ul>
+</section>
+
+<section id="gcaveats"><title>General caveats</title>
+<p> This module caches authentication and authorization results based
+on the configuration of <module>mod_ldap</module>. Changes
+made to the backing LDAP server will not be immediately reflected on the
+HTTP Server, including but not limited to user lockouts/revocations, 
+password changes, or changes to group memberships.  Consult the directives 
+in <module>mod_ldap</module> for details of the cache tunables.
+</p>
 </section>
 
 <section id="operation"><title>Operation</title>
@@ -705,8 +715,8 @@ AuthLDAPURL ldap://10.0.0.1:3268/?userPrincipalName?sub
     that gets created in the web</p>
 <highlight language="config">
 AuthLDAPURL       "the url"
-AuthGroupFile     mygroupfile
-Require group     mygroupfile
+AuthGroupFile     "mygroupfile"
+Require group     "mygroupfile"
 </highlight>
 
 <section id="howitworks"><title>How It Works</title>
@@ -867,7 +877,7 @@ to perform a DN lookup</description>
 <usage>
     <p>If <directive module="mod_authnz_ldap">AuthLDAPInitialBindAsUser</directive> is set to
        <em>ON</em>, the basic authentication username will be transformed according to the
-       regular expression and substituion arguments.</p>
+       regular expression and substitution arguments.</p>
 
     <p> The regular expression argument is compared against the current basic authentication username.
         The substitution argument may contain backreferences, but has no other variable interpolation.</p>

@@ -123,9 +123,9 @@
       your system. If you don't, or prefer to not use the system-provided
       versions, download the latest versions of both APR and APR-Util
       from <a href="http://apr.apache.org/">Apache APR</a>, unpack
-      them into <code>./srclib/apr</code> and <code>./srclib/apr-util</code>
+      them into <code>/httpd_source_tree_root/srclib/apr</code> and <code>/httpd_source_tree_root/srclib/apr-util</code>
       (be sure the directory names do not have version numbers; for example,
-      the APR distribution must be under ./srclib/apr/) and use
+      the APR distribution must be under /httpd_source_tree_root/srclib/apr/) and use
       <code>./configure</code>'s <code>--with-included-apr</code>
       option.  On some platforms, you may have to install the 
       corresponding <code>-dev</code> packages to allow httpd to build 
@@ -174,12 +174,7 @@
       <dd>For some of the support scripts like <program>
       apxs</program> or <program>dbmmanage</program> (which are
       written in Perl) the Perl 5 interpreter is required (versions
-      5.003 or newer are sufficient). If you have multiple Perl
-      interpreters (for example, a systemwide install of Perl 4, and
-      your own install of Perl 5), you are advised to use the
-      <code>--with-perl</code> option (see below) to make sure the
-      correct one is used by <program>configure</program>.
-      If no Perl 5 interpreter is found by the
+      5.003 or newer are sufficient).  If no Perl 5 interpreter is found by the
       <program>configure</program> script, you will not be able to use
       the affected support scripts. Of course, you will still be able to
       build and use Apache httpd.</dd>

@@ -125,10 +125,15 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(SessionCacheTimeout, TAKE1,
                 "SSL Session Cache object lifetime "
                 "('N' - number of seconds)")
-#ifdef HAVE_TLSV1_X
-#define SSL_PROTOCOLS "SSLv3|TLSv1|TLSv1.1|TLSv1.2"
+#ifdef OPENSSL_NO_SSL3
+#define SSLv3_PROTO_PREFIX ""
 #else
-#define SSL_PROTOCOLS "SSLv3|TLSv1"
+#define SSLv3_PROTO_PREFIX "SSLv3|"
+#endif
+#ifdef HAVE_TLSV1_X
+#define SSL_PROTOCOLS SSLv3_PROTO_PREFIX "TLSv1|TLSv1.1|TLSv1.2"
+#else
+#define SSL_PROTOCOLS SSLv3_PROTO_PREFIX "TLSv1"
 #endif
     SSL_CMD_SRV(Protocol, RAW_ARGS,
                 "Enable or disable various SSL protocols "
@@ -270,7 +275,7 @@ static const command_rec ssl_config_cmds[] = {
 
 #ifdef HAVE_SSL_CONF_CMD
     SSL_CMD_SRV(OpenSSLConfCmd, TAKE2,
-		"OpenSSL configuration command")
+                "OpenSSL configuration command")
 #endif
 
     /* Deprecated directives. */
@@ -340,6 +345,11 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
     OpenSSL_add_all_algorithms();
     OPENSSL_load_builtin_modules();
 
+    if (OBJ_txt2nid("id-on-dnsSRV") == NID_undef) {
+        (void)OBJ_create("1.3.6.1.5.5.7.8.7", "id-on-dnsSRV",
+                         "SRVName otherName form");
+    }
+
     /*
      * Let us cleanup the ssl library when the module is unloaded
      */
@@ -355,7 +365,10 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
     /* Register mutex type names so they can be configured with Mutex */
     ap_mutex_register(pconf, SSL_CACHE_MUTEX_TYPE, NULL, APR_LOCK_DEFAULT, 0);
 #ifdef HAVE_OCSP_STAPLING
-    ap_mutex_register(pconf, SSL_STAPLING_MUTEX_TYPE, NULL, APR_LOCK_DEFAULT, 0);
+    ap_mutex_register(pconf, SSL_STAPLING_CACHE_MUTEX_TYPE, NULL,
+                      APR_LOCK_DEFAULT, 0);
+    ap_mutex_register(pconf, SSL_STAPLING_REFRESH_MUTEX_TYPE, NULL,
+                      APR_LOCK_DEFAULT, 0);
 #endif
 
     return OK;
@@ -477,7 +490,7 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
     }
 
     SSL_set_app_data(ssl, c);
-    SSL_set_app_data2(ssl, NULL); /* will be request_rec */
+    modssl_set_app_data2(ssl, NULL); /* will be request_rec */
 
     sslconn->ssl = ssl;
 

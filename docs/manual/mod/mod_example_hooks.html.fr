@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head><!--
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr"><head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type" />
+<!--
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
               This file is generated from xml source: DO NOT EDIT
         XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -51,16 +53,16 @@
     correspondante, vous verrez s'afficher certaines sorties que le
     module example_hooks produit au cours des différents appels.</p>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
-<ul id="toc">
-<li><img alt="" src="../images/down.gif" /> <a href="#example">Example</a></li>
-</ul>
-<h3>Sujets</h3>
+<div id="quickview"><h3>Sujets</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#compiling">Compilation du module example_hooks</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#using">Utilisation du module
 <code>mod_example_hooks</code></a></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
+</ul><h3 class="directives">Directives</h3>
+<ul id="toc">
+<li><img alt="" src="../images/down.gif" /> <a href="#example">Example</a></li>
+</ul>
+<ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="compiling" id="compiling">Compilation du module example_hooks</a></h2>
@@ -123,7 +125,7 @@
 
     <p>Pour activer le module example_hooks, ajoutez à votre fichier
     <code>httpd.conf</code> un bloc du style :</p>
-<pre class="prettyprint lang-config">&lt;Location /example-hooks-info&gt;
+<pre class="prettyprint lang-config">&lt;Location "/example-hooks-info"&gt;
    SetHandler example-hooks-handler
 &lt;/Location&gt;</pre>
 
@@ -132,7 +134,7 @@
     accéder au fichier "test.example" à partir du répertoire
     correspondant :</p>
 
-<pre class="prettyprint lang-config">AddHandler example-hooks-handler .example</pre>
+<pre class="prettyprint lang-config">AddHandler example-hooks-handler ".example"</pre>
 
 
     <p>Après avoir rechargé la configuration ou redémarré votre serveur,
@@ -140,7 +142,7 @@
     a été décrit plus haut.</p>
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
-<div class="directive-section"><h2><a name="Example" id="Example">Example</a> <a name="example" id="example">Directive</a></h2>
+<div class="directive-section"><h2><a name="example" id="example">Directive</a> <a name="Example" id="Example">Example</a></h2>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Directive de démonstration pour illustrer l'API des modules
 Apache</td></tr>

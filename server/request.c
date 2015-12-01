@@ -71,6 +71,7 @@ APR_HOOK_STRUCT(
     APR_HOOK_LINK(create_request)
     APR_HOOK_LINK(post_perdir_config)
     APR_HOOK_LINK(dirwalk_stat)
+    APR_HOOK_LINK(force_authn)
 )
 
 AP_IMPLEMENT_HOOK_RUN_FIRST(int,translate_name,
@@ -97,6 +98,8 @@ AP_IMPLEMENT_HOOK_RUN_ALL(int, post_perdir_config,
 AP_IMPLEMENT_HOOK_RUN_FIRST(apr_status_t,dirwalk_stat,
                             (apr_finfo_t *finfo, request_rec *r, apr_int32_t wanted),
                             (finfo, r, wanted), AP_DECLINED)
+AP_IMPLEMENT_HOOK_RUN_FIRST(int,force_authn,
+                          (request_rec *r), (r), DECLINED)
 
 static int auth_internal_per_conf = 0;
 static int auth_internal_per_conf_hooks = 0;
@@ -116,6 +119,39 @@ static int decl_die(int status, const char *phase, request_rec *r)
                       status, r->uri);
         return status;
     }
+}
+
+AP_DECLARE(int) ap_some_authn_required(request_rec *r)
+{
+    int access_status;
+
+    switch (ap_satisfies(r)) {
+    case SATISFY_ALL:
+    case SATISFY_NOSPEC:
+        if ((access_status = ap_run_access_checker(r)) != OK) {
+            break;
+        }
+
+        access_status = ap_run_access_checker_ex(r);
+        if (access_status == DECLINED) {
+            return TRUE;
+        }
+
+        break;
+    case SATISFY_ANY:
+        if ((access_status = ap_run_access_checker(r)) == OK) {
+            break;
+        }
+
+        access_status = ap_run_access_checker_ex(r);
+        if (access_status == DECLINED) {
+            return TRUE;
+        }
+
+        break;
+    }
+
+    return FALSE;
 }
 
 /* This is the master logic for processing requests.  Do NOT duplicate
@@ -232,15 +268,8 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
             }
 
             access_status = ap_run_access_checker_ex(r);
-            if (access_status == OK) {
-                ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
-                              "request authorized without authentication by "
-                              "access_checker_ex hook: %s", r->uri);
-            }
-            else if (access_status != DECLINED) {
-                return decl_die(access_status, "check access", r);
-            }
-            else {
+            if (access_status == DECLINED
+                || (access_status == OK && ap_run_force_authn(r) == OK)) {
                 if ((access_status = ap_run_check_user_id(r)) != OK) {
                     return decl_die(access_status, "check user", r);
                 }
@@ -258,6 +287,14 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
                     return decl_die(access_status, "check authorization", r);
                 }
             }
+            else if (access_status == OK) {
+                ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
+                              "request authorized without authentication by "
+                              "access_checker_ex hook: %s", r->uri);
+            }
+            else {
+                return decl_die(access_status, "check access", r);
+            }
             break;
         case SATISFY_ANY:
             if ((access_status = ap_run_access_checker(r)) == OK) {
@@ -269,15 +306,8 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
             }
 
             access_status = ap_run_access_checker_ex(r);
-            if (access_status == OK) {
-                ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
-                              "request authorized without authentication by "
-                              "access_checker_ex hook: %s", r->uri);
-            }
-            else if (access_status != DECLINED) {
-                return decl_die(access_status, "check access", r);
-            }
-            else {
+            if (access_status == DECLINED
+                || (access_status == OK && ap_run_force_authn(r) == OK)) {
                 if ((access_status = ap_run_check_user_id(r)) != OK) {
                     return decl_die(access_status, "check user", r);
                 }
@@ -294,6 +324,14 @@ AP_DECLARE(int) ap_process_request_internal(request_rec *r)
                 if ((access_status = ap_run_auth_checker(r)) != OK) {
                     return decl_die(access_status, "check authorization", r);
                 }
+            }
+            else if (access_status == OK) {
+                ap_log_rerror(APLOG_MARK, APLOG_TRACE3, 0, r,
+                              "request authorized without authentication by "
+                              "access_checker_ex hook: %s", r->uri);
+            }
+            else {
+                return decl_die(access_status, "check access", r);
             }
             break;
         }
@@ -530,10 +568,9 @@ static void core_opts_merge(const ap_conf_vector_t *sec, core_opts_t *opts)
         opts->override_opts = this_dir->override_opts;
     }
 
-   if (this_dir->override_list != NULL) {
+    if (this_dir->override_list != NULL) {
         opts->override_list = this_dir->override_list;
-   }
-
+    }
 }
 
 
@@ -576,7 +613,7 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
         ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, APLOGNO(00029)
                       "Module bug?  Request filename is missing for URI %s",
                       r->uri);
-       return OK;
+        return OK;
     }
 
     /* Canonicalize the file path without resolving filename case or aliases
@@ -1210,13 +1247,6 @@ AP_DECLARE(int) ap_directory_walk(request_rec *r)
                 }
                 nmatch = entry_core->refs->nelts;
                 pmatch = apr_palloc(rxpool, nmatch*sizeof(ap_regmatch_t));
-            }
-
-            /* core_dir_config is Directory*, but the requested file is
-             * not a directory, so although the regexp could match,
-             * we skip it. */
-            if (entry_core->d_is_directory && r->finfo.filetype != APR_DIR) {
-                continue;
             }
 
             if (ap_regexec(entry_core->r, r->filename, nmatch, pmatch, 0)) {

@@ -48,7 +48,6 @@
 #include "mpm_common.h"
 #include "scoreboard.h"
 #include "mod_core.h"
-#include "mod_proxy.h"
 #include "ap_listen.h"
 
 #include "mod_so.h" /* for ap_find_loaded_module_symbol */
@@ -468,17 +467,16 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
     if (new_bb == NULL) {
         rv = send_brigade_nonblocking(net->client_socket, bb,
                                       &(ctx->bytes_written), c);
-        if (APR_STATUS_IS_EAGAIN(rv)) {
-            rv = APR_SUCCESS;
-        }
-        else if (rv != APR_SUCCESS) {
+        if (rv != APR_SUCCESS && !APR_STATUS_IS_EAGAIN(rv)) {
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
+            return rv;
         }
         setaside_remaining_output(f, ctx, bb, c);
-        return rv;
+        return APR_SUCCESS;
     }
 
     bytes_in_brigade = 0;
@@ -547,6 +545,7 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
             return rv;
         }
@@ -560,6 +559,7 @@ apr_status_t ap_core_output_filter(ap_filter_t *f, apr_bucket_brigade *new_bb)
             /* The client has aborted the connection */
             ap_log_cerror(APLOG_MARK, APLOG_TRACE1, rv, c,
                           "core_output_filter: writing data to the network");
+            apr_brigade_cleanup(bb);
             c->aborted = 1;
             return rv;
         }
@@ -644,7 +644,6 @@ static apr_status_t send_brigade_nonblocking(apr_socket_t *s,
                 if (nvec > 0) {
                     (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 1);
                     rv = writev_nonblocking(s, vec, nvec, bb, bytes_written, c);
-                    nvec = 0;
                     if (rv != APR_SUCCESS) {
                         (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 0);
                         return rv;
@@ -653,6 +652,7 @@ static apr_status_t send_brigade_nonblocking(apr_socket_t *s,
                 rv = sendfile_nonblocking(s, bucket, bytes_written, c);
                 if (nvec > 0) {
                     (void)apr_socket_opt_set(s, APR_TCP_NOPUSH, 0);
+                    nvec = 0;
                 }
                 if (rv != APR_SUCCESS) {
                     return rv;
