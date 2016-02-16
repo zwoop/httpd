@@ -561,12 +561,7 @@ static int read_request_line(request_rec *r, apr_bucket_brigade *bb)
     unsigned int major = 1, minor = 0;   /* Assume HTTP/1.0 if non-"HTTP" protocol */
     char http[5];
     apr_size_t len;
-    int num_blank_lines = 0;
-    int max_blank_lines = r->server->limit_req_fields;
-
-    if (max_blank_lines <= 0) {
-        max_blank_lines = DEFAULT_LIMIT_REQUEST_FIELDS;
-    }
+    int num_blank_lines = DEFAULT_LIMIT_BLANK_LINES;
 
     /* Read past empty lines until we get a real request line,
      * a read error, the connection closes (EOF), or we timeout.
@@ -613,7 +608,7 @@ static int read_request_line(request_rec *r, apr_bucket_brigade *bb)
             r->protocol  = apr_pstrdup(r->pool, "HTTP/1.0");
             return 0;
         }
-    } while ((len <= 0) && (++num_blank_lines < max_blank_lines));
+    } while ((len <= 0) && (--num_blank_lines >= 0));
 
     if (APLOGrtrace5(r)) {
         ap_log_rerror(APLOG_MARK, APLOG_TRACE5, 0, r,
@@ -627,6 +622,13 @@ static int read_request_line(request_rec *r, apr_bucket_brigade *bb)
 
     uri = ap_getword_white(r->pool, &ll);
 
+    if (!*r->method || !*uri) {
+        r->status    = HTTP_BAD_REQUEST;
+        r->proto_num = HTTP_VERSION(1,0);
+        r->protocol  = apr_pstrdup(r->pool, "HTTP/1.0");
+        return 0;
+    }
+
     /* Provide quick information about the request method as soon as known */
 
     r->method_number = ap_method_number_of(r->method);
@@ -635,6 +637,9 @@ static int read_request_line(request_rec *r, apr_bucket_brigade *bb)
     }
 
     ap_parse_uri(r, uri);
+    if (r->status != HTTP_OK) {
+        return 0;
+    }
 
     if (ll[0]) {
         r->assbackwards = 0;
@@ -1823,15 +1828,61 @@ AP_DECLARE(const char *) ap_get_protocol(conn_rec *c)
     return protocol? protocol : AP_PROTOCOL_HTTP1;
 }
 
+AP_DECLARE(apr_status_t) ap_get_protocol_upgrades(conn_rec *c, request_rec *r, 
+                                                  server_rec *s, int report_all, 
+                                                  const apr_array_header_t **pupgrades)
+{
+    apr_pool_t *pool = r? r->pool : c->pool;
+    core_server_config *conf;
+    const char *existing;
+    apr_array_header_t *upgrades = NULL;
+
+    if (!s) {
+        s = (r? r->server : c->base_server);
+    }
+    conf = ap_get_core_module_config(s->module_config);
+    
+    if (conf->protocols->nelts > 0) {
+        existing = ap_get_protocol(c);
+        if (conf->protocols->nelts > 1 
+            || !ap_array_str_contains(conf->protocols, existing)) {
+            int i;
+            
+            /* possibly more than one choice or one, but not the
+             * existing. (TODO: maybe 426 and Upgrade then?) */
+            upgrades = apr_array_make(pool, conf->protocols->nelts + 1, 
+                                      sizeof(char *));
+            for (i = 0; i < conf->protocols->nelts; i++) {
+                const char *p = APR_ARRAY_IDX(conf->protocols, i, char *);
+                if (strcmp(existing, p)) {
+                    /* not the one we have and possible, add in this order */
+                    APR_ARRAY_PUSH(upgrades, const char*) = p;
+                }
+                else if (!report_all) {
+                    break;
+                }
+            }
+        }
+    }
+    
+    *pupgrades = upgrades;
+    return APR_SUCCESS;
+}
+
 AP_DECLARE(const char *) ap_select_protocol(conn_rec *c, request_rec *r, 
                                             server_rec *s,
                                             const apr_array_header_t *choices)
 {
     apr_pool_t *pool = r? r->pool : c->pool;
-    core_server_config *conf = ap_get_core_module_config(s->module_config);
+    core_server_config *conf;
     const char *protocol = NULL, *existing;
     apr_array_header_t *proposals;
 
+    if (!s) {
+        s = (r? r->server : c->base_server);
+    }
+    conf = ap_get_core_module_config(s->module_config);
+    
     if (APLOGcdebug(c)) {
         const char *p = apr_array_pstrcat(pool, conf->protocols, ',');
         ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, c, 
@@ -1935,6 +1986,22 @@ AP_DECLARE(apr_status_t) ap_switch_protocol(conn_rec *c, request_rec *r,
                           , rc, protocol);
             return APR_EOF;
     }    
+}
+
+AP_DECLARE(int) ap_is_allowed_protocol(conn_rec *c, request_rec *r,
+                                       server_rec *s, const char *protocol)
+{
+    core_server_config *conf;
+
+    if (!s) {
+        s = (r? r->server : c->base_server);
+    }
+    conf = ap_get_core_module_config(s->module_config);
+    
+    if (conf->protocols->nelts > 0) {
+        return ap_array_str_contains(conf->protocols, protocol);
+    }
+    return !strcmp(AP_PROTOCOL_HTTP1, protocol);
 }
 
 

@@ -34,7 +34,8 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.17  : Tagged on October 9, 2015.
+    2.4.18  : Tagged on December 8, 2015.
+    2.4.17  : Tagged on October 9, 2015. Released October 13, 2015.
     2.4.16  : Tagged on July 9, 2015. Released July 15, 2015
     2.4.15  : Tagged on June 19, 2015. Not released.
     2.4.14  : Tagged on June 11, 2015. Not released.
@@ -111,19 +112,60 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
 
+
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-   * mod_journald: Add new module mod_journald to log error logs into journald.
-                   This patch needs changes done in mod_systemd patch (already
-                   proposed for 2.4.x).
-     trunk patch: http://svn.apache.org/r1610339
-                  http://svn.apache.org/r1621806
-     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+  *) mod_alias: Introduce expression parser support for Alias, ScriptAlias
+     and Redirect. Limit Redirect expressions to directory (Location) context
+     and redirect statuses (implicit or explicit).
+     trunk patch: http://svn.apache.org/r1653941
+                  http://svn.apache.org/r1653978
+                  http://svn.apache.org/r1656225
+                  http://svn.apache.org/r1686853
+                  http://svn.apache.org/r1686856
+     2.4.x patch: https://people.apache.org/~minfrin/httpd-mod_alias-expr2.patch
+     +1: minfrin
+
+   * core: Fix crash in ap_mpm_pod_check call caused by NULL dereference of
+          its parameter when starting httpd as single process (httpd -X).
+     trunk patch: http://svn.apache.org/r1711479
+     2.4.x patch: trunk works
      +1: jkaluza, jim
-     rjung, minfrin: Not understanding "This patch needs changes done in
-                     mod_systemd patch", am I right in understanding this patch is
-                     already committed?
+     minfrin: Needs extra parens to suppress a warning:
+              prefork.c:1319:16: note: place parentheses around the assignment
+              to silence this warning
+     jailletc36: This has been done in r1711919
+     ylavic: Also, I don't think the changes on worker/event are needed,
+             prefork only requires the accept mutex in ONE_PROCESS mode.
+
+  *) Remove some useless return statements (+ some minor style changes)
+     trunk patch: http://svn.apache.org/r1715567
+                  http://svn.apache.org/r1715568
+                  http://svn.apache.org/r1715570
+                  http://svn.apache.org/r1715571
+                  http://svn.apache.org/r1715572
+                  http://svn.apache.org/r1715576
+                  http://svn.apache.org/r1715581
+                  http://svn.apache.org/r1715582
+                  http://svn.apache.org/r1715583
+                  http://svn.apache.org/r1715584
+                  http://svn.apache.org/r1715585
+     2.4.x patch: https://people.apache.org/~jailletc36/remove_return.patch
+     +1: jailletc36, jim
+
+  *) mod_ssl: Fix missing TLS Upgrade/Connection headers on OPTIONS * requests
+     (Note that this is simply a necessary band-aid, and still won't allow h2c
+     to peacefully coexist with tls/n.n upgrades, because Upgrade phase needs
+     to come earlier, not as a handler, and the bogus connection-close behavior
+     must be removed before the Protocol API can handle TLS upgrade.)
+     PR58688
+     trunk patch: http://svn.apache.org/r1717816
+     +1: wrowe, icing
+     ylavic: how about adding !ap_request_has_body(r) to the test then?
+
+
+PATCHES/ISSUES THAT ARE BEING WORKED
 
   *) http: Don't remove the Content-Length of zero from a HEAD response if
      it comes from an origin server, module or script. Allow the previous
@@ -138,40 +180,6 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
              ints added at the end of core_server_config, the proposed merge
              does a minor bump only.
      minfrin: Two new directives need to be documented.
-
-  *) mod_alias: Introduce expression parser support for Alias, ScriptAlias
-     and Redirect. Limit Redirect expressions to directory (Location) context
-     and redirect statuses (implicit or explicit).
-     trunk patch: http://svn.apache.org/r1653941
-                  http://svn.apache.org/r1653978
-                  http://svn.apache.org/r1656225
-                  http://svn.apache.org/r1686853
-                  http://svn.apache.org/r1686856
-     2.4.x patch: https://people.apache.org/~minfrin/httpd-mod_alias-expr2.patch
-     +1: minfrin
-
-   * mod_ssl: Make the output filter more friendly with deferred write and
-              response pipelining.
-     trunk patch: http://svn.apache.org/r1705194
-                  http://svn.apache.org/r1705823
-                  http://svn.apache.org/r1705826
-                  http://svn.apache.org/r1705828
-                  http://svn.apache.org/r1705833
-                  http://svn.apache.org/r1706275
-                  http://svn.apache.org/r1707230
-                  http://svn.apache.org/r1707231
-     2.4.x patch: http://people.apache.org/~ylavic/httpd-2.4.x-mod_ssl-deferred_friendly-v3.patch
-     +1: ylavic
-
-   * mod_ssl: Extend expression parser registration to support ssl variables
-     in any expression using mod_rewrite syntax "%{SSL:VARNAME}" or function
-     syntax "ssl(VARIABLE)".
-     trunk patch: http://svn.apache.org/r1707002
-     2.4.x patch: trunk works (modulo CHANGES)
-     +1: rjung, ylavic
-
-
-PATCHES/ISSUES THAT ARE BEING WORKED
 
    * mod_proxy_http: Don't establish or reuse a backend connection before pre-
      fetching the request body, so to minimize the delay between it is supposed
@@ -251,6 +259,19 @@ PATCHES/ISSUES THAT ARE STALLED
                   http://svn.apache.org/r1618588
      2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
      +1: jkaluza
+
+   * mod_journald: Add new module mod_journald to log error logs into journald.
+                   This patch needs changes done in mod_systemd patch (already
+                   proposed for 2.4.x).
+     trunk patch: http://svn.apache.org/r1610339
+                  http://svn.apache.org/r1621806
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+     +1: jkaluza, jim
+     rjung, minfrin: Not understanding "This patch needs changes done in
+                     mod_systemd patch", am I right in understanding this patch is
+                     already committed?
+     jkaluza: No, that patch is not committed yet. It is in STALLED section.
+              The link for that patch is: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
 
    * core: Add support for systemd socket activation.
      trunk patch: http://svn.apache.org/r1511033

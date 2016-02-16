@@ -20,6 +20,8 @@ dnl #  list of module object files
 http2_objs="dnl
 mod_http2.lo dnl
 h2_alt_svc.lo dnl
+h2_bucket_eoc.lo dnl
+h2_bucket_eos.lo dnl
 h2_config.lo dnl
 h2_conn.lo dnl
 h2_conn_io.lo dnl
@@ -29,6 +31,7 @@ h2_h2.lo dnl
 h2_io.lo dnl
 h2_io_set.lo dnl
 h2_mplx.lo dnl
+h2_push.lo dnl
 h2_request.lo dnl
 h2_response.lo dnl
 h2_session.lo dnl
@@ -39,7 +42,6 @@ h2_task.lo dnl
 h2_task_input.lo dnl
 h2_task_output.lo dnl
 h2_task_queue.lo dnl
-h2_to_h1.lo dnl
 h2_util.lo dnl
 h2_worker.lo dnl
 h2_workers.lo dnl
@@ -125,12 +127,12 @@ AC_DEFUN([APACHE_CHECK_NGHTTP2],[
       fi
     fi
 
-    AC_MSG_CHECKING([for nghttp2 version >= 1.0.0])
+    AC_MSG_CHECKING([for nghttp2 version >= 1.2.1])
     AC_TRY_COMPILE([#include <nghttp2/nghttp2ver.h>],[
 #if !defined(NGHTTP2_VERSION_NUM)
 #error "Missing nghttp2 version"
 #endif
-#if NGHTTP2_VERSION_NUM < 0x010000
+#if NGHTTP2_VERSION_NUM < 0x010201
 #error "Unsupported nghttp2 version " NGHTTP2_VERSION_TEXT
 #endif],
       [AC_MSG_RESULT(OK)
@@ -152,6 +154,12 @@ AC_DEFUN([APACHE_CHECK_NGHTTP2],[
       if test "x$liberrors" != "x"; then
         AC_MSG_WARN([nghttp2 library is unusable])
       fi
+dnl # nghttp2 >= 1.3.0: access to stream weights
+      AC_CHECK_FUNCS([nghttp2_stream_get_weight], 
+        [APR_ADDTO(MOD_CPPFLAGS, ["-DH2_NG2_STREAM_API"])], [])
+dnl # nghttp2 >= 1.5.0: changing stream priorities
+      AC_CHECK_FUNCS([nghttp2_session_change_stream_priority], 
+        [APR_ADDTO(MOD_CPPFLAGS, ["-DH2_NG2_CHANGE_PRIO"])], [])
     else
       AC_MSG_WARN([nghttp2 version is too old])
     fi
