@@ -40,7 +40,10 @@
 <seealso><directive module="core" type="section">If</directive></seealso>
 <seealso><directive module="core" type="section">ElseIf</directive></seealso>
 <seealso><directive module="core" type="section">Else</directive></seealso>
-<seealso><directive module="core" type="section">ErrorDocument</directive></seealso>
+<seealso><directive module="core">ErrorDocument</directive></seealso>
+<seealso><directive module="mod_alias">Alias</directive></seealso>
+<seealso><directive module="mod_alias">ScriptAlias</directive></seealso>
+<seealso><directive module="mod_alias">Redirect</directive></seealso>
 <seealso><directive module="mod_auth_basic">AuthBasicFake</directive></seealso>
 <seealso><directive module="mod_auth_form">AuthFormLoginRequiredLocation</directive></seealso>
 <seealso><directive module="mod_auth_form">AuthFormLoginSuccessLocation</directive></seealso>
@@ -251,6 +254,9 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
     <tr><td><code>HANDLER</code></td>
         <td>The name of the <a href="handler.html">handler</a> creating
             the response</td></tr>
+    <tr><td><code>HTTP2</code></td>
+        <td>"<code>on</code>" if the request uses http/2,
+            "<code>off</code>" otherwise</td></tr>
     <tr><td><code>HTTPS</code></td>
         <td>"<code>on</code>" if the request uses https,
             "<code>off</code>" otherwise</td></tr>
@@ -574,12 +580,15 @@ listfunction ::= listfuncname "<strong>(</strong>" word "<strong>)</strong>"
 &lt;If "md5('foo') == 'acbd18db4cc2f85cedef654fccc4a4d8'"&gt;
   Header set checksum-matched true
 &lt;/If&gt;
-&lt;If "md5('foo') == replace('md5:XXXd18db4cc2f85cedef654fccc4a4d8', 'md5:XXX', 'acb')&gt;
+&lt;If "md5('foo') == replace('md5:XXXd18db4cc2f85cedef654fccc4a4d8', 'md5:XXX', 'acb')"&gt;
   Header set checksum-matched-2 true
 &lt;/If&gt;
 
 # Function example in string context
 Header set foo-checksum "expr=%{md5:foo}"
+
+# This delays the evaluation of the condition clause compared to &lt;If&gt;
+Header always set CustomHeader my-value "expr=%{REQUEST_URI} =~ m#^/special_path.php$#"
 
 	</highlight>
 </section>

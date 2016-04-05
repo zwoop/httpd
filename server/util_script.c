@@ -123,7 +123,11 @@ AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
             *whack++ = '_';
         }
         while (*whack != '=') {
+#ifdef WIN32
+            if (!apr_isalnum(*whack) && *whack != '(' && *whack != ')') {
+#else
             if (!apr_isalnum(*whack)) {
+#endif
                 *whack = '_';
             }
             ++whack;
@@ -240,7 +244,7 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_addn(e, "SERVER_PORT",
                   apr_psprintf(r->pool, "%u", ap_get_server_port(r)));
     add_unless_null(e, "REMOTE_HOST",
-                    ap_get_remote_host(c, r->per_dir_config, REMOTE_HOST, NULL));
+                    ap_get_useragent_host(r, REMOTE_HOST, NULL));
     apr_table_addn(e, "REMOTE_ADDR", r->useragent_ip);
     apr_table_addn(e, "DOCUMENT_ROOT", ap_document_root(r));    /* Apache */
     apr_table_setn(e, "REQUEST_SCHEME", ap_http_scheme(r));
@@ -469,12 +473,14 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
             const char *msg = "Premature end of script headers";
             if (first_header)
                 msg = "End of script output before headers";
+            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "%s: %s", msg,
                           apr_filepath_name_get(r->filename));
             return HTTP_INTERNAL_SERVER_ERROR;
         }
         else if (rv == -1) {
+            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "Script timed out before returning headers: %s",
                           apr_filepath_name_get(r->filename));
@@ -582,6 +588,7 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
                 }
             }
 
+            /* Intentional no APLOGNO */
             ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                           "malformed header from script '%s': Bad header: %.30s",
                           apr_filepath_name_get(r->filename), w);
@@ -614,6 +621,7 @@ AP_DECLARE(int) ap_scan_script_header_err_core_ex(request_rec *r, char *buffer,
         else if (!strcasecmp(w, "Status")) {
             r->status = cgi_status = atoi(l);
             if (!ap_is_HTTP_VALID_RESPONSE(cgi_status))
+                /* Intentional no APLOGNO */
                 ap_log_rerror(SCRIPT_LOG_MARK, APLOG_ERR|APLOG_TOCLIENT, 0, r,
                               "Invalid status line from script '%s': %.30s",
                               apr_filepath_name_get(r->filename), l);

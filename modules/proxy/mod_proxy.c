@@ -68,9 +68,10 @@ static const char *set_worker_param(apr_pool_t *p,
         /* Normalized load factor. Used with BalancerMember,
          * it is a number between 1 and 100.
          */
-        worker->s->lbfactor = atoi(val);
-        if (worker->s->lbfactor < 1 || worker->s->lbfactor > 100)
+        ival = atoi(val);
+        if (ival < 1 || ival > 100)
             return "LoadFactor must be a number between 1..100";
+        worker->s->lbfactor = ival;
     }
     else if (!strcasecmp(key, "retry")) {
         /* If set it will give the retry timeout for the worker
@@ -1058,7 +1059,7 @@ static int proxy_handler(request_rec *r)
     }
 #if DEBUGGING
     ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r,
-                (direct_connect) ? "NoProxy for %s" : "UseProxy for %s",
+                (direct_connect) ? APLOGNO(03231) "NoProxy for %s" : APLOGNO(03232) "UseProxy for %s",
                 r->uri);
 #endif
 
@@ -1825,23 +1826,23 @@ static const char *
 
         if (ap_proxy_is_ipaddr(New, parms->pool)) {
 #if DEBUGGING
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(03018)
                          "Parsed addr %s", inet_ntoa(New->addr));
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(03019)
                          "Parsed mask %s", inet_ntoa(New->mask));
 #endif
         }
         else if (ap_proxy_is_domainname(New, parms->pool)) {
             ap_str_tolower(New->name);
 #if DEBUGGING
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(03020)
                          "Parsed domain %s", New->name);
 #endif
         }
         else if (ap_proxy_is_hostname(New, parms->pool)) {
             ap_str_tolower(New->name);
 #if DEBUGGING
-            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL,
+            ap_log_error(APLOG_MARK, APLOG_STARTUP, 0, NULL, APLOGNO(03021)
                          "Parsed host %s", New->name);
 #endif
         }

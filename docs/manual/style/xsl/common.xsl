@@ -206,7 +206,7 @@
                                               [@id='apachehttpserver'])"/>
     </p>&lf;
 
-    <img src="{$path}/images/feather.gif" alt="" />
+    <img src="{$path}/images/feather.png" alt="" />
 </div>&lf; <!-- /page-header -->
 
 <div class="up">
@@ -417,7 +417,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/]]></xsl:text>&httpd.doc
 </xsl:choose>
 <div id="footer">&lf;
     <p class="apache">
-        <xsl:text>Copyright 2015 The Apache Software Foundation.</xsl:text><br />
+        <xsl:text>Copyright 2016 The Apache Software Foundation.</xsl:text><br />
         <xsl:if test="normalize-space($message[@id='before-license'])">
             <xsl:value-of select="$message[@id='before-license']"/>
             <xsl:text> </xsl:text>

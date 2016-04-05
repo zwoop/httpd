@@ -26,11 +26,16 @@
 
 #include "ssl_private.h"
 #include "mod_ssl.h"
+#include "mod_ssl_openssl.h"
 #include "util_md5.h"
 #include "util_mutex.h"
 #include "ap_provider.h"
 
 #include <assert.h>
+
+APR_IMPLEMENT_OPTIONAL_HOOK_RUN_ALL(ssl, SSL, int, pre_handshake,
+                                    (conn_rec *c,SSL *ssl,int is_proxy),
+                                    (c,ssl,is_proxy), OK, DECLINED);
 
 /*
  *  the table of configuration directives we provide
@@ -243,6 +248,8 @@ static const command_rec ssl_config_cmds[] = {
                 "OCSP responder query timeout")
     SSL_CMD_SRV(OCSPUseRequestNonce, FLAG,
                 "Whether OCSP queries use a nonce or not ('on', 'off')")
+    SSL_CMD_SRV(OCSPProxyURL, TAKE1,
+                "Proxy URL to use for OCSP requests")
 
 #ifdef HAVE_OCSP_STAPLING
     /*
@@ -445,6 +452,7 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
     SSL *ssl;
     SSLConnRec *sslconn = myConnConfig(c);
     char *vhost_md5;
+    int rc;
     modssl_ctx_t *mctx;
     server_rec *server;
 
@@ -466,7 +474,7 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
      * attach this to the socket. Additionally we register this attachment
      * so we can detach later.
      */
-    if (!(ssl = SSL_new(mctx->ssl_ctx))) {
+    if (!(sslconn->ssl = ssl = SSL_new(mctx->ssl_ctx))) {
         ap_log_cerror(APLOG_MARK, APLOG_ERR, 0, c, APLOGNO(01962)
                       "Unable to create a new SSL connection from the SSL "
                       "context");
@@ -475,6 +483,11 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
         c->aborted = 1;
 
         return DECLINED; /* XXX */
+    }
+
+    rc = ssl_run_pre_handshake(c, ssl, sslconn->is_proxy ? 1 : 0);
+    if (rc != OK && rc != DECLINED) {
+        return rc;
     }
 
     vhost_md5 = ap_md5_binary(c->pool, (unsigned char *)sc->vhost_id,
@@ -494,8 +507,6 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
 
     SSL_set_app_data(ssl, c);
     modssl_set_app_data2(ssl, NULL); /* will be request_rec */
-
-    sslconn->ssl = ssl;
 
     SSL_set_verify_result(ssl, X509_V_OK);
 

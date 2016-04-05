@@ -34,7 +34,9 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.18  : Tagged on December 8, 2015.
+    2.4.20  : Tagged on April 4, 2016.
+    2.4.19  : Tagged on March 21, 2016, not released.
+    2.4.18  : Tagged on December 8, 2015. Released on December 14, 2015.
     2.4.17  : Tagged on October 9, 2015. Released October 13, 2015.
     2.4.16  : Tagged on July 9, 2015. Released July 15, 2015
     2.4.15  : Tagged on June 19, 2015. Not released.
@@ -112,58 +114,72 @@ PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
 
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  *) mod_alias: Introduce expression parser support for Alias, ScriptAlias
-     and Redirect. Limit Redirect expressions to directory (Location) context
-     and redirect statuses (implicit or explicit).
-     trunk patch: http://svn.apache.org/r1653941
-                  http://svn.apache.org/r1653978
-                  http://svn.apache.org/r1656225
-                  http://svn.apache.org/r1686853
-                  http://svn.apache.org/r1686856
-     2.4.x patch: https://people.apache.org/~minfrin/httpd-mod_alias-expr2.patch
-     +1: minfrin
+  *) mod_proxy_hcheck: Dynamic reverse proxy backend health check module
+     Trunk version of patch: <various>
+     Backport version for 2.4.x of patch:
+         http://home.apache.org/~jim/patches/hcheck-2.4-v2.patch
+         <Plus docs>
+     +1: jim
+     ylavic: Looks like the changes on struct proxy_worker_shared would break
+             startup with "BalancerPersist on" due to the strict checks on
+             the sizes of existing slotmems (slotmem_create/attach)?
+     jim: Yes, that is right (re: breakage)... this would be noted at
+          release.
+     ylavic: OK, this is just that persisted slotmems won't be reused on first
+             startup, not that the startup will fail (as I first thought).
 
-   * core: Fix crash in ap_mpm_pod_check call caused by NULL dereference of
-          its parameter when starting httpd as single process (httpd -X).
-     trunk patch: http://svn.apache.org/r1711479
-     2.4.x patch: trunk works
-     +1: jkaluza, jim
-     minfrin: Needs extra parens to suppress a warning:
-              prefork.c:1319:16: note: place parentheses around the assignment
-              to silence this warning
-     jailletc36: This has been done in r1711919
-     ylavic: Also, I don't think the changes on worker/event are needed,
-             prefork only requires the accept mutex in ONE_PROCESS mode.
+  *) mod_ssl: Add "no_crl_for_cert_ok" flag to SSLCARevocationCheck directive
+     to opt-in previous behaviour (2.2) with CRLs verification when checking
+     certificate(s) with no corresponding CRL.
+     trunk patch: http://svn.apache.org/r1734561
+                  http://svn.apache.org/r1734807
+                  http://svn.apache.org/r1735159
+                  http://svn.apache.org/r1735337
+                  http://svn.apache.org/r1737265
+     2.4.x patch: trunk works (modulo CHANGES) or
+                  http://home.apache.org/~ylavic/patches/httpd-2.4.x-no_crl_for_cert_ok-v2.patch
+     +1: ylavic
 
-  *) Remove some useless return statements (+ some minor style changes)
-     trunk patch: http://svn.apache.org/r1715567
-                  http://svn.apache.org/r1715568
-                  http://svn.apache.org/r1715570
-                  http://svn.apache.org/r1715571
-                  http://svn.apache.org/r1715572
-                  http://svn.apache.org/r1715576
-                  http://svn.apache.org/r1715581
-                  http://svn.apache.org/r1715582
-                  http://svn.apache.org/r1715583
-                  http://svn.apache.org/r1715584
-                  http://svn.apache.org/r1715585
-     2.4.x patch: https://people.apache.org/~jailletc36/remove_return.patch
-     +1: jailletc36, jim
+  *) mod_proxy_http2: add http2 proxy support in new, experimental module. 
+     Includes backport of r1729208 to set ALPN protocols for ssl backend
+     connections. 
+     Trunk version of patch: <various>
+     Backport version for 2.4.x of patch: https://www.eissing.org/proxy_http2_2.4v4.patch
+     +1: icing, ylavic
+     updated patch after review by cjaillet, merged 1735668,1735748 from trunk
+     updated patch with APLOGNOs by merging 1735931,1735935 from trunk
+     updated patch with APLOGNOs by merging 1735942 from trunk
 
-  *) mod_ssl: Fix missing TLS Upgrade/Connection headers on OPTIONS * requests
-     (Note that this is simply a necessary band-aid, and still won't allow h2c
-     to peacefully coexist with tls/n.n upgrades, because Upgrade phase needs
-     to come earlier, not as a handler, and the bogus connection-close behavior
-     must be removed before the Protocol API can handle TLS upgrade.)
-     PR58688
-     trunk patch: http://svn.apache.org/r1717816
-     +1: wrowe, icing
-     ylavic: how about adding !ap_request_has_body(r) to the test then?
+  *) CGIVar for controlling building of REQUEST_URI (and future uses)
+     As mentioned on dev@:
+     * This is intended to replace existing methods of configuring how various
+       CGI vars should be built over the long term, though only REQUEST_URI is
+       handled for now.
+     * If the mechanism should be usable by third-party modules for its own
+       concerns, a check for recognized-envvar can be removed from the command
+       processor and the rest of the code will let the third-party module do
+       the right thing since the rule for a var is a character string in a table,
+       not a separate core_dir_config flag with enumerated values.
+     Trunk patch: r1734947, 1735952
+     2.4.x patch: https://emptyhammock.com/media/downloads/CGIVar-to-2.4.x.txt
+       Bad Jeff: The MMN change was missing originally, same patch updated :(
+     +1: trawick, ylavic
 
+  *) mod_ssl: Return 502 instead of 500 when SSL peer check or 
+     proxy_post_handshake hook fails. 
+     Trunk patch: r1645529 (works)
+     2.4.x patch which adds CHANGES: https://emptyhammock.com/media/downloads/r1645529-to-2.4.x.txt
+     +1: trawick
+     ylavic: there may be missing bits, see thread for commit r1736510.
+
+  *) mod_include: add the <!--#comment ...> syntax in order to include comments
+     in a SSI file.
+     Trunk patch: http://svn.apache.org/r1737476
+     2.4.x patch: trunk patch works (compatibility note to be adjusted)
+     +1: jailletc36
 
 PATCHES/ISSUES THAT ARE BEING WORKED
 
@@ -207,6 +223,7 @@ PATCHES/ISSUES THAT ARE BEING WORKED
              Do you think we'd better remove the prefetch, or maybe just
              make it nonblocking (by default)?
         jim: Non-blocking seems the best way to handle...
+
 
 PATCHES/ISSUES THAT ARE STALLED
 
@@ -259,6 +276,11 @@ PATCHES/ISSUES THAT ARE STALLED
                   http://svn.apache.org/r1618588
      2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
      +1: jkaluza
+     sf comments: The IdleShutdown logic seems broken. Consider a single
+                  active connection that is stalled for 10 seconds. That
+                  connection will be broken after GracefulShutdownTimeout.
+                  A better logic would be to check if there is any open
+                  connection that is not in keep-alive state.
 
    * mod_journald: Add new module mod_journald to log error logs into journald.
                    This patch needs changes done in mod_systemd patch (already

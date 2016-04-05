@@ -49,12 +49,6 @@ h2_from_h1 *h2_from_h1_create(int stream_id, apr_pool_t *pool)
     return from_h1;
 }
 
-apr_status_t h2_from_h1_destroy(h2_from_h1 *from_h1)
-{
-    from_h1->bb = NULL;
-    return APR_SUCCESS;
-}
-
 static void set_state(h2_from_h1 *from_h1, h2_from_h1_state_t state)
 {
     if (from_h1->state != state) {
@@ -70,12 +64,14 @@ h2_response *h2_from_h1_get_response(h2_from_h1 *from_h1)
 static apr_status_t make_h2_headers(h2_from_h1 *from_h1, request_rec *r)
 {
     from_h1->response = h2_response_create(from_h1->stream_id, 0,
-                                           from_h1->http_status, from_h1->hlines,
+                                           from_h1->http_status, 
+                                           from_h1->hlines,
+                                           r->notes,
                                            from_h1->pool);
     from_h1->content_length = from_h1->response->content_length;
     from_h1->chunked = r->chunked;
     
-    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, r->connection,
+    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, r->connection, APLOGNO(03197)
                   "h2_from_h1(%d): converted headers, content-length: %d"
                   ", chunked=%d",
                   from_h1->stream_id, (int)from_h1->content_length, 
@@ -258,7 +254,7 @@ static int uniq_field_values(void *d, const char *key, const char *val)
          */
         for (i = 0, strpp = (char **) values->elts; i < values->nelts;
              ++i, ++strpp) {
-            if (*strpp && strcasecmp(*strpp, start) == 0) {
+            if (*strpp && apr_strnatcasecmp(*strpp, start) == 0) {
                 break;
             }
         }
@@ -408,7 +404,7 @@ static h2_response *create_response(h2_from_h1 *from_h1, request_rec *r)
         
         while (field && (token = ap_get_list_item(r->pool, &field)) != NULL) {
             for (i = 0; i < r->content_languages->nelts; ++i) {
-                if (!strcasecmp(token, languages[i]))
+                if (!apr_strnatcasecmp(token, languages[i]))
                     break;
             }
             if (i == r->content_languages->nelts) {
@@ -507,7 +503,7 @@ apr_status_t h2_response_output_filter(ap_filter_t *f, apr_bucket_brigade *bb)
          */
         if (AP_BUCKET_IS_EOC(b)) {
             ap_remove_output_filter(f);
-            ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, f->c,
+            ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, f->c,
                           "h2_from_h1(%d): eoc bucket passed", 
                           from_h1->stream_id);
             return ap_pass_brigade(f->next, bb);
@@ -517,7 +513,7 @@ apr_status_t h2_response_output_filter(ap_filter_t *f, apr_bucket_brigade *bb)
     if (eb) {
         int st = eb->status;
         apr_brigade_cleanup(bb);
-        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, f->c,
+        ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, f->c, APLOGNO(03047)
                       "h2_from_h1(%d): err bucket status=%d", 
                       from_h1->stream_id, st);
         ap_die(st, r);
@@ -526,7 +522,7 @@ apr_status_t h2_response_output_filter(ap_filter_t *f, apr_bucket_brigade *bb)
     
     from_h1->response = create_response(from_h1, r);
     if (from_h1->response == NULL) {
-        ap_log_cerror(APLOG_MARK, APLOG_INFO, 0, f->c,
+        ap_log_cerror(APLOG_MARK, APLOG_NOTICE, 0, f->c, APLOGNO(03048)
                       "h2_from_h1(%d): unable to create response", 
                       from_h1->stream_id);
         return APR_ENOMEM;
@@ -572,7 +568,7 @@ apr_status_t h2_response_trailers_filter(ap_filter_t *f, apr_bucket_brigade *bb)
                 /* FIXME: need a better test case than this.
                 apr_table_setn(r->trailers_out, "X", "1"); */
                 if (r->trailers_out && !apr_is_empty_table(r->trailers_out)) {
-                    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, f->c,
+                    ap_log_cerror(APLOG_MARK, APLOG_DEBUG, 0, f->c, APLOGNO(03049)
                                   "h2_from_h1(%d): trailers filter, saving trailers",
                                   from_h1->stream_id);
                     h2_response_set_trailers(from_h1->response,

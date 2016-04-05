@@ -19,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -574,6 +574,15 @@ AddOutputFilter INCLUDES .shtml</pre>
       <dt><code>DATE_LOCAL</code></dt>
       <dd>La date locale courante.</dd>
 
+      <dt><code>DOCUMENT_ARGS</code></dt>
+      <dd>Cette variable contient la chaîne de paramètres de la requête du
+      document SSI actif, ou la chaîne vide si aucune chaîne de paramètres de
+      requête n'est incluse. Pour les sous-requêtes invoquées par la directive
+      SSI <code>include</code>, <code>QUERY_STRING</code> contiendra la chaîne
+      de paramètres de la sous-requête et <code>DOCUMENT_ARGS</code> la chaîne
+      de paramètres du document SSI (disponible à partir de la version 2.4.19 du
+      serveur HTTP Apache).</dd>
+
       <dt><code>DOCUMENT_NAME</code></dt>
       <dd>Le nom de base du fichier demandé par l'utilisateur (sans son
       chemin).</dd>
@@ -591,11 +600,14 @@ AddOutputFilter INCLUDES .shtml</pre>
       l'utilisateur.</dd>
 
       <dt><code>QUERY_STRING_UNESCAPED</code></dt>
-      <dd>Si une chaîne d'arguments est présente, elle sera affectée à
-      cette variable, les caractères % décodés, et éventuellement
+      <dd>Si une chaîne d'arguments est présente dans la requête pour le
+      document SSI actif, elle sera affectée à
+      cette variable, les caractères %-décodés, et éventuellement
       <em>échappés</em> pour qu'ils ne soient pas interprétés par le
       shell (les caractères spéciaux comme <code>&amp;</code>,etc...
-      sont précédés d'anti-slashes).</dd>
+      sont précédés d'anti-slashes). Cette variable n'est pas définie si aucune
+      chaîne d'arguments n'est présente. Utilisez <code>DOCUMENT_ARGS</code> si
+      l'échappement des caractères du shell n'est pas souhaité.</dd>
     </dl>
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
@@ -1186,7 +1198,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_include.html
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

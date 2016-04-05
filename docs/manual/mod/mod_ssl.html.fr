@@ -19,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p>
 <p class="apache">Serveur Apache HTTP Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">Serveur HTTP</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -76,6 +76,7 @@ disponibles avec Require</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocspdefaultresponder">SSLOCSPDefaultResponder</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocspenable">SSLOCSPEnable</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocspoverrideresponder">SSLOCSPOverrideResponder</a></li>
+<li><img alt="" src="../images/down.gif" /> <a href="#sslocspproxyurl">SSLOCSPProxyURL</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocsprespondertimeout">SSLOCSPResponderTimeout</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocspresponsemaxage">SSLOCSPResponseMaxAge</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sslocspresponsetimeskew">SSLOCSPResponseTimeSkew</a></li>
@@ -692,7 +693,8 @@ d'authentification au niveau du serveur - souvent RSA, DSA et ECC. Le
 nombre d'algorithmes supportés dépend de la version d'OpenSSL utilisée
 avec mod_ssl : à partir de la version 1.0.0, la commande <code>openssl
 list-public-key-algorithms</code> affiche la liste des algorithmes
-supportés.
+supportés. Voir aussi la note ci-dessous à propos des limitations des versions
+d'OpenSSL antérieures à 1.0.2 et la manière de les contourner.
 </p>
 
 <p>Les fichiers peuvent aussi contenir des certificats de CA
@@ -737,6 +739,37 @@ clé du certificat RSA/DSA. En particulier avec les clients basés sur
 Java (versions 7 et antérieures), ceci peut provoquer des erreurs au
 cours de la négociation - voir cette <a href="../ssl/ssl_faq.html#javadh">réponse de la FAQ SSL</a> pour
 contourner les problèmes de ce genre.
+</p>
+</div>
+
+<div class="note">
+<h3>Paramètres DH par défaut lorsqu'on utilise plusieurs certificats et une
+version d'OpenSSL antérieure à 1.0.2.</h3>
+<p>
+Lorsqu'on utilise plusieurs certificats pour supporter différents algorithmes
+d'authentification (comme RSA, DSA, mais principalement ECC) et une
+version d'OpenSSL antérieure à 1.0.2, il est recommandé soit d'utiliser des
+paramètres DH spécifiques (solution à privilégier) en les ajoutant au premier
+fichier certificat (comme décrit ci-dessus), soit d'ordonner les directives
+<code class="directive">SSLCertificateFile</code> de façon à ce que les certificats
+RSA/DSA soit placés <strong>après</strong> les certificats ECC.
+</p>
+<p>
+Cette limitation est présente dans les anciennes versions d'OpenSSL qui
+présentent toujours le dernier certificat configuré, au lieu
+de laisser le serveur HTTP Apache déterminer le certificat sélectionné lors de
+la phase de négociation de la connexion (lorsque les paramètres DH doivent être
+envoyés à l'hôte distant).
+De ce fait, le serveur peut sélectionner des paramètres DH par défaut basés sur
+la longueur de la clé du mauvais certificat (les clés ECC sont beaucoup plus
+petites que les clés RSA/DSA et leur longueur n'est pas pertinente pour la
+sélection des nombres premiers DH).
+</p>
+<p>
+Ce problème peut être résolu en créant et configurant des paramètres DH
+spécifiques (comme décrit ci-dessus), car ils l'emportent toujours sur les
+paramètres DH par défaut, et vous pourrez ainsi utiliser une longueur spécifique
+et appropriée.
 </p>
 </div>
 
@@ -1212,6 +1245,20 @@ la validation OCSP</td></tr>
 répondeur OCSP par défaut spécifié dans la configuration, que le
 certificat en cours de vérification fasse mention d'un répondeur OCSP ou
 non.</p>
+
+</div>
+<div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
+<div class="directive-section"><h2><a name="sslocspproxyurl" id="sslocspproxyurl">Directive</a> <a name="SSLOCSPProxyURL" id="SSLOCSPProxyURL">SSLOCSPProxyURL</a></h2>
+<table class="directive">
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Adresse de mandataire à utiliser pour les requêtes OCSP</td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntaxe:</a></th><td><code>SSLOCSPProxyURL <em>url</em></code></td></tr>
+<tr><th><a href="directive-dict.html#Context">Contexte:</a></th><td>configuration du serveur, serveur virtuel</td></tr>
+<tr><th><a href="directive-dict.html#Status">Statut:</a></th><td>Extension</td></tr>
+<tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_ssl</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibilité:</a></th><td>Disponible à partir de la version 2.4.19 du serveur HTTP Apache</td></tr>
+</table>
+<p>Cette directive permet de définir l'URL d'un mandataire HTTP qui devra être
+utilisé pour toutes les requêtes vers un répondeur OCSP.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -2935,7 +2982,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_ssl.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

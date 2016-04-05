@@ -1,5 +1,254 @@
                                                          -*- coding: utf-8 -*-
 
+Changes with Apache 2.4.20
+
+  *) core: Do not read .htaccess if AllowOverride and AllowOverrideList
+     are "None". PR 58528.
+     [Michael Schlenker <msc contact.de, Ruediger Pluem, Daniel Ruggeri]
+
+  *) mod_proxy_express: Fix possible use of DB handle after close.  PR 59230.
+     [Petr <pgajdos suse.cz>]
+
+  *) core/util_script: relax alphanumeric filter of enviroment variable names
+     on Windows to allow '(' and ')' for passing PROGRAMFILES(X86) et.al.
+     unadulterated in 64 bit versions of Windows. PR 46751.  
+     [John <john leineweb de>]
+
+  *) mod_http2: incrementing keepalives on each request started so that logging
+     %k gives increasing numbers per master http2 connection. 
+     New documented variables in env, usable in custom log formats: H2_PUSH,
+     H2_PUSHED, H2_PUSHED_ON, H2_STREAM_ID and H2_STREAM_TAG.
+     [Stefan Eissing]
+
+  *) mod_http2: more efficient passing of response bodies with less contention
+     and file bucket forwarding. [Stefan Eissing]
+
+  *) mod_http2: fix for missing score board updates on request count, fix for
+     memory leak on slave connection reuse. [Stefan Eissing]
+     
+  *) mod_http2: Fix build on Windows from dsp files.
+     [Stefan Eissing] 
+
+Changes with Apache 2.4.19
+
+  *) mod_include: Add variable DOCUMENT_ARGS, with the arguments to the
+     request for the SSI document.  [Jeff Trawick]
+
+  *) mod_authz_host: Add a new "forward-dns" authorization type, not relying on
+     reverse DNS lookups.  [Fabien]
+
+  *) mod_ssl: Add hooks to allow other modules to perform processing at
+     several stages of initialization and connection handling.  See
+     mod_ssl_openssl.h.  [Jeff Trawick]
+
+  *) mod_http2: disabling PUSH when client sends GOAWAY. Slave connections are 
+     reused for several requests, improved performance and better memory use. 
+     [Stefan Eissing]  
+
+  *) mod_rewrite: Don't implicitly URL-escape the original query string
+     when no substitution has changed it (like PR50447 but server context)
+     [Evgeny Kotkov <evgeny.kotkov visualsvn.com>]
+
+  *) mod_http2: fixes problem with wrong lifetime of file buckets on main
+     connection. [Stefan Eissing]
+
+  *) mod_http2: fixes incorrect denial of requests without :authority header.
+     [Stefan Eissing]
+
+  *) mod_reqtimeout: Prevent long response times from triggering a timeout once
+     the request has been fully read.  PR 59045.  [Yann Ylavic]
+
+  *) ap_expr: expression support for variable HTTP2=on|off. [Stefan Eissing]
+
+  *) mod_http2: give control to async mpm for keepalive timeouts only when
+     no streams are open and even if only after 1 sec delay. Under load, event
+     mpm discards connections otherwise too quickly. [Stefan Eissing]
+
+  *) mod_ssl: Don't lose track of the SSL context if an unlikely failure occurs
+     in ssl_init_ssl_connection().  [Graham Leggett]
+
+  *) mod_rewrite: Add QSL|qslast flag to allow rewrites to files with
+     literal question marks in their names. PR 58777. [Eric Covener]
+
+  *) event: use pre_connection hook to properly initialize connection state for
+     slave connections. use protocol_switch hook to initialize server config
+     early based on SNI selected vhost. 
+     [Stefan Eissing]
+
+  *) hostname: Test and log useragent_host per-request across various modules,
+     including the scoreboard, expression and rewrite engines, setenvif,
+     authz_host, access_compat, custom logging, ssl and REMOTE_HOST variables.
+     PR55348  [William Rowe]
+
+  *) core: Track the useragent_host per-request when mod_remoteip or similar
+     modules track a per-request useragent_ip.  Modules should be updated
+     to inquire for ap_get_useragent_host() in place of ap_get_remote_host().
+     [William Rowe]
+
+  *) core: fix a bug in <UnDefine ...> directive processing. When used, the last
+     <Define...>'ed variable was also withdrawn. PR 59019
+     [Christophe Jaillet]
+
+  *) mod_http2: Accept-Encoding is, when present on the initiating request, 
+     added to push promises. This lets compressed content work in pushes.
+     by the client. [Stefan Eissing]
+
+  *) mod_http2: fixed possible read after free when streams were cancelled early
+     by the client. [Stefan Eissing]
+
+  *) mod_http2: fixed possible deadlock during connection shutdown. Thanks to 
+     @FrankStolle for reporting and getting the necessary data.
+     [Stefan Eissing]
+
+  *) mod_http2: fixed apr_uint64_t formatting in a log statement to user proper 
+     APR def, thanks to @Sp1l.
+
+  *) mod_http2: number of worker threads allowed to a connection is adjusting 
+     dynamically. Starting with 4, the number is doubled when streams can be 
+     served without block on http/2 connection flow. The number is halfed, when
+     the server has to wait on client flow control grants. 
+     This can happen with a maximum frequency of 5 times per second. 
+     When a connection occupies too many workers, repeatable requests 
+     (GET/HEAD/OPTIONS) are cancelled and placed back in the queue. Should that 
+     not suffice and a stream is busy longer than the server timeout, the 
+     connection will be aborted with error code ENHANCE_YOUR_CALM.
+     This does *not* limit the number of streams a client may open, rather the
+     number of server threads a connection might use.
+     [Stefan Eissing]
+
+  *) mod_http2: allowing link header to specify multiple "rel" values, 
+     space-separated inside a quoted string. Prohibiting push when Link 
+     parameter "nopush" is present.
+     [Stefan Eissing]
+
+  *) mod_http2: reworked connection state handling. Idle connections accept a
+     GOAWAY from the client without further reply. Otherwise the
+     module makes a best effort to send one last GOAWAY to the client.
+
+  *) mod_http2: the values from standard directives Timeout and KeepAliveTimeout
+     properly are applied to http/2 connections.
+     [Stefan Eissing]
+
+  *) mod_http2: idle connections are returned to async mpms. new hook
+     "pre_close_connection" used to send GOAWAY frame when not already done.
+     Setting event mpm server config "by hand" for the main connection to
+     the correct negotiated server.
+     [Stefan Eissing]
+
+  *) mod_http2: keep-alive blocking reads are done with 1 second timeouts to
+     check for MPM stopping. Will announce early GOAWAY and finish processing
+     open streams, then close.
+     [Stefan Eissing]
+
+  *) mod_http2: bytes read/written on slave connections are reported via the
+     optional mod_logio functions. Fixes PR 58871.
+
+  *) prefork: Initialize the POD when running in ONE_PROCESS (or -X) mode to
+     avoid a crash.  [Jan Kaluza, Yann Ylavic]
+
+  *) mod_ssl: When SSLVerify is disabled (NONE), don't force a renegotiation if
+     the SSLVerifyDepth applied with the default/handshaken vhost differs from
+     the one applicable with the finally selected vhost.  [Yann Ylavic]
+
+  *) core: Ensure that httpd exits with an error status when the MPM fails
+     to run.  [Yann Ylavic]
+
+  *) mod_ssl: Fix a possible memory leak on restart for custom [EC]DH params.
+     [Jan Kaluza, Yann Ylavic]
+
+  *) mod_ssl: Add SSLOCSPProxyURL to add the possibility to do all queries
+     to OCSP responders through a HTTP proxy. [Ruediger Pluem]
+
+  *) mod_proxy: Play/restore the TLS-SNI on new backend connections which
+     had to be issued because the remote closed the previous/reusable one
+     during idle (keep-alive) time.  [Yann Ylavic]
+
+  *) mod_cache_socache: Fix a possible cached entity body corruption when it
+     is received from an origin server in multiple batches and forwarded by
+     mod_proxy.  [Yann Ylavic]
+
+  *) core: Add expression support to SetHandler.
+     [Eric Covener]
+
+  *) mod_remoteip: Prevent an external proxy from presenting an internal
+     proxy. PR 55962. [Mike Rumph]
+
+  *) core: Prevent a server crash in case of an invalid CONNECT request with
+     a custom error page for status code 400 that uses server side includes.
+     PR 58929 [Ruediger Pluem]
+
+  *) mod_ssl: handle TIMEOUT on empty SSL input as non-fatal, returning 
+     APR_TIMEUP and preserving connection state for later retry.
+     [Stefan Eissing]
+
+  *) mod_ssl: Save some TLS record (application data) fragmentations by
+     including the last and subsequent suitable buckets when coalescing.
+     [Yann Ylavic]
+
+  *) mod_proxy_fcgi: Suppress HTTP error 503 and message 01075, 
+     "Error dispatching request", when the cause appears to be 
+     due to the client closing the connection. 
+     PR58118.  [Tobias Adolph <adolph lrz.de>]
+
+  *) mod_cgid: Message AH02550, failure to flush a response to the client,
+     is now logged at TRACE1 level to match the underlying core output filter
+     severity.  [Eric Covener]
+
+  *) mime.types: add common extension "m4a" for MPEG 4 Audio.
+     PR 57895 [Dylan Millikin <dylan.millikin gmail.com>]
+
+  *) Added many log numbers to log statements that had none.
+     [Rainer Jung]
+
+  *) mod_log_config: Add GlobalLog to allow a globally defined log to
+     be inherited by virtual hosts that define a CustomLog.
+     [Edward Lu]
+
+  *) mod_http2: connections how keep a "push diary" where hashes of already
+     pushed resources are kept. See directive H2PushDiarySize for managing this.
+     Push diaries can be initialized by clients via the "Cache-Digest" request
+     header. This carries a base64url encoded. compressed Golomb set as described
+     in https://datatracker.ietf.org/doc/draft-kazuho-h2-cache-digest/
+     Introduced a status handler for HTTP/2 connections, giving various counters
+     and statistics about the current connection, plus its cache digest value
+     in a JSON record. Not a replacement for more HTTP/2 in the server status. 
+     Configured as
+     <Location "/http2-status">
+         SetHandler http2-status
+     </Location>
+     [Stefan Eissing]
+
+  *) mod_http2: Fixed flushing of last GOAWAY frame. Previously, that frame
+     did not always reach the client, causing some to fail the next request.
+     Fixed calculation of last stream id accepted as described in rfc7540. 
+     Reading in KEEPALIVE state now correctly shown in scoreboard. 
+     Fixed possible race in connection shutdown after review by Ylavic. 
+     Fixed segfault on connection shutdown, callback ran into a semi dismantled session. 
+     [Stefan Eissing]
+
+  *) mod_http2: Added support for experimental accept-push-policy draft
+     (https://tools.ietf.org/html/draft-ruellan-http-accept-push-policy-00). Clients
+     may now influence server pushes by sending accept-push-policy headers.
+     [Stefan Eissing]
+
+  *) mod_http2: new r->subprocess_env variables HTTP2 and H2PUSH, set to "on"
+     when available for request.
+     [Stefan Eissing]
+
+  *) mod_http2: fixed bug in input window size calculation by moving chunked
+     request body encoding into later stage of processing. Fixes PR 58825.
+     [Stefan Eissing]
+
+  *) core: new hook "pre_close_connection" which is run before the lingering
+     close of connections is started. This gives protocol handlers one last
+     chance to use a connection before it goes down.
+     [Stefan Eissing]
+
+  *) mod_status/scoreboard: showing connection protocol in new column, new 
+     ap_update_child_status methods for updating server/description. mod_ssl
+     sets vhost negotiated by servername directly.
+     [Stefan Eissing]
+
 Changes with Apache 2.4.18
 
   *) mod_ssl: for all ssl_engine_vars.c lookups, fall back to master connection
@@ -77,6 +326,9 @@ Changes with Apache 2.4.18
      Renegotiation is 403ed when a master connection is present. Exact reason
      is given additionally in a request note. [Stefan Eissing]
 
+  *) mod_ssl: Make the output filter more friendly with deferred write and
+     response pipelining. [Yann Ylavic, Joe Orton]
+
   *) core: Fix scoreboard crash (SIGBUS) on hardware requiring strict 64bit
      alignment (SPARC64, PPC64).  [Yann Ylavic]
 
@@ -102,9 +354,6 @@ Changes with Apache 2.4.17
   *) mod_proxy: don't recyle backend announced "Connection: close" connections
      to avoid reusing it should the close be effective after some new request
      is ready to be sent.  [Yann Ylavic]
-
-  *) mod_ssl: Make the output filter more friendly with deferred write and
-     response pipelining. [Yann Ylavic, Joe Orton]
 
   *) mod_substitute: Allow to configure the patterns merge order with the new
      SubstituteInheritBefore on|off directive.  PR 57641
@@ -147,6 +396,11 @@ Changes with Apache 2.4.17
   *) MPMs: Support SO_REUSEPORT to create multiple duplicated listener
      records for scalability. [Yingqi Lu <yingqi.lu@intel.com>,
      Jeff Trawick, Jim Jagielski, Yann Ylavic]
+
+  *) mod_alias: Introduce expression parser support for Alias, ScriptAlias
+     and Redirect. Limit Redirect expressions to directory (Location) context
+     and redirect statuses (implicit or explicit).
+     [Graham Leggett, Yann Ylavic, Ruediger Pluem]
 
   *) mod_proxy: Fix a race condition that caused a failed worker to be retried
      before the retry period is over. [Ruediger Pluem]

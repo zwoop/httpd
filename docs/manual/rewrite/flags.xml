@@ -227,10 +227,10 @@ variables work.</p>
 
 <p>The full syntax for this flag is:</p>
 
-<example>
+<highlight language="config">
 [E=VAR:VAL]
 [E=!VAR]
-</example>
+</highlight>
 
 <p><code>VAL</code> may contain backreferences (<code>$N</code> or
 <code>%N</code>) which are expanded.</p>
@@ -627,6 +627,23 @@ URI.
 </p>
 
 </section>
+
+<section id="flag_qsl"><title>QSL|qslast</title>
+<p>
+By default, the first (left-most) question mark in the substitution
+delimits the path from the query string.  Using the [QSL] flag instructs
+<directive module="mod_rewrite">RewriteRule</directive> to instead split
+the two components using the last (right-most) question mark.  </p>
+
+<p>
+This is useful when mapping to files that have literal question marks in 
+their filename.  If no query string is used in the substitution, 
+a question mark can be appended to it in combination with this flag.  </p>
+
+<p> This flag is available in version 2.4.19 and later.</p>
+
+</section>
+
 
 <section id="flag_r"><title>R|redirect</title>
 <p>

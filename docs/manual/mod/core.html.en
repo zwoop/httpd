@@ -19,7 +19,7 @@
 <div id="page-header">
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p>
 <p class="apache">Apache HTTP Server Version 2.4</p>
-<img alt="" src="../images/feather.gif" /></div>
+<img alt="" src="../images/feather.png" /></div>
 <div class="up"><a href="./"><img title="&lt;-" alt="&lt;-" src="../images/left.gif" /></a></div>
 <div id="path">
 <a href="http://www.apache.org/">Apache</a> &gt; <a href="http://httpd.apache.org/">HTTP Server</a> &gt; <a href="http://httpd.apache.org/docs/">Documentation</a> &gt; <a href="../">Version 2.4</a> &gt; <a href="./">Modules</a></div>
@@ -1314,12 +1314,12 @@ in case of an error</td></tr>
     whether the parameter is an URL, a path or a message is performed
     before any expression is parsed. Examples:</p>
 
-    <pre class="prettyprint lang-config">ErrorDocument 500 http://foo.example.com/cgi-bin/tester
-ErrorDocument 404 /cgi-bin/bad_urls.pl
+    <pre class="prettyprint lang-config">ErrorDocument 500 http://example.com/cgi-bin/server-error.cgi
+ErrorDocument 404 /errors/bad_urls.php
 ErrorDocument 401 /subscription_info.html
-ErrorDocument 403 "Sorry can't allow you access today"
+ErrorDocument 403 "Sorry, can't allow you access today"
 ErrorDocument 403 Forbidden!
-ErrorDocument 403 /cgi-bin/forbidden.pl?referrer=%{escape:%{HTTP_REFERER}}</pre>
+ErrorDocument 403 /errors/forbidden.py?referrer=%{escape:%{HTTP_REFERER}}</pre>
 
 
     <p>Additionally, the special value <code>default</code> can be used
@@ -3246,10 +3246,10 @@ or specified mutexes</td></tr>
         holding a mutex that uses this implementation, the server will deadlock
         and stop responding to requests.  When this occurs, the server will
         require a manual restart to recover.</p>
-        <p>Solaris is a notable exception as it provides a mechanism which
+        <p>Solaris and Linux are notable exceptions as they provide a mechanism which
         usually allows the mutex to be recovered after a child process
         terminates abnormally while holding a mutex.</p>
-        <p>If your system implements the
+        <p>If your system is POSIX compliant or if it implements the
         <code>pthread_mutexattr_setrobust_np()</code> function, you may be able
         to use the <code>pthread</code> option safely.</p>
         </div>
@@ -3668,8 +3668,8 @@ On Windows, from Apache 2.3.3 and later.</td></tr>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="QualifyRedirectURL" id="QualifyRedirectURL">QualifyRedirectURL</a> <a name="qualifyredirecturl" id="qualifyredirecturl">Directive</a></h2>
 <table class="directive">
-<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Controls whether the REDIRECT_URL environent variable is 
-             fully qualified</td></tr>
+<tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Controls whether the REDIRECT_URL environment variable is
+fully qualified</td></tr>
 <tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>QualifyRedirectURL ON|OFF</code></td></tr>
 <tr><th><a href="directive-dict.html#Default">Default:</a></th><td><code>QualifyRedirectURL OFF</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory</td></tr>
@@ -3973,19 +3973,23 @@ to name-virtual hosts</td></tr>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Hostname and port that the server uses to identify
 itself</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>ServerName [<var>scheme</var>://]<var>fully-qualified-domain-name</var>[:<var>port</var>]</code></td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>ServerName [<var>scheme</var>://]<var>domain-name</var>|<var>ip-address</var>[:<var>port</var>]</code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
 </table>
     <p>The <code class="directive">ServerName</code> directive sets the
-    request scheme, hostname and
-    port that the server uses to identify itself.  This is used when
-    creating redirection URLs.</p>
+    request scheme, hostname and port that the server uses to identify itself.
+    </p>
 
-    <p>Additionally, <code class="directive">ServerName</code> is used (possibly
+    <p><code class="directive">ServerName</code> is used (possibly
     in conjunction with <code class="directive">ServerAlias</code>) to uniquely
     identify a virtual host, when using <a href="../vhosts/name-based.html">name-based virtual hosts</a>.</p>
+
+    <p>Additionally, this is used when
+    creating self-referential redirection URLs when 
+    <code class="directive">UseCanonicalName</code> is set to a non-default
+    value.</p>
 
     <p>For example, if the name of the
     machine hosting the web server is <code>simple.example.com</code>,
@@ -4001,9 +4005,10 @@ itself</td></tr>
     each appearance overrides the previous appearance (within that
     server).</p>
 
-    <p>If no <code class="directive">ServerName</code> is specified, then the
-    server attempts to deduce the client visible hostname by performing a
-    reverse lookup on an IP address of the systems hostname.</p>
+    <p>If no <code class="directive">ServerName</code> is specified, the
+    server attempts to deduce the client visible hostname by first asking 
+    the operating system for the system hostname, and if that fails, 
+    performing a reverse lookup on an IP address present on the system.</p>
     
     <p>If no port is specified in the
     <code class="directive">ServerName</code>, then the server will use the
@@ -4219,11 +4224,12 @@ header</td></tr>
 <table class="directive">
 <tr><th><a href="directive-dict.html#Description">Description:</a></th><td>Forces all matching files to be processed by a
 handler</td></tr>
-<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>SetHandler <var>handler-name</var>|None</code></td></tr>
+<tr><th><a href="directive-dict.html#Syntax">Syntax:</a></th><td><code>SetHandler <var>handler-name</var>|none|<var>expression</var></code></td></tr>
 <tr><th><a href="directive-dict.html#Context">Context:</a></th><td>server config, virtual host, directory, .htaccess</td></tr>
 <tr><th><a href="directive-dict.html#Override">Override:</a></th><td>FileInfo</td></tr>
 <tr><th><a href="directive-dict.html#Status">Status:</a></th><td>Core</td></tr>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>core</td></tr>
+<tr><th><a href="directive-dict.html#Compatibility">Compatibility:</a></th><td>expression argument 2.4.19 and later</td></tr>
 </table>
     <p>When placed into an <code>.htaccess</code> file or a
     <code class="directive"><a href="#directory">&lt;Directory&gt;</a></code> or
@@ -4254,6 +4260,14 @@ handler</td></tr>
     <pre class="prettyprint lang-config">&lt;FilesMatch "\.php$"&gt;
     SetHandler application/x-httpd-php
 &lt;/FilesMatch&gt;</pre>
+
+
+    <p>String-valued expressions can be used to reference per-request 
+    variables, including backreferences to named regular expressions:</p>
+
+    <pre class="prettyprint lang-config">&lt;LocationMatch ^/app/(?&lt;sub&gt;[^/]+)/&gt;
+     SetHandler "proxy:unix:/var/run/app_%{env:MATCH_sub}.sock|fcgi://localhost:8080"
+&lt;/LocationMatch&gt;</pre>
 
 
     <p>You can override an earlier defined <code class="directive">SetHandler</code>
@@ -4346,10 +4360,14 @@ certain events before failing a request</td></tr>
     <p>The <code class="directive">TimeOut</code> directive defines the length
     of time Apache httpd will wait for I/O in various circumstances:</p>
 
-    <ol>
-      <li>When reading data from the client, the length of time to
+    <ul>
+      <li><p>When reading data from the client, the length of time to
       wait for a TCP packet to arrive if the read buffer is
-      empty.</li>
+      empty.</p>
+      <p> For initial data on a new connection, this directive doesn't
+      take effect until after any configured <code class="directive"><a href="#acceptfilter">
+      AcceptFilter</a></code> has passed the new connection to the server.</p>
+      </li>
 
       <li>When writing data to the client, the length of time to wait
       for an acknowledgement of a packet if the send buffer is
@@ -4364,7 +4382,7 @@ certain events before failing a request</td></tr>
       <li>In <code class="module"><a href="../mod/mod_proxy.html">mod_proxy</a></code>, the default timeout value if
       <code class="directive"><a href="../mod/mod_proxy.html#proxytimeout">ProxyTimeout</a></code> is not
       configured.</li>
-    </ol>
+    </ul>
 
 
 </div>
@@ -4676,7 +4694,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/core.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2015 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
