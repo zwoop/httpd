@@ -82,7 +82,7 @@
     before a 1011-byte file (if in ascending order) even though
     they both are shown as "1K".</p>
 </div>
-<div id="quickview"><h3>Topics</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3>Topics</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#query">Autoindex Request Query Arguments</a></li>
 </ul><h3 class="directives">Directives</h3>
@@ -104,7 +104,9 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#indexstylesheet">IndexStyleSheet</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#readmename">ReadmeName</a></li>
 </ul>
-<ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_autoindex">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_autoindex">Report a bug</a></li></ul><h3>See also</h3>
+<ul class="seealso">
+<li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="query" id="query">Autoindex Request Query Arguments</a></h2>
@@ -854,6 +856,14 @@ indexing</td></tr>
 
       </dd>
 
+      <dt><a name="indexoptions.useolddateformat" id="indexoptions.useolddateformat">UseOldDateFormat</a>
+      (<em>Apache HTTP Server 2.4.26 and later</em>)</dt>
+
+      <dd>The date format used for the <code>Last Modified</code> field was 
+      inadvertently changed to <code>"%Y-%m-%d %H:%M"</code> from 
+      <code>"%d-%b-%Y %H:%M"</code> in 2.4.0. Setting this option 
+      restores the date format from 2.2 and earlier.</dd>
+
       <dt><a name="indexoptions.versionsort" id="indexoptions.versionsort">VersionSort</a>
       (<em>Apache HTTP Server 2.0a3 and later</em>)</dt>
 
@@ -927,7 +937,7 @@ indexing</td></tr>
      clears all inherited options and any incremental settings encountered
      so far. Consider the following example:</p>
 
-     <pre class="prettyprint lang-config">IndexOptions +ScanHTMLTitles -IconsAreLinks FancyIndexing<br />
+     <pre class="prettyprint lang-config">IndexOptions +ScanHTMLTitles -IconsAreLinks FancyIndexing
 IndexOptions +SuppressSize</pre>
 
 
@@ -1068,7 +1078,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_autoindex.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2017 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

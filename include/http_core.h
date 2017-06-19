@@ -669,6 +669,9 @@ typedef struct {
     unsigned int cgi_pass_auth : 2;
     unsigned int qualify_redirect_url :2;
     ap_expr_info_t  *expr_handler;         /* forced with SetHandler */
+
+    /** Table of rules for building CGI variables, NULL if none configured */
+    apr_hash_t *cgi_var_rules;
 } core_dir_config;
 
 /* macro to implement off by default behaviour */
@@ -720,10 +723,24 @@ typedef struct {
 #define AP_MERGE_TRAILERS_DISABLE  2
     int merge_trailers;
 
-
-
     apr_array_header_t *protocols;
     int protocols_honor_order;
+
+#define AP_HTTP09_UNSET   0
+#define AP_HTTP09_ENABLE  1
+#define AP_HTTP09_DISABLE 2
+    char http09_enable;
+
+#define AP_HTTP_CONFORMANCE_UNSET     0
+#define AP_HTTP_CONFORMANCE_UNSAFE    1
+#define AP_HTTP_CONFORMANCE_STRICT    2
+    char http_conformance;
+
+#define AP_HTTP_METHODS_UNSET         0
+#define AP_HTTP_METHODS_LENIENT       1
+#define AP_HTTP_METHODS_REGISTERED    2
+    char http_methods;
+
 } core_server_config;
 
 /* for AddOutputFiltersByType in core.c */

@@ -36,7 +36,7 @@
 modules multi-processus (MPM)</td></tr>
 <tr><th><a href="module-dict.html#Status">Statut:</a></th><td>MPM</td></tr></table>
 </div>
-<div id="quickview"><h3 class="directives">Directives</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3 class="directives">Directives</h3>
 <ul id="toc">
 <li><img alt="" src="../images/down.gif" /> <a href="#coredumpdirectory">CoreDumpDirectory</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#enableexceptionhook">EnableExceptionHook</a></li>
@@ -60,7 +60,9 @@ modules multi-processus (MPM)</td></tr>
 <li><img alt="" src="../images/down.gif" /> <a href="#threadsperchild">ThreadsPerChild</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#threadstacksize">ThreadStackSize</a></li>
 </ul>
-<ul class="seealso"><li><a href="#comments_section">Commentaires</a></li></ul></div>
+<h3>Traitement des bugs</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">Journal des modifications de httpd</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mpm_common">Problèmes connus</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mpm_common">Signaler un bug</a></li></ul><h3>Voir aussi</h3>
+<ul class="seealso">
+<li><a href="#comments_section">Commentaires</a></li></ul></div>
 
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="directive-section"><h2><a name="coredumpdirectory" id="coredumpdirectory">Directive</a> <a name="CoreDumpDirectory" id="CoreDumpDirectory">CoreDumpDirectory</a></h2>
@@ -144,7 +146,7 @@ gestionnaires d'exception après un crash</td></tr>
 
     <p>Deux modules, <code>mod_whatkilledus</code> et
     <code>mod_backtrace</code> utilisent ce hook. Veuillez vous
-    référer à la <a href="http://people.apache.org/~trawick/exception_hook.html">page EnableExceptionHook</a> de Jeff Trawick pour plus
+    référer à la <a href="https://emptyhammock.com/projects/httpd/diag/">page EnableExceptionHook</a> de Jeff Trawick pour plus
     d'informations à leur sujet.</p>
 
 </div>
@@ -300,13 +302,20 @@ plateformes de type BSD.</td></tr>
     <p>Vous pouvez utiliser la directive
     <code class="directive">ListenCoresBucketsRatio</code> pour spécifier un
     <var>ratio</var> entre le nombre de coeurs de CPU activés et le
-    nombre de segments d'écoute (listeners' buckets) souhaités ;  le
+    nombre de segments d'écoute (listeners' buckets) souhaités ; le
     serveur HTTP Apache va alors créer<code>num_cpu_cores / ratio</code>
     segments d'écoute, chacun contenant son propre socket d'écoute
     <code class="directive">Listen</code> sur le ou les mêmes ports ; chaque
     processus enfant sera associé à un seul segment d'écoute (avec une
     distribution de type round-robin des segments à la création des
     processus enfants).</p>
+
+    <div class="note"><h3>Définition du terme coeur de CPU activé ("online")</h3>
+    <p>Sous Linux et BSD, un coeur de CPU peut être activé ou désactivé si <a href="https://www.kernel.org/doc/Documentation/cpu-hotplug.txt">Hotplug</a>
+    a été configuré ; la directive
+    <code class="directive">ListenCoresBucketsRatio</code> doit donc tenir compte de ce
+    paramètre pour calculer le nombre de segments d'écoute à créer.</p>
+    </div>
 
     <p>La directive <code class="directive">ListenCoresBucketsRatio</code> peut
     améliorer le support de la montée en charge lorsque l'arrivée de
@@ -319,7 +328,15 @@ plateformes de type BSD.</td></tr>
     de CPU doit être égal au moins au double du <var>ratio</var>
     spécifié. Si vous spécifiez la valeur recommandée pour
     <var>ratio</var>, à savoir <code>8</code>, le nombre minimum de
-    coeurs de processeurs disponibles sera alors de <code>16</code>.</p>
+    coeurs de processeurs disponibles sera alors de <code>16</code>. La valeur
+    optimale de <var>ratio</var> permettant d'obtenir des performances maximales
+    doit être calculée pour chaque système cible, en testant plusieurs valeurs
+    et en observant les résultats.</p>
+
+    <p>Cette directive influence le calcul des valeurs limites inférieures de
+    <code class="directive"><a href="#minsparethreads">MinSpareThreads</a></code> et <code class="directive"><a href="#maxsparethreads">MaxSpareThreads</a></code>. En effet, pour accepter les
+    connexions de manière optimale, le nombre de processus enfants doit être un
+    multiple du nombre de segments d'écoute.</p>
 
 </div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -431,7 +448,10 @@ simultanément</td></tr>
     <code>MaxSpareThreads 250</code>. Ce MPM gère les threads inactifs
     au niveau du serveur. Si le serveur possède trop de threads
     inactifs, des processus enfants seront arrêtés jusqu'à ce que le
-    nombre de threads inactifs repasse en dessous de cette limite.</p>
+    nombre de threads inactifs repasse en dessous de cette limite. Des
+    processus/threads supplémentaires sont susceptibles d'être créés si
+    <code class="directive"><a href="#listencoresbucketsratio">ListenCoresBucketsRatio</a></code> est
+    activée.</p>
 
     <p>Pour <code class="module"><a href="../mod/mpm_netware.html">mpm_netware</a></code>, la définition par défaut est
     <code>MaxSpareThreads 100</code>. Comme ce MPM n'exécute qu'un seul
@@ -482,7 +502,8 @@ pour pouvoir traiter les pics de requêtes</td></tr>
     est surveillé au niveau du serveur. Si le serveur ne possède pas
     assez de threads inactifs, des processus enfants sont créés jusqu'à
     ce que le nombre de threads inactifs repasse au dessus de
-    <var>nombre</var>.</p>
+    <var>nombre</var>. Des processus/threads supplémentaires peuvent
+    être créés si <code class="directive"><a href="#listencoresbucketsratio">ListenCoresBucketsRatio</a></code> est activée.</p>
 
     <p>Avec <code class="module"><a href="../mod/mpm_netware.html">mpm_netware</a></code>, la définition par défaut est
     <code>MinSpareThreads 10</code> et, comme ce MPM n'exécute qu'un
@@ -649,7 +670,10 @@ processus</td></tr>
     MPMs <code class="module"><a href="../mod/worker.html">worker</a></code> et <code class="module"><a href="../mod/event.html">event</a></code>, cette directive, en combinaison avec
     <code class="directive"><a href="#threadlimit">ThreadLimit</a></code>, définit le
     nombre maximum que l'on peut affecter à <code class="directive"><a href="#maxrequestworkers">MaxRequestWorkers</a></code>, et ceci pour la durée de
-    vie du processus Apache httpd. Au cours d'un redémarrage, vous pouvez
+    vie du processus Apache httpd. Avec le MPM <code class="module"><a href="../mod/event.html">event</a></code>, cette
+    directive permet aussi de définir le nombre de processus anciens du serveur
+    pouvant continuer à s'exécuter pour terminer le traitement des connexions
+    ouvertes. Au cours d'un redémarrage, vous pouvez
     modifier la valeur de la directive <code class="directive"><a href="#maxrequestworkers">MaxRequestWorkers</a></code>, alors que toute
     tentative de modification de la valeur de la directive <code class="directive"><a href="#serverlimit">ServerLimit</a></code> sera ignorée.</p>
 
@@ -900,7 +924,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mpm_common.html'
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2017 The Apache Software Foundation.<br />Autorisé sous <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossaire</a> | <a href="../sitemap.html">Plan du site</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

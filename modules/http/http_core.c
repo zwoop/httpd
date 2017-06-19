@@ -66,7 +66,7 @@ static const char *set_keep_alive_timeout(cmd_parms *cmd, void *dummy,
      * set for the main server, because if no http_module directive is used
      * for a vhost, it will inherit the http_srv_cfg from the main server.
      * However keep_alive_timeout_set helps determine whether the vhost should
-     * use its own configured timeout or the one from the vhost delared first
+     * use its own configured timeout or the one from the vhost declared first
      * on the same IP:port (ie. c->base_server, and the legacy behaviour).
      */
     if (cmd->server->is_virtual) {
@@ -148,9 +148,9 @@ static int ap_process_http_async_connection(conn_rec *c)
             c->keepalive = AP_CONN_UNKNOWN;
             /* process the request if it was read without error */
 
-            ap_update_child_status(c->sbh, SERVER_BUSY_WRITE, r);
             if (r->status == HTTP_OK) {
                 cs->state = CONN_STATE_HANDLER;
+                ap_update_child_status(c->sbh, SERVER_BUSY_WRITE, r);
                 ap_process_async_request(r);
                 /* After the call to ap_process_request, the
                  * request pool may have been deleted.  We set
@@ -203,10 +203,10 @@ static int ap_process_http_sync_connection(conn_rec *c)
         c->keepalive = AP_CONN_UNKNOWN;
         /* process the request if it was read without error */
 
-        ap_update_child_status(c->sbh, SERVER_BUSY_WRITE, r);
         if (r->status == HTTP_OK) {
             if (cs)
                 cs->state = CONN_STATE_HANDLER;
+            ap_update_child_status(c->sbh, SERVER_BUSY_WRITE, r);
             ap_process_request(r);
             /* After the call to ap_process_request, the
              * request pool will have been deleted.  We set

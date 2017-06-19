@@ -303,6 +303,18 @@ ProxyPass "/examples" "http://backend.example.com/examples" timeout=10
       Members are added to a balancer using
       <directive module="mod_proxy">BalancerMember</directive>.</p>
 
+      <note><title>DNS resolution for origin domains</title>
+      <p>DNS resolution happens when the socket to
+        the origin domain is created for the first time.
+        When connection pooling is used, each backend domain is resolved 
+        only once per child process, and reused for all further connections 
+        until the child is recycled. This information should to be considered 
+        while planning DNS maintenance tasks involving backend domains. 
+        Please also check <directive module="mod_proxy">ProxyPass</directive>
+        parameters for more details about connection reuse.
+        </p>
+      </note>
+
     </section> <!-- /workers -->
 
     <section id="access"><title>Controlling Access to Your Proxy</title>
@@ -385,6 +397,12 @@ ProxyPass "/examples" "http://backend.example.com/examples" timeout=10
   SetEnv proxy-nokeepalive 1
 &lt;/Location&gt;
         </highlight>
+
+      <p> In 2.4.26 and later, the "no-proxy" environment variable can be set to disable 
+      <module>mod_proxy</module> processing the current request.
+      This variable should be set with <directive module="mod_setenvif"
+      >SetEnvIf</directive>, as <directive module="mod_env">SetEnv</directive>
+      is not evaluated early enough.</p>
 
     </section> <!-- /envsettings -->
 
@@ -853,8 +871,9 @@ expressions</description>
     a local virtual path; <var>url</var> is a partial URL for the
     remote server and cannot include a query string.</p>
 
-    <note><strong>Note: </strong>This directive cannot be used within a 
-    <code>&lt;Directory&gt;</code> context.</note>
+    <note><strong>Note: </strong>This directive is not supported within
+    <directive type="section" module="core">Directory</directive> and
+    <directive type="section" module="core">Files</directive> containers.</note>
 
     <note type="warning">The <directive
     module="mod_proxy">ProxyRequests</directive> directive should
@@ -889,10 +908,6 @@ expressions</description>
     <p>will cause a local request for
     <code>http://example.com/mirror/foo/bar</code> to be internally converted
     into a proxy request to <code>http://backend.example.com/bar</code>.</p>
-
-    <p>The ProxyPass directive is not supported in <directive type="section" module="core"
-    >Directory</directive> or <directive type="section" module="core"
-    >Files</directive> sections.</p>
 
     <p>If you require a more flexible reverse-proxy configuration, see the
     <directive module="mod_rewrite">RewriteRule</directive> directive with the
@@ -950,7 +965,14 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
       specific location will take precedence.</p>
 
       <p>For the same reasons, exclusions must come <em>before</em> the
-      general <directive>ProxyPass</directive> directives.</p>
+      general <directive>ProxyPass</directive> directives. In 2.4.26 and later, the "no-proxy"
+      environment variable is an alternative to exclusions, and is the only
+      way to configure an exclusion of a <directive>ProxyPass</directive>
+      directive in <directive module="core">Location</directive> context. 
+      This variable should be set with <directive module="mod_setenvif"
+      >SetEnvIf</directive>, as <directive module="mod_env">SetEnv</directive>
+      is not evaluated early enough.
+      </p>
 
     </note> <!-- /ordering_proxypass -->
 
@@ -1165,6 +1187,16 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
     <tr><td>flusher</td>
         <td>flush</td>
         <td><p>Name of the provider used by <module>mod_proxy_fdpass</module>.
+        See the documentation of this module for more details.</p>
+    </td></tr>
+    <tr><td>secret</td>
+        <td>-</td>
+        <td><p>Value of secret used by <module>mod_proxy_ajp</module>.
+        See the documentation of this module for more details.</p>
+    </td></tr>
+    <tr><td>upgrade</td>
+        <td>WebSocket</td>
+        <td><p>Protocol accepted in the Upgrade header by <module>mod_proxy_wstunnel</module>.
         See the documentation of this module for more details.</p>
     </td></tr>
 
@@ -1826,9 +1858,9 @@ NoProxy         ".example.com" "192.168.112.0/21"
 
     <example><title>Example</title>
     <highlight language="config">
-      ProxyRemote  "*"  "http://firewall.example.com:81"<br />
-      NoProxy         ".example.com" "192.168.112.0/21"<br />
-      ProxyDomain     ".example.com"
+ProxyRemote  "*"  "http://firewall.example.com:81"
+NoProxy         ".example.com" "192.168.112.0/21"
+ProxyDomain     ".example.com"
       </highlight>
     </example>
 </usage>

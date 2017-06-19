@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE manualpage SYSTEM "../style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.en.xsl"?>
-<!-- English Revision: 1732097 -->
+<!-- English Revision: 1786687 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -86,6 +86,21 @@
     </dl>
 
     <dl>
+      <dt>HTTP/2 avec httpd</dt>
+      <dd>
+      <p>HTTP/2 est une évolution du protocole de la couche application le plus
+      connu au monde, HTTP. Les efforts se sont concentrés sur une amélioration
+      de l'efficacité de l'utilisation des ressources réseau sans modifier la
+      sémantique de HTTP. Ce guide explique la manière dont HTTP/2 est
+      implémenté dans httpd, donne des conseils pour une configuration de base
+      ainsi qu'une liste de recommandations.
+      </p>
+
+        <p>Voir le <a href="http2.html">guide HTTP/2</a></p>
+      </dd>
+    </dl>
+
+    <dl>
       <dt>Introduction au Inclusions côté Serveur (Server Side Includes
       ou SSI)</dt>
       <dd>
@@ -131,6 +146,17 @@
 
         <p>Voir le <a href="reverse_proxy.html"></a>Guide de configuration des
 	mandataires inverses</p>
+      </dd>
+    </dl>
+
+    <dl>
+      <dt>Réécriture d'URLs avec mod_rewrite</dt>
+      <dd>
+        <p>La réécriture d'URLs avec (ou sans) <module>mod_rewrite</module> devient
+	l'une des questions les plus fréquentes posées dans nos listes de
+	diffusion et nos canaux IRC. C'est pourquoi nous avons dédié une <a
+	href="../rewrite/">section entière de notre documentation</a> à des
+	howtos et recettes sur ce sujet.</p>
       </dd>
     </dl>
 

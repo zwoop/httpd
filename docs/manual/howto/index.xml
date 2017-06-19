@@ -81,6 +81,20 @@
     </dl>
 
     <dl>
+      <dt>HTTP/2 with httpd</dt>
+      <dd>
+      <p>HTTP/2 is the evolution of the world's most successful application layer protocol, HTTP. 
+        It focuses on making more efficient use of network resources without changing the semantics of HTTP.
+        This guide explains how HTTP/2 is implemented in httpd, showing basic configurations tips and 
+        best practices.
+      </p>
+
+        <p>See: <a href="http2.html">HTTP/2 guide</a></p>
+      </dd>
+    </dl>
+
+
+    <dl>
       <dt>Introduction to Server Side Includes</dt>
       <dd>
         <p>SSI (Server Side Includes) are directives that are placed in
@@ -119,6 +133,17 @@
         balancing and failover, cloud-based clustering and dynamic on-the-fly reconfiguration.</p>
 
         <p>See: <a href="reverse_proxy.html">Reverse proxy guide</a></p>
+      </dd>
+    </dl>
+
+    <dl>
+      <dt>Rewriting URLs with mod_rewrite</dt>
+      <dd>
+        <p>Rewriting URLs with (and without)
+        <module>mod_rewrite</module> tends to be one of the most
+        frequently asked topics on our mailing lists and IRC channels.
+        We have devoted <a href="../rewrite/">and entire section of our
+        documentation</a> to howtos and recipes around this topic.</p>
       </dd>
     </dl>
 

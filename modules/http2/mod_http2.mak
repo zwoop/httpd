@@ -50,7 +50,7 @@ CLEAN :"libapr - Win32 ReleaseCLEAN" "libaprutil - Win32 ReleaseCLEAN" "libhttpd
 CLEAN :
 !ENDIF 
 	-@erase "$(INTDIR)\h2_alt_svc.obj"
-	-@erase "$(INTDIR)\h2_bucket_eoc.obj"
+	-@erase "$(INTDIR)\h2_bucket_beam.obj"
 	-@erase "$(INTDIR)\h2_bucket_eos.obj"
 	-@erase "$(INTDIR)\h2_config.obj"
 	-@erase "$(INTDIR)\h2_conn.obj"
@@ -59,22 +59,16 @@ CLEAN :
 	-@erase "$(INTDIR)\h2_filter.obj"
 	-@erase "$(INTDIR)\h2_from_h1.obj"
 	-@erase "$(INTDIR)\h2_h2.obj"
-	-@erase "$(INTDIR)\h2_int_queue.obj"
-	-@erase "$(INTDIR)\h2_io.obj"
-	-@erase "$(INTDIR)\h2_io_set.obj"
+	-@erase "$(INTDIR)\h2_headers.obj"
 	-@erase "$(INTDIR)\h2_mplx.obj"
 	-@erase "$(INTDIR)\h2_ngn_shed.obj"
 	-@erase "$(INTDIR)\h2_push.obj"
 	-@erase "$(INTDIR)\h2_request.obj"
-	-@erase "$(INTDIR)\h2_response.obj"
 	-@erase "$(INTDIR)\h2_session.obj"
 	-@erase "$(INTDIR)\h2_stream.obj"
 	-@erase "$(INTDIR)\h2_switch.obj"
 	-@erase "$(INTDIR)\h2_task.obj"
-	-@erase "$(INTDIR)\h2_task_input.obj"
-	-@erase "$(INTDIR)\h2_task_output.obj"
 	-@erase "$(INTDIR)\h2_util.obj"
-	-@erase "$(INTDIR)\h2_worker.obj"
 	-@erase "$(INTDIR)\h2_workers.obj"
 	-@erase "$(INTDIR)\mod_http2.obj"
 	-@erase "$(INTDIR)\mod_http2.res"
@@ -133,7 +127,7 @@ LINK32=link.exe
 LINK32_FLAGS=kernel32.lib nghttp2.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_http2.pdb" /debug /out:"$(OUTDIR)\mod_http2.so" /implib:"$(OUTDIR)\mod_http2.lib" /libpath:"..\..\srclib\nghttp2\lib\MSVC_obj" /base:@..\..\os\win32\BaseAddr.ref,mod_http2.so /opt:ref 
 LINK32_OBJS= \
 	"$(INTDIR)\h2_alt_svc.obj" \
-	"$(INTDIR)\h2_bucket_eoc.obj" \
+	"$(INTDIR)\h2_bucket_beam.obj" \
 	"$(INTDIR)\h2_bucket_eos.obj" \
 	"$(INTDIR)\h2_config.obj" \
 	"$(INTDIR)\h2_conn.obj" \
@@ -142,22 +136,16 @@ LINK32_OBJS= \
 	"$(INTDIR)\h2_filter.obj" \
 	"$(INTDIR)\h2_from_h1.obj" \
 	"$(INTDIR)\h2_h2.obj" \
-	"$(INTDIR)\h2_int_queue.obj" \
-	"$(INTDIR)\h2_io.obj" \
-	"$(INTDIR)\h2_io_set.obj" \
+	"$(INTDIR)\h2_headers.obj" \
 	"$(INTDIR)\h2_mplx.obj" \
 	"$(INTDIR)\h2_ngn_shed.obj" \
 	"$(INTDIR)\h2_push.obj" \
 	"$(INTDIR)\h2_request.obj" \
-	"$(INTDIR)\h2_response.obj" \
 	"$(INTDIR)\h2_session.obj" \
 	"$(INTDIR)\h2_stream.obj" \
 	"$(INTDIR)\h2_switch.obj" \
 	"$(INTDIR)\h2_task.obj" \
-	"$(INTDIR)\h2_task_input.obj" \
-	"$(INTDIR)\h2_task_output.obj" \
 	"$(INTDIR)\h2_util.obj" \
-	"$(INTDIR)\h2_worker.obj" \
 	"$(INTDIR)\h2_workers.obj" \
 	"$(INTDIR)\mod_http2.obj" \
 	"$(INTDIR)\mod_http2.res" \
@@ -208,7 +196,7 @@ CLEAN :"libapr - Win32 DebugCLEAN" "libaprutil - Win32 DebugCLEAN" "libhttpd - W
 CLEAN :
 !ENDIF 
 	-@erase "$(INTDIR)\h2_alt_svc.obj"
-	-@erase "$(INTDIR)\h2_bucket_eoc.obj"
+	-@erase "$(INTDIR)\h2_bucket_beam.obj"
 	-@erase "$(INTDIR)\h2_bucket_eos.obj"
 	-@erase "$(INTDIR)\h2_config.obj"
 	-@erase "$(INTDIR)\h2_conn.obj"
@@ -217,22 +205,16 @@ CLEAN :
 	-@erase "$(INTDIR)\h2_filter.obj"
 	-@erase "$(INTDIR)\h2_from_h1.obj"
 	-@erase "$(INTDIR)\h2_h2.obj"
-	-@erase "$(INTDIR)\h2_int_queue.obj"
-	-@erase "$(INTDIR)\h2_io.obj"
-	-@erase "$(INTDIR)\h2_io_set.obj"
+	-@erase "$(INTDIR)\h2_headers.obj"
 	-@erase "$(INTDIR)\h2_mplx.obj"
 	-@erase "$(INTDIR)\h2_ngn_shed.obj"
 	-@erase "$(INTDIR)\h2_push.obj"
 	-@erase "$(INTDIR)\h2_request.obj"
-	-@erase "$(INTDIR)\h2_response.obj"
 	-@erase "$(INTDIR)\h2_session.obj"
 	-@erase "$(INTDIR)\h2_stream.obj"
 	-@erase "$(INTDIR)\h2_switch.obj"
 	-@erase "$(INTDIR)\h2_task.obj"
-	-@erase "$(INTDIR)\h2_task_input.obj"
-	-@erase "$(INTDIR)\h2_task_output.obj"
 	-@erase "$(INTDIR)\h2_util.obj"
-	-@erase "$(INTDIR)\h2_worker.obj"
 	-@erase "$(INTDIR)\h2_workers.obj"
 	-@erase "$(INTDIR)\mod_http2.obj"
 	-@erase "$(INTDIR)\mod_http2.res"
@@ -291,7 +273,7 @@ LINK32=link.exe
 LINK32_FLAGS=kernel32.lib nghttp2d.lib /nologo /subsystem:windows /dll /incremental:no /pdb:"$(OUTDIR)\mod_http2.pdb" /debug /out:"$(OUTDIR)\mod_http2.so" /implib:"$(OUTDIR)\mod_http2.lib" /libpath:"..\..\srclib\nghttp2\lib\MSVC_obj" /base:@..\..\os\win32\BaseAddr.ref,mod_http2.so 
 LINK32_OBJS= \
 	"$(INTDIR)\h2_alt_svc.obj" \
-	"$(INTDIR)\h2_bucket_eoc.obj" \
+	"$(INTDIR)\h2_bucket_beam.obj" \
 	"$(INTDIR)\h2_bucket_eos.obj" \
 	"$(INTDIR)\h2_config.obj" \
 	"$(INTDIR)\h2_conn.obj" \
@@ -300,22 +282,16 @@ LINK32_OBJS= \
 	"$(INTDIR)\h2_filter.obj" \
 	"$(INTDIR)\h2_from_h1.obj" \
 	"$(INTDIR)\h2_h2.obj" \
-	"$(INTDIR)\h2_int_queue.obj" \
-	"$(INTDIR)\h2_io.obj" \
-	"$(INTDIR)\h2_io_set.obj" \
+	"$(INTDIR)\h2_headers.obj" \
 	"$(INTDIR)\h2_mplx.obj" \
 	"$(INTDIR)\h2_ngn_shed.obj" \
 	"$(INTDIR)\h2_push.obj" \
 	"$(INTDIR)\h2_request.obj" \
-	"$(INTDIR)\h2_response.obj" \
 	"$(INTDIR)\h2_session.obj" \
 	"$(INTDIR)\h2_stream.obj" \
 	"$(INTDIR)\h2_switch.obj" \
 	"$(INTDIR)\h2_task.obj" \
-	"$(INTDIR)\h2_task_input.obj" \
-	"$(INTDIR)\h2_task_output.obj" \
 	"$(INTDIR)\h2_util.obj" \
-	"$(INTDIR)\h2_worker.obj" \
 	"$(INTDIR)\h2_workers.obj" \
 	"$(INTDIR)\mod_http2.obj" \
 	"$(INTDIR)\mod_http2.res" \
@@ -438,9 +414,9 @@ SOURCE=./h2_alt_svc.c
 "$(INTDIR)\h2_alt_svc.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=./h2_bucket_eoc.c
+SOURCE=./h2_bucket_beam.c
 
-"$(INTDIR)\h2_bucket_eoc.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)/h2_bucket_beam.obj" : $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=./h2_bucket_eos.c
@@ -483,19 +459,9 @@ SOURCE=./h2_h2.c
 "$(INTDIR)\h2_h2.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=./h2_int_queue.c
+SOURCE=./h2_headers.c
 
-"$(INTDIR)\h2_int_queue.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=./h2_io.c
-
-"$(INTDIR)\h2_io.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=./h2_io_set.c
-
-"$(INTDIR)\h2_io_set.obj" : $(SOURCE) "$(INTDIR)"
+"$(INTDIR)\h2_headers.obj" : $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=./h2_mplx.c
@@ -518,11 +484,6 @@ SOURCE=./h2_request.c
 "$(INTDIR)\h2_request.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=./h2_response.c
-
-"$(INTDIR)\h2_response.obj" : $(SOURCE) "$(INTDIR)"
-
-
 SOURCE=./h2_session.c
 
 "$(INTDIR)\h2_session.obj" : $(SOURCE) "$(INTDIR)"
@@ -543,24 +504,9 @@ SOURCE=./h2_task.c
 "$(INTDIR)\h2_task.obj" : $(SOURCE) "$(INTDIR)"
 
 
-SOURCE=./h2_task_input.c
-
-"$(INTDIR)\h2_task_input.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=./h2_task_output.c
-
-"$(INTDIR)\h2_task_output.obj" : $(SOURCE) "$(INTDIR)"
-
-
 SOURCE=./h2_util.c
 
 "$(INTDIR)\h2_util.obj" : $(SOURCE) "$(INTDIR)"
-
-
-SOURCE=./h2_worker.c
-
-"$(INTDIR)\h2_worker.obj" : $(SOURCE) "$(INTDIR)"
 
 
 SOURCE=./h2_workers.c
@@ -574,14 +520,14 @@ SOURCE=..\..\build\win32\httpd.rc
 
 
 "$(INTDIR)\mod_http2.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_http2.res" /i "../../include" /i "../../srclib/apr/include" /i "\local0\asf\build\httpd-2.4\build\win32" /d "NDEBUG" /d BIN_NAME="mod_http2.so" /d LONG_NAME="http2_module for Apache" $(SOURCE)
+	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_http2.res" /i "../../include" /i "../../srclib/apr/include" /i "../../build\win32" /d "NDEBUG" /d BIN_NAME="mod_http2.so" /d LONG_NAME="http2_module for Apache" $(SOURCE)
 
 
 !ELSEIF  "$(CFG)" == "mod_http2 - Win32 Debug"
 
 
 "$(INTDIR)\mod_http2.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_http2.res" /i "../../include" /i "../../srclib/apr/include" /i "\local0\asf\build\httpd-2.4\build\win32" /d "_DEBUG" /d BIN_NAME="mod_http2.so" /d LONG_NAME="http2_module for Apache" $(SOURCE)
+	$(RSC) /l 0x409 /fo"$(INTDIR)\mod_http2.res" /i "../../include" /i "../../srclib/apr/include" /i "../../build\win32" /d "_DEBUG" /d BIN_NAME="mod_http2.so" /d LONG_NAME="http2_module for Apache" $(SOURCE)
 
 
 !ENDIF 

@@ -128,7 +128,7 @@
     <p>Further details, discussion, and examples, are provided in the
     <a href="../caching.html">Caching Guide</a>.</p>
 </div>
-<div id="quickview"><h3>Topics</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3>Topics</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#related">Related Modules and Directives</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#sampleconf">Sample Configuration</a></li>
@@ -160,10 +160,10 @@
 <li><img alt="" src="../images/down.gif" /> <a href="#cachestorenostore">CacheStoreNoStore</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#cachestoreprivate">CacheStorePrivate</a></li>
 </ul>
-<h3>See also</h3>
+<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mod_cache">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mod_cache">Report a bug</a></li></ul><h3>See also</h3>
 <ul class="seealso">
 <li><a href="../caching.html">Caching Guide</a></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+<li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="related" id="related">Related Modules and Directives</a></h2>
@@ -709,10 +709,10 @@ header.</td></tr>
       <li><code>/someapplication/image.gif;jsessionid=123456789</code></li>
       <li><code>/someapplication/image.gif?PHPSESSIONID=12345678</code></li>
     </ul>
-    <p>This causes cachable resources to be stored separately for each session, which
+    <p>This causes cacheable resources to be stored separately for each session, which
     is often not desired. <code class="directive">CacheIgnoreURLSessionIdentifiers</code> lets
     define a list of identifiers that are removed from the key that is used to identify
-    an entity in the cache, such that cachable resources are not stored separately for
+    an entity in the cache, such that cacheable resources are not stored separately for
     each session.
     </p>
     <p><code>CacheIgnoreURLSessionIdentifiers None</code> clears the list of ignored
@@ -861,7 +861,7 @@ CacheLock on</pre>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_cache</td></tr>
 </table>
     <p>The <code class="directive">CacheMaxExpire</code> directive specifies the maximum number of
-    seconds for which cachable HTTP documents will be retained without checking the origin
+    seconds for which cacheable HTTP documents will be retained without checking the origin
     server. Thus, documents will be out of date at most this number of seconds. This maximum
     value is enforced even if an expiry date was supplied with the document.</p>
 
@@ -880,7 +880,7 @@ CacheLock on</pre>
 <tr><th><a href="directive-dict.html#Module">Module:</a></th><td>mod_cache</td></tr>
 </table>
     <p>The <code class="directive">CacheMinExpire</code> directive specifies the minimum number of
-    seconds for which cachable HTTP documents will be retained without checking the origin
+    seconds for which cacheable HTTP documents will be retained without checking the origin
     server. This is only used if no valid expire time was supplied with the document.</p>
 
 
@@ -1070,7 +1070,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_cache.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2017 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

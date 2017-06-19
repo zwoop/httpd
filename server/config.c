@@ -15,7 +15,7 @@
  */
 
 /*
- * http_config.c: once was auxillary functions for reading httpd's config
+ * http_config.c: once was auxiliary functions for reading httpd's config
  * file and converting filenames into a namespace
  *
  * Rob McCool
@@ -737,7 +737,7 @@ AP_DECLARE(void) ap_remove_loaded_module(module *mod)
      *
      *  Note: 1. We cannot determine if the module was successfully
      *           removed by ap_remove_module().
-     *        2. We have not to complain explicity when the module
+     *        2. We have not to complain explicitly when the module
      *           is not found because ap_remove_module() did it
      *           for us already.
      */
@@ -1115,7 +1115,11 @@ static const char *ap_build_config_sub(apr_pool_t *p, apr_pool_t *temp_pool,
     args = ap_resolve_env(temp_pool, l);
 #endif
 
-    cmd_name = ap_getword_conf(p, &args);
+    /* The first word is the name of a directive.  We can safely use the
+     * 'temp_pool' for it.  If it matches the name of a known directive, we
+     * can reference the string within the module if needed.  Otherwise, we
+     * can still make a copy in the 'p' pool. */
+    cmd_name = ap_getword_conf(temp_pool, &args);
     if (*cmd_name == '\0') {
         /* Note: this branch should not occur. An empty line should have
          * triggered the exit further above.
@@ -1136,10 +1140,11 @@ static const char *ap_build_config_sub(apr_pool_t *p, apr_pool_t *temp_pool,
     newdir = apr_pcalloc(p, sizeof(ap_directive_t));
     newdir->filename = parms->config_file->name;
     newdir->line_num = parms->config_file->line_number;
-    newdir->directive = cmd_name;
     newdir->args = apr_pstrdup(p, args);
 
     if ((cmd = ap_find_command_in_modules(cmd_name, &mod)) != NULL) {
+        newdir->directive = cmd->name;
+        
         if (cmd->req_override & EXEC_ON_READ) {
             ap_directive_t *sub_tree = NULL;
 
@@ -1173,6 +1178,11 @@ static const char *ap_build_config_sub(apr_pool_t *p, apr_pool_t *temp_pool,
             return retval;
         }
     }
+    else {
+        /* No known directive found?  Make a copy of what we have parsed. */
+        newdir->directive = apr_pstrdup(p, cmd_name);
+    }
+
 
     if (cmd_name[0] == '<') {
         if (cmd_name[1] != '/') {
@@ -1316,7 +1326,7 @@ static const char *ap_walk_config_sub(const ap_directive_t *current,
         if (retval != NULL && strcmp(retval, DECLINE_CMD) != 0) {
             /* If the directive in error has already been set, don't
              * replace it.  Otherwise, an error inside a container
-             * will be reported as occuring on the first line of the
+             * will be reported as occurring on the first line of the
              * container.
              */
             if (!parms->err_directive) {
@@ -1780,6 +1790,54 @@ static int fname_alphasort(const void *fn1, const void *fn2)
     return strcmp(f1->fname,f2->fname);
 }
 
+/**
+ * Used by -D DUMP_INCLUDES to output the config file "tree".
+ */
+static void dump_config_name(const char *fname, apr_pool_t *p)
+{
+    unsigned i, recursion, line_number;
+    void *data;
+    apr_file_t *out = NULL;
+
+    apr_file_open_stdout(&out, p);
+
+    /* ap_include_sentinel is defined by the core Include directive; use it to
+     * figure out how deep in the stack we are.
+     */
+    apr_pool_userdata_get(&data, "ap_include_sentinel", p);
+
+    if (data) {
+        recursion = *(unsigned *)data;
+    } else {
+        recursion = 0;
+    }
+
+    /* Indent once for each level. */
+    for (i = 0; i < (recursion + 1); ++i) {
+        apr_file_printf(out, "  ");
+    }
+
+    /* ap_include_lineno is similarly defined to tell us where in the last
+     * config file we were.
+     */
+    apr_pool_userdata_get(&data, "ap_include_lineno", p);
+
+    if (data) {
+        line_number = *(unsigned *)data;
+    } else {
+        line_number = 0;
+    }
+
+    /* Print the line number and the name of the parsed file. */
+    if (line_number > 0) {
+        apr_file_printf(out, "(%u)", line_number);
+    } else {
+        apr_file_printf(out, "(*)");
+    }
+
+    apr_file_printf(out, " %s\n", fname);
+}
+
 AP_DECLARE(const char *) ap_process_resource_config(server_rec *s,
                                                     const char *fname,
                                                     ap_directive_t **conftree,
@@ -1802,6 +1860,10 @@ AP_DECLARE(const char *) ap_process_resource_config(server_rec *s,
     if (rv != APR_SUCCESS) {
         return apr_psprintf(p, "Could not open configuration file %s: %pm",
                             fname, &rv);
+    }
+
+    if (ap_exists_config_define("DUMP_INCLUDES")) {
+        dump_config_name(fname, p);
     }
 
     parms.config_file = cfp;
@@ -2396,6 +2458,16 @@ AP_DECLARE(server_rec*) ap_read_config(process_rec *process, apr_pool_t *ptemp,
     }
 
     init_config_globals(p);
+
+    if (ap_exists_config_define("DUMP_INCLUDES")) {
+        apr_file_t *out = NULL;
+        apr_file_open_stdout(&out, p);
+
+        /* Included files will be dumped as the config is walked; print a
+         * header.
+         */
+        apr_file_printf(out, "Included configuration files:\n");
+    }
 
     /* All server-wide config files now have the SAME syntax... */
     error = process_command_config(s, ap_server_pre_read_config, conftree,

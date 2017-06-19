@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.tr.xsl"?>
-<!-- English Revision: 1707631 -->
+<!-- English Revision: 1772336 -->
 <!-- =====================================================
  Translated by: Nilgün Belma Bugüner <nilgun belgeler.gen.tr>
    Reviewed by: Orhan Berent <berent belgeler.gen.tr>
@@ -109,7 +109,7 @@
     <p>Bu kancayı kullanan iki modül (<code>mod_whatkilledus</code> ve
     <code>mod_backtrace</code>) zaten vardır. bunlar hakkında daha fazla bilgi
       edinmek için Jeff Trawick'in <a
-      href="http://people.apache.org/~trawick/exception_hook.html"
+      href="https://emptyhammock.com/projects/httpd/diag/"
       >EnableExceptionHook site</a>sine bakabilirsiniz.</p>
 </usage>
 </directivesynopsis>
@@ -288,6 +288,14 @@ açıklaması</a></seealso>
       her çocuk süreç tek bir buketle çalışır (çocukların oluşturulması
       sırasında buketler döner dağılımla eşleştirilir).</p>
 
+    <note><title>"çevrimiçi" İşlemci çekirdek sayısının anlamı</title>
+    <p>Linux için (ve ayrıca BSD) bir işlemci çekirdeği <a 
+      href="https://www.kernel.org/doc/Documentation/cpu-
+      hotplug.txt">Hotplug</a> yapılandırılarak açılıp kapatıalbilir. 
+      Dolayısıyla, <directive>ListenCoresBucketsRatio</directive> yönergesi 
+      oluşturulacak buket sayısını hesaplarken bu yapılandırmayı esas alır.</p>
+    </note>
+
     <p><directive>ListenCoresBucketsRatio</directive> yeni bağlantılar kabul
       edilirken/darboğazlar oluşurken ölçeklenebilirliği arttırabilir. Çok
       sayıda işlemci çekirdekli sistemlerde bu özelliğin etkinleştirilmesinin
@@ -297,7 +305,10 @@ açıklaması</a></seealso>
     <p>Bu <var>oran</var>ın etkin olabilmesi için işlemci çekirdeği çift sayıda
       olmalıdır. <var>oran</var> için önerilen değer <code>8</code> olup bu
       durumda çalışma anında en azından <code>16</code> çekirdek
-      kullanılabiliyor olmalıdır.</p>
+      kullanılabiliyor olmalıdır. En iyi başarımı elde etmek gereken 
+      <var>oran</var> her sistem için hesaplanmalı, çok sayıda değer denenmeli 
+      ve başlıca başarım ölçütlerinizin çeşitli sonuçları iyi gözlemlenmelidir. 
+      </p>
 </usage>
 </directivesynopsis>
 
@@ -438,7 +449,9 @@ açıklaması</a></seealso>
       <code>MaxSpareThreads 250</code> öntanımlıdır. Bu MPM'ler boştaki
       evreleri sunucu genelinde izler. Eğer sunucuda çok fazla boşta evre
       varsa, sunucu boştaki evrelerin sayısı bu sınırın altına inene kadar
-      çocuk süreçleri öldürür.</p>
+      çocuk süreçleri öldürür. 
+      <directive module="mpm_common">ListenCoresBucketsRatio</directive> 
+      yönergesi etkinse ek süreçler/evreler oluşabilir.</p>
 
     <p><module>mpm_netware</module> için <code>MaxSpareThreads 100</code>
       öntanımlıdır. Bu MPM tek bir süreç olarak çalıştığından boştaki evre
@@ -488,7 +501,9 @@ açıklaması</a></seealso>
       <code>MinSpareThreads 75</code> öntanımlıdır ve bu modül boştaki evreleri
       sunucu genelinde izler. Eğer sunucuda boştaki evre sayısı yetersizse,
       sunucu, boştaki evrelerin sayısı bu sınırın üstüne çıkana kadar çocuk
-      süreç oluşturur.</p>
+      süreç oluşturur.
+      <directive module="mpm_common">ListenCoresBucketsRatio</directive> 
+      yönergesi etkinse ek süreçler/evreler oluşabilir.</p>
 
     <p><module>mpm_netware</module> için <code>MinSpareThreads 10</code>
       öntanımlıdır ve tek süreç kendisi olduğundan izleme sunucu genelinde
@@ -616,7 +631,9 @@ ScoreBoardFile /var/run/apache_status
       olduğunda ise, Apache httpd sürecinin ömrü boyunca <directive
       module="mpm_common">MaxRequestWorkers</directive> yönergesine
       atanabilecek  azami değeri <directive module="mpm_common"
-      >ThreadLimit</directive> ile birlikte belirler. Bu yönergeyi bir yeniden
+      >ThreadLimit</directive> ile birlikte belirler. <module>event</module> modülü 
+      için bu yönerge kaç eski sunucunun çalışmayı sürdüreceğini ve kaçının açık 
+      bağlantıları işlemeyi bitireceğini belirler. Bu yönergeyi bir yeniden
       başlatma sırasında değiştirirseniz bu değişiklik yok sayılır fakat
       <directive module="mpm_common">MaxRequestWorkers</directive>
       değişiklikleri dikkate alınır.</p>
@@ -635,8 +652,7 @@ ScoreBoardFile /var/run/apache_status
       <directive module="mpm_common">MaxRequestWorkers</directive> için atamak
       istediğiniz değerden fazlasını atamayınız.</p>
 
-    <p><module>worker</module> ve <module>event</module> modülü söz konusu
-      olduğunda bu yönergeyi
+    <p><module>worker</module> modülü söz konusu olduğunda bu yönergeyi
       <directive module="mpm_common">MaxRequestWorkers</directive> ve
       <directive module="mpm_common">ThreadsPerChild</directive> ayarları 16
       sunucu sürecinden (16 öntanımlıdır) fazlasını gerektiriyorsa
@@ -645,7 +661,13 @@ ScoreBoardFile /var/run/apache_status
       >ThreadsPerChild</directive> için gerekli gördüğünüz sunucu süreci
       sayısından fazlasını atamayınız.</p>
 
-    <note><title>Ek Bilgi</title>
+    <p><module>event</module> modülü söz konusu olduğunda, <directive
+      module="mpm_common">MaxRequestWorkers</directive> ve <directive
+      module="mpm_common">ThreadsPerChild</directive> yönergeleri ile belirlenen 
+      süreç sayısına ek olarak zarifçe kapatılan süreçlerin sayısıyla arttırıp 16
+      sunucu sürecinden (16 öntanımlıdır) fazlasına ayarlayınız.</p>
+
+     <note><title>Ek Bilgi</title>
       <p>Sunucu içinde derlenmiş olarak <code>ServerLimit 20000</code>
         şeklinde bir zorlayıcı sınır vardır (<module>prefork</module> için
         200000’dir). Bu önlem, yazım hatalarının istenmeyen sonuçlara yol

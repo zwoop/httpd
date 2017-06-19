@@ -32,6 +32,7 @@
       <modulelist>
         <module>mod_alias</module>
         <module>mod_cgi</module>
+        <module>mod_cgid</module>
       </modulelist>
 
       <directivelist>
@@ -44,8 +45,9 @@
     <p>The CGI (Common Gateway Interface) defines a way for a web
     server to interact with external content-generating programs,
     which are often referred to as CGI programs or CGI scripts. It
-    is the simplest, and most common, way to put dynamic content on
-    your web site. This document will be an introduction to setting
+    is a simple way to put dynamic content on
+    your web site, using whatever programming language you're most
+    familiar with. This document will be an introduction to setting
     up CGI on your Apache web server, and getting started writing
     CGI programs.</p>
   </section>
@@ -65,8 +67,17 @@
     may look like this:
 
     <highlight language="config">
+      LoadModule cgid_module modules/mod_cgid.so
+    </highlight>
+
+
+     On Windows, or using a non-threaded MPM like prefork,  A correctly 
+     configured directive may look like this:
+
+    <highlight language="config">
       LoadModule cgi_module modules/mod_cgi.so
     </highlight></note>
+
 
     <section id="scriptalias">
       <title>ScriptAlias</title>

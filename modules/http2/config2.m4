@@ -20,7 +20,7 @@ dnl #  list of module object files
 http2_objs="dnl
 mod_http2.lo dnl
 h2_alt_svc.lo dnl
-h2_bucket_eoc.lo dnl
+h2_bucket_beam.lo dnl
 h2_bucket_eos.lo dnl
 h2_config.lo dnl
 h2_conn.lo dnl
@@ -29,22 +29,16 @@ h2_ctx.lo dnl
 h2_filter.lo dnl
 h2_from_h1.lo dnl
 h2_h2.lo dnl
-h2_int_queue.lo dnl
-h2_io.lo dnl
-h2_io_set.lo dnl
+h2_headers.lo dnl
 h2_mplx.lo dnl
 h2_ngn_shed.lo dnl
 h2_push.lo dnl
 h2_request.lo dnl
-h2_response.lo dnl
 h2_session.lo dnl
 h2_stream.lo dnl
 h2_switch.lo dnl
 h2_task.lo dnl
-h2_task_input.lo dnl
-h2_task_output.lo dnl
 h2_util.lo dnl
-h2_worker.lo dnl
 h2_workers.lo dnl
 "
 
@@ -104,7 +98,6 @@ AC_DEFUN([APACHE_CHECK_NGHTTP2],[
         pkglookup="`$PKGCONFIG --cflags-only-I libnghttp2`"
         APR_ADDTO(CPPFLAGS, [$pkglookup])
         APR_ADDTO(MOD_CFLAGS, [$pkglookup])
-        APR_ADDTO(ab_CFLAGS, [$pkglookup])
         pkglookup="`$PKGCONFIG $PKGCONFIG_LIBOPTS --libs-only-L libnghttp2`"
         APR_ADDTO(LDFLAGS, [$pkglookup])
         APR_ADDTO(MOD_LDFLAGS, [$pkglookup])
@@ -119,7 +112,6 @@ AC_DEFUN([APACHE_CHECK_NGHTTP2],[
     if test "x$ap_nghttp2_base" != "x" -a "x$ap_nghttp2_found" = "x"; then
       APR_ADDTO(CPPFLAGS, [-I$ap_nghttp2_base/include])
       APR_ADDTO(MOD_CFLAGS, [-I$ap_nghttp2_base/include])
-      APR_ADDTO(ab_CFLAGS, [-I$ap_nghttp2_base/include])
       APR_ADDTO(LDFLAGS, [-L$ap_nghttp2_base/lib])
       APR_ADDTO(MOD_LDFLAGS, [-L$ap_nghttp2_base/lib])
       if test "x$ap_platform_runtime_link_flag" != "x"; then
@@ -144,9 +136,6 @@ AC_DEFUN([APACHE_CHECK_NGHTTP2],[
       ap_nghttp2_libs="${ap_nghttp2_libs:--lnghttp2} `$apr_config --libs`"
       APR_ADDTO(MOD_LDFLAGS, [$ap_nghttp2_libs])
       APR_ADDTO(LIBS, [$ap_nghttp2_libs])
-      APR_SETVAR(ab_LDFLAGS, [$MOD_LDFLAGS])
-      APACHE_SUBST(ab_CFLAGS)
-      APACHE_SUBST(ab_LDFLAGS)
 
       dnl Run library and function checks
       liberrors=""
@@ -163,6 +152,12 @@ dnl # nghttp2 >= 1.3.0: access to stream weights
 dnl # nghttp2 >= 1.5.0: changing stream priorities
       AC_CHECK_FUNCS([nghttp2_session_change_stream_priority], 
         [APR_ADDTO(MOD_CPPFLAGS, ["-DH2_NG2_CHANGE_PRIO"])], [])
+dnl # nghttp2 >= 1.14.0: invalid header callback
+      AC_CHECK_FUNCS([nghttp2_session_callbacks_set_on_invalid_header_callback], 
+        [APR_ADDTO(MOD_CPPFLAGS, ["-DH2_NG2_INVALID_HEADER_CB"])], [])
+dnl # nghttp2 >= 1.15.0: get/set stream window sizes
+      AC_CHECK_FUNCS([nghttp2_session_get_stream_local_window_size], 
+        [APR_ADDTO(MOD_CPPFLAGS, ["-DH2_NG2_LOCAL_WIN_SIZE"])], [])
     else
       AC_MSG_WARN([nghttp2 version is too old])
     fi
@@ -204,6 +199,29 @@ is usually linked shared and requires loading. ], $http2_objs, , most, [
 # icing: hold back for now until it is more stable
 #APR_ADDTO(INCLUDES, [-I\$(top_srcdir)/$modpath_current])
 
+
+
+dnl #  list of module object files
+proxy_http2_objs="dnl
+mod_proxy_http2.lo dnl
+h2_proxy_session.lo dnl
+h2_proxy_util.lo dnl
+"
+
+dnl # hook module into the Autoconf mechanism (--enable-proxy_http2)
+APACHE_MODULE(proxy_http2, [HTTP/2 proxy module. This module requires a libnghttp2 installation. 
+See --with-nghttp2 on how to manage non-standard locations. Also requires --enable-proxy.], $proxy_http2_objs, , no, [
+    APACHE_CHECK_NGHTTP2
+    if test "$ac_cv_nghttp2" = "yes" ; then
+        if test "x$enable_http2" = "xshared"; then
+           # The only symbol which needs to be exported is the module
+           # structure, so ask libtool to hide everything else:
+           APR_ADDTO(MOD_PROXY_HTTP2_LDADD, [-export-symbols-regex proxy_http2_module])
+        fi
+    else
+        enable_proxy_http2=no
+    fi
+], proxy)
 
 
 dnl #  end of module specific part

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1736594 -->
+<!-- English Revision: 1796151 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -90,23 +90,17 @@ AcceptFilter https data
     <code>none</code> active le filtre <code>TCP_DEFER_ACCEPT</code>
     pour ce protocole. Pour plus de détails, voir la page de
     manuel Linux de <a
-    href="http://homepages.cwi.nl/~aeb/linux/man2html/man7/
-    tcp.7.html">tcp(7)</a>.</p>
+    href="http://man7.org/linux/man-pages/man7/tcp.7.html">tcp(7)</a>.</p>
 
     <p>Sous Windows, les valeurs par défaut sont :</p>
     <highlight language="config">
-AcceptFilter http data
-AcceptFilter https data
+AcceptFilter http connect
+AcceptFilter https connect
     </highlight>
 
     <p>Le module MPM pour Windows mpm_winnt utilise la directive
     AcceptFilter comme commutateur de l'API AcceptEx(), et ne supporte
-    pas la mise en tampon du protocole http. Deux valeurs utilisent
-    l'API Windows AcceptEx() et vont recycler les sockets réseau entre
-    les connexions. <code>data</code> attend jusqu'à ce que les données
-    aient été transmises comme décrit plus haut, et le tampon de données
-    initiales ainsi que les adresses réseau finales sont tous extraits
-    grâce à une seule invocation d'AcceptEx(). <code>connect</code>
+    pas la mise en tampon du protocole http. <code>connect</code>
     utilise l'API AcceptEx(), extrait aussi les adresses réseau finales,
     mais à l'instar de <code>none</code>, la valeur <code>connect</code>
     n'attend pas la transmission des données initiales.</p>
@@ -117,6 +111,23 @@ AcceptFilter https data
     défectueux, ainsi que pour certains fournisseurs de réseau comme les
     pilotes vpn, ou les filtres anti-spam, anti-virus ou
     anti-spyware.</p>
+
+    <note type="warning">
+      <title>L'AcceptFilter <code>data</code> (Windows)</title>
+
+      <p>Jusqu'à la version 2.4.23, le filtre d'acceptation <code>data</code>
+      attendait que des données aient été transmises et que le tampon de données
+      initial et l'adresse réseau finale aient été déterminés par l'invocation
+      AcceptEx(). Cette implémentation étant vulnérable à une attaque de type
+      denial of service, elle a été désactivée.</p>
+
+      <p>La version actuelle de httpd prend par défaut le filtre
+      <code>connect</code> sous Windows, et reprendra la valeur
+      <code>data</code> si <code>data</code> est spécifié. Il est fortement
+      conseillé aux utilisateurs des versions plus anciennes de définir
+      explicitement le filtre <code>connect</code> pour leurs AcceptFilter
+      comme indiqué plus haut.</p>
+    </note>
 
 </usage>
 <seealso><directive module="core">Protocol</directive></seealso>
@@ -653,6 +664,33 @@ Apache</compatibility>
 </directivesynopsis>
 
 <directivesynopsis>
+<name>CGIVar</name>
+<description>Contrôle la manière dont certaines variables CGI sont définies</description>
+<syntax>CGIVar <var>variable</var> <var>rule</var></syntax>
+<contextlist><context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>FileInfo</override>
+<compatibility>Disponible à partir de la version 2.4.21 du serveur HTTP Apache</compatibility>
+
+<usage>
+  <p>Cette directive permet de contrôler la manière dont certaines variables CGI
+  sont définies.</p>
+
+  <p>règles <strong>REQUEST_URI</strong> :</p>
+  <dl>
+    <dt><code>original-uri</code> (valeur par défaut)</dt>
+    <dd>La valeur est extraite de la requête originale, et ne tient pas compte
+    des redirections internes ou des sous-requêtes qui pourraient modifier la
+    ressource demandée.</dd>
+    <dt><code>current-uri</code></dt>
+    <dd>La valeur reflète la ressource en cours de traitement ; elle peut être
+    différente de la ressource demandée dans la requête initiale du client suite à
+    d'éventuelles redirections internes ou sous-requêtes.</dd>
+  </dl>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
 <name>ContentDigest</name>
 <description>Active la génération d'un en-tête <code>Content-MD5</code>
 dans la réponse HTTP</description>
@@ -812,7 +850,16 @@ DocumentRoot "/var/www/${servername}/htdocs"
     <p>Le caractère ":" est interdit dans les noms de variables afin
     d'éviter les conflits avec la syntaxe de la directive <directive
     module="mod_rewrite">RewriteMap</directive>.</p>
+
+    <p>Si cette directive est définie au sein d'un bloc VirtualHost, les
+    changements qu'elle induit sont visibles de toute directive
+    ultérieure, au delà de tout bloc VirtualHost. Le support des autres sections
+    de configuration a été permis par erreur par l'implémentation initiale de
+    cette directive, et n'est conservé (avec des effets imprévisibles) que dans un
+    but de compatibilité ascendante.</p>
 </usage>
+<seealso><directive module="core">UnDefine</directive></seealso>
+<seealso><directive module="core">IfDefine</directive></seealso>
 </directivesynopsis>
 
 <directivesynopsis type="section">
@@ -820,7 +867,7 @@ DocumentRoot "/var/www/${servername}/htdocs"
 <description>Regroupe un ensemble de directives qui ne s'appliquent
 qu'au répertoire concerné du système de fichiers, à ses
 sous-répertoires, et à leur contenu.</description>
-<syntax>&lt;Directory "<var>chemin répertoire</var>"&gt;
+<syntax>&lt;Directory <var>chemin répertoire</var>&gt;
 ... &lt;/Directory&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
@@ -1081,6 +1128,8 @@ requête à l'exécution</description>
 <context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>All</override>
+<compatibility>Les conditions imbriquées sont supportées à partir de la version
+2.4.26 du serveur HTTP Apache</compatibility>
 
 <usage>
     <p>La section <directive type="section">Else</directive> applique
@@ -1128,6 +1177,8 @@ type="section">ElseIf</directive> précédente ne l'était pas.</description>
 <context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>All</override>
+<compatibility>Les conditions imbriquées sont supportées à partir de la version
+2.4.26 du serveur HTTP Apache</compatibility>
 
 <usage>
     <p>La section <directive type="section">ElseIf</directive> applique
@@ -1290,6 +1341,145 @@ host</context>
     définition de <directive>EnableSendfile</directive> que dans un
     contexte global.
     </p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>HttpProtocolOptions</name>
+<description>Modifie les contraintes sur les messages des requêtes HTTP</description>
+<syntax>HttpProtocolOptions [Strict|Unsafe] [RegisteredMethods|LenientMethods]
+ [Allow0.9|Require1.0]</syntax>
+<default>HttpProtocolOptions Strict LenientMethods Allow0.9</default>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Disponible à partir des versions 2.2.32 et 2.4.24 du serveur HTTP
+Apache</compatibility>
+
+<usage>
+    <p>Cette directive permet de modifier les règles qui s'appliquent à la ligne
+    de requête HTTP (<a
+    href="https://tools.ietf.org/html/rfc7230#section-3.1.1">RFC 7230
+    &sect;3.1.1</a>) et aux champs des en-têtes des requêtes HTTP (<a
+    href="https://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230
+    &sect;3.2</a>), qui s'appliquent maintenant par défaut ou en utilisant
+    l'option <code>Strict</code>. L'option <code>Unsafe</code>
+    a été ajoutée pour pouvoir restaurer les anciens
+    comportements nécessaires aux anciens modules et applications et aux agents
+    utilisateurs personnalisés considérés comme obsolètes.</p>
+
+    <p>Ces règles
+    s'appliquant avant le traitement de la requête, elles doivent, pour être prises en
+    compte, être définies
+    au niveau global ou dans la première section par défaut du serveur virtuel
+    qui correspond à la requête considérée, par interface IP/port et non par
+    nom.</p>
+
+    <p>Cette directive accepte trois paramètres issus de la liste suivante, ceux
+    qui ne sont pas spécifiés prenant leur valeur par défaut :</p>
+
+    <dl>
+    <dt>Strict|Unsafe</dt>
+    <dd>
+    <p>Avant l'introduction de cette directive, les interpréteurs de requêtes du
+    serveur HTTP Apache toléraient un grand nombre de formats en entrée qui
+    n'étaient pas forcément conformes au protocole. <a
+    href="https://tools.ietf.org/html/rfc7230#section-9.4">RFC 7230 &sect;9.4
+    Request Splitting</a> et <a
+    href="https://tools.ietf.org/html/rfc7230#section-9.5">&sect;9.5 Response
+    Smuggling</a> ne rappellent que deux des risques potentiels induits par des
+    requêtes non conformes, alors que <a
+    href="https://tools.ietf.org/html/rfc7230#section-3.5">RFC 7230
+    &sect;3.5</a> signale les risques encourus par l'acceptation de blancs non
+    conformes dans les lignes de requête. Avec l'introduction de cette
+    directive, toutes les règles de grammaire de la spécification doivent être
+    respectées dans le mode d'opérations par défaut <code>Strict</code>.</p>
+
+    <note type="warning"><title>Risques de sécurité liés au mode Unsafe</title>
+    <p>Il est fortement déconseillé aux utilisateurs d'utiliser le mode
+    d'opération <code>Unsafe</code>, ou
+    <code>UnsafeWhitespace</code>, en particulier pour les déploiements de
+    serveurs ouverts sur l'extérieur et/ou accessibles au public. Si un moniteur
+    défectueux ou autre logiciel spécialisé ne s'exécutant que sur un intranet
+    nécessite une interface, les utilisateurs ne doivent utiliser les options de
+    type UnSafe qu'en cas de nécessité et uniquement au sein d'un serveur
+    virtuel bien spécifique et sur un réseau privé.</p>
+    </note>
+
+    <example>
+        <title>Exemple de requête provoquant l'envoi d'un message HTTP 400 en
+	mode Strict</title>
+        # Missing CRLF<br />
+        GET / HTTP/1.0\n\n
+      </example>
+      <note type="warning"><title>Utilitaires en ligne de commande et CRLF</title>
+        <p>Il peut s'avérer nécessaire de forcer certains utilitaires à utiliser
+	CRLF ; si ce n'est pas le cas, httpd reverra une réponse HTTP 400 comme
+	dans le cas précédent. Par exemple, le <strong>client OpenSSL s_client
+	doit utiliser le paramètre -crlf pour fonctionner correctement</strong>.</p>
+        <p>Pour détecter des problèmes tels que l'absence de CRLF, vous pouvez
+	utiliser la directive <directive
+	module="mod_dumpio">DumpIOInput</directive> qui permet de décortiquer
+	les requêtes HTTP.</p>
+      </note>
+    </dd>
+    <dt>RegisteredMethods|LenientMethods</dt>
+    <dd>
+    <p>La section de la <a
+    href="https://tools.ietf.org/html/rfc7231#section-4.1">RFC 7231
+    &sect;4.1</a> "Request Methods" "Overview" indique que les serveurs doivent
+    renvoyer un message d'erreur lorsque la ligne de requête comporte une
+    méthode non supportée. C'est déjà le cas lorsque l'option
+    <code>LenientMethods</code> est utilisée, mais les administrateurs ont la
+    possibilité de limiter les méthodes utilisées via l'option
+    <code>RegisteredMethods</code> en enregistrant toute méthode non standard
+    via la directive <directive>RegisterHttpMethod</directive>, en particulier
+    si l'option <code>Unsafe</code> est utilisée.</p>
+
+    <note type="warning"><title>Compatibilité avec le mandat direct</title>
+    <p>L'option
+    <code>RegisteredMethods</code> <strong>ne doit pas</strong> être utilisée
+    pour les serveurs mandataires car ces derniers ne connaissent pas les
+    méthodes supportées par les serveurs originaux.</p>
+    </note>
+
+    <example>
+        <title>Exemple de requête provoquant l'envoi d'un message HTTP 501 en
+	mode LenientMethods</title>
+        # Méthode HTTP inconnue<br />
+        WOW / HTTP/1.0\r\n\r\n<br /><br />
+        # Méthode HTTP spécifiée en minuscules<br />
+        get / HTTP/1.0\r\n\r\n<br />
+      </example>
+      </dd>
+      <dt>Allow0.9|Require1.0</dt>
+      <dd>
+    <p>La section de la <a
+    href="https://tools.ietf.org/html/rfc2616#section-19.6">RFC 2616
+    &sect;19.6</a> "Compatibility With Previous Versions" encouragait les
+    serveurs HTTP à supporter les anciennes requêtes HTTP/0.9. La RFC 7230 va
+    cependant à son encontre via sa préconisation "Le souhait de supporter les
+    requêtes HTTP/0.9 a été supprimé" et y adjoint des commentaires dans <a
+    href="https://tools.ietf.org/html/rfc7230#appendix-A">RFC 7230 Appendix
+    A</a>. A ce titre, l'option <code>Require1.0</code> permet à l'utilisateur
+    d'inhiber le comportement induit par l'option par défaut
+    <code>Allow0.9</code>.</p>
+
+    <example>
+        <title>Exemple de requête provoquant l'envoi d'un message HTTP 400 en
+	mode Require1.0</title>
+        # Version HTTP non supportée<br />
+        GET /\r\n\r\n
+      </example>
+    </dd>
+    </dl>
+
+    <p>La consultation des messages enregistrés dans le journal
+    <directive>ErrorLog</directive>, configuré via la directive
+    <directive>LogLevel</directive> avec un niveau <code>info</code>, pourra
+    vous aider à identifier de telles requêtes non conformes ainsi que leur
+    provenance. Les utilisateurs devront accorder une attention particulière aux
+    messages d'erreur de type 400 dans le journal access pour détecter les
+    requêtes apparemment valides mais rejetées.</p>    
 </usage>
 </directivesynopsis>
 
@@ -1872,7 +2062,7 @@ dans les versions 2.3.14 et antérieures.</compatibility>
 <name>Files</name>
 <description>Contient des directives qui s'appliquent aux fichiers
 précisés</description>
-<syntax>&lt;Files "<var>nom fichier</var>"&gt; ... &lt;/Files&gt;</syntax>
+<syntax>&lt;Files <var>nom fichier</var>&gt; ... &lt;/Files&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
 <context>directory</context><context>.htaccess</context>
@@ -2157,6 +2347,8 @@ host</context>
 <context>directory</context><context>.htaccess</context>
 </contextlist>
 <override>All</override>
+<compatibility>Les conditions imbriquées sont supportées à partir de la version
+2.4.26 du serveur HTTP Apache</compatibility>
 
 <usage>
     <p>La directive <directive type="section">If</directive> évalue une
@@ -2877,7 +3069,7 @@ host</context>
 <description>N'applique les directives contenues qu'aux URLs
 spécifiées</description>
 <syntax>&lt;Location
-    "<var>chemin URL</var>|<var>URL</var>"&gt; ... &lt;/Location&gt;</syntax>
+    <var>chemin URL</var>|<var>URL</var>&gt; ... &lt;/Location&gt;</syntax>
 <contextlist><context>server config</context><context>virtual
 host</context>
 </contextlist>
@@ -3843,7 +4035,7 @@ host</context>
     <directive>Options</directive> peuvent s'appliquer à un répertoire,
     c'est la plus spécifique qui est utilisée et les autres sont
     ignorées ; les options ne sont pas fusionnées (voir <a
-    href="../sections.html#mergin">comment les sections sont
+    href="../sections.html#merging">comment les sections sont
     fusionnées</a>). Elles le sont cependant si <em>toutes</em> les
     options de la directive <directive>Options</directive> sont
     précédées d'un symbole <code>+</code> ou <code>-</code>. Toute
@@ -4305,8 +4497,8 @@ serveurs virtuels à base de nom</description>
     priorité particulière si le nom contient des caractères génériques
     (que ce soit pour ServerName ou ServerAlias).</p>
 
-    <p>Tous les noms spécifiés au sein d'une section
-    <directive>VirtualHost</directive> sont traités comme un
+    <p>Tous les noms spécifiés au sein d'une section <directive type="section"
+    module="core">VirtualHost</directive> sont traités comme un
     <directive>ServerAlias</directive> (sans caractères génériques).</p>
 
 </usage>
@@ -4330,17 +4522,16 @@ host</context>
     les protocole, nom d'hôte et port d'une requête que le serveur
     utilise pour s'authentifier lui-même.</p>
 
-    <p>La directive <directive>ServerName</directive> permet
-    (éventuellement en conjonction avec la directive
-    <directive>ServerAlias</directive>) d'identifier de manière unique
-    un serveur virtuel, lorsqu'elle est utilisée dans un contexte de <a
-    href="../vhosts/name-based.html">serveurs virtuels à base de
-    noms</a>.</p>
+    <p>La directive <directive>ServerName</directive> permet (éventuellement en
+    conjonction avec la directive <directive
+    module="core">ServerAlias</directive>) d'identifier de manière unique un
+    serveur virtuel, lorsqu'elle est utilisée dans un contexte de <a
+    href="../vhosts/name-based.html">serveurs virtuels à base de noms</a>.</p>
 
     <p>Cette directive est aussi utilisée lors de la création d'URLs de
-    redirection relatives quand la directive
-    <directive>UseCanonicalName</directive> est définie à une valeur autre que
-    la valeur par défaut.</p>
+    redirection relatives quand la directive <directive
+    module="core">UseCanonicalName</directive> est définie à une valeur autre
+    que la valeur par défaut.</p>
     
     <p>Par exemple, si le nom de la
     machine hébergeant le serveur web est
@@ -4745,8 +4936,8 @@ host</context></contextlist>
       maximum jusqu'à l'arrivée de l'accusé-réception d'un paquet si le
       tampon d'envoi est plein.</li>
 
-      <li>Avec <module>mod_cgi</module>, le temps d'attente maximum des
-      sorties d'un script CGI.</li>
+      <li>Avec <module>mod_cgi</module> et <module>mod_cgid</module>, le temps
+      d'attente maximum pour un bloc individuel en sortie d'un script CGI.</li>
 
       <li>Avec <module>mod_ext_filter</module>, le temps d'attente
       maximum des sorties d'un processus de filtrage.</li>
@@ -4781,18 +4972,18 @@ host</context></contextlist>
     peut autoriser l'ajout d'un corps de requête à l'aide de la
     définition non standard <code>TraceEnable extended</code>. Le noyau
     du serveur (dans le cas d'un serveur d'origine) va limiter la taille
-    du corps de requête à 64k (plus 8k pour les en-têtes de
+    du corps de requête à 64Kb (plus 8Kb pour les en-têtes de
     fractionnement si <code>Transfer-Encoding: chunked</code> est
     utilisé). Le noyau du serveur va reproduire l'ensemble des en-têtes,
     y compris les en-têtes de fractionnement avec le corps de la
     réponse. Dans le cas d'un serveur mandataire, la taille du corps de
-    requête n'est pas limitée à 64k.</p>
+    requête n'est pas limitée à 64Kb.</p>
 
     <note><title>Note</title>
-    <p>Bien que certains prétendent le contraire, <code>TRACE</code> ne
-    constitue pas une vulnérabilité en matière de sécurité, et il n'y a
-    aucune raison suffisante pour le désactiver, ce qui rendrait
-    votre serveur non conforme.</p>
+    <p>Bien que certains prétendent le contraire, activer la méthode
+    <code>TRACE</code> ne constitue pas un problème de sécurité dans Apache
+    httpd. La méthode <code>TRACE</code> est définie par la spécification
+    HTTP/1.1 et les différentes implémentations sont censées la supporter.</p>
     </note>
 </usage>
 </directivesynopsis>
@@ -4816,6 +5007,8 @@ host</context></contextlist>
     changements qu'elle induit sont visibles de toute directive
     ultérieure, au delà de tout bloc VirtualHost.</p>
 </usage>
+<seealso><directive module="core">Define</directive></seealso>
+<seealso><directive module="core">IfDefine</directive></seealso>
 </directivesynopsis>
 
 <directivesynopsis>
@@ -5117,6 +5310,23 @@ comme si la directive QualifyRedirectURL était définie à ON.</compatibility>
     soumise avec une URL pleinement qualifiée, la variable REDIRECT_URL
     contiendra quand-même une URL pleinement qualifiée.
     </p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>RegisterHttpMethod</name>
+<description>Enregistrement de méthodes HTTP non standards</description>
+<syntax>RegisterHttpMethod <var>méthode</var> [<var>méthode</var> [...]]</syntax>
+<contextlist><context>server config</context></contextlist>
+
+<usage>
+<p>Normalement, les méthodes HTTP non conformes aux RFCs correspondantes
+sont rejetées au cours du traitement de la requête par HTTPD. Pour
+éviter ceci, les modules peuvent enregistrer les méthodes HTTP non
+standards qu'ils supportent. La directive
+<directive>RegisterHttpMethod</directive> permet d'enregistrer de telles
+méthodes manuellement. Ceci peut s'avérer utile si de telle méthodes
+doivent être utilisées dans un traitement externe, comme un script CGI.</p>
 </usage>
 </directivesynopsis>
 

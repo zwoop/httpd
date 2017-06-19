@@ -309,7 +309,7 @@ extern "C" {
 
 /**
  * APR_HAS_LARGE_FILES introduces the problem of spliting sendfile into
- * mutiple buckets, no greater than MAX(apr_size_t), and more granular
+ * multiple buckets, no greater than MAX(apr_size_t), and more granular
  * than that in case the brigade code/filters attempt to read it directly.
  * ### 16mb is an invention, no idea if it is reasonable.
  */
@@ -354,7 +354,7 @@ extern "C" {
  * use by modules.  The difference between #AP_DECLARE and
  * #AP_DECLARE_NONSTD is that the latter is required for any functions
  * which use varargs or are used via indirect function call.  This
- * is to accomodate the two calling conventions in windows dlls.
+ * is to accommodate the two calling conventions in windows dlls.
  */
 # define AP_DECLARE_NONSTD(type)    type
 #endif
@@ -481,7 +481,7 @@ AP_DECLARE(const char *) ap_get_server_built(void);
  * When adding a new code here add it to status_lines as well.
  * A future version should dynamically generate the apr_table_t at startup.
  */
-#define RESPONSE_CODES 83
+#define RESPONSE_CODES 103
 
 #define HTTP_CONTINUE                        100
 #define HTTP_SWITCHING_PROTOCOLS             101
@@ -530,6 +530,7 @@ AP_DECLARE(const char *) ap_get_server_built(void);
 #define HTTP_PRECONDITION_REQUIRED           428
 #define HTTP_TOO_MANY_REQUESTS               429
 #define HTTP_REQUEST_HEADER_FIELDS_TOO_LARGE 431
+#define HTTP_UNAVAILABLE_FOR_LEGAL_REASONS   451
 #define HTTP_INTERNAL_SERVER_ERROR           500
 #define HTTP_NOT_IMPLEMENTED                 501
 #define HTTP_BAD_GATEWAY                     502
@@ -1503,6 +1504,25 @@ AP_DECLARE(char *) ap_getword_conf(apr_pool_t *p, const char **line);
 AP_DECLARE(char *) ap_getword_conf_nc(apr_pool_t *p, char **line);
 
 /**
+ * Get the second word in the string paying attention to quoting,
+ * with {...} supported as well as "..." and '...'
+ * @param p The pool to allocate from
+ * @param line The line to traverse
+ * @return A copy of the string
+ */
+AP_DECLARE(char *) ap_getword_conf2(apr_pool_t *p, const char **line);
+
+/**
+ * Get the second word in the string paying attention to quoting,
+ * with {...} supported as well as "..." and '...'
+ * @param p The pool to allocate from
+ * @param line The line to traverse
+ * @return A copy of the string
+ * @note The same as ap_getword_conf2(), except it doesn't use const char **.
+ */
+AP_DECLARE(char *) ap_getword_conf2_nc(apr_pool_t *p, char **line);
+
+/**
  * Check a string for any config define or environment variable construct
  * and replace each of them by the value of that variable, if it exists.
  * The default syntax of the constructs is ${ENV} but can be changed by
@@ -1564,6 +1584,28 @@ AP_DECLARE(int) ap_find_etag_weak(apr_pool_t *p, const char *line, const char *t
  * @return 1 if found, 0 if not found.
  */
 AP_DECLARE(int) ap_find_etag_strong(apr_pool_t *p, const char *line, const char *tok);
+
+/* Scan a string for field content chars, as defined by RFC7230 section 3.2
+ * including VCHAR/obs-text, as well as HT and SP
+ * @param ptr The string to scan
+ * @return A pointer to the first (non-HT) ASCII ctrl character.
+ * @note lws and trailing whitespace are scanned, the caller is responsible
+ * for trimming leading and trailing whitespace
+ */
+AP_DECLARE(const char *) ap_scan_http_field_content(const char *ptr);
+
+/* Scan a string for token characters, as defined by RFC7230 section 3.2.6 
+ * @param ptr The string to scan
+ * @return A pointer to the first non-token character.
+ */
+AP_DECLARE(const char *) ap_scan_http_token(const char *ptr);
+
+/* Scan a string for visible ASCII (0x21-0x7E) or obstext (0x80+)
+ * and return a pointer to the first SP/CTL/NUL character encountered.
+ * @param ptr The string to scan
+ * @return A pointer to the first SP/CTL character.
+ */
+AP_DECLARE(const char *) ap_scan_vchar_obstext(const char *ptr);
 
 /**
  * Retrieve an array of tokens in the format "1#token" defined in RFC2616. Only
@@ -2320,6 +2362,34 @@ AP_DECLARE(int) ap_array_str_index(const apr_array_header_t *array,
  */
 AP_DECLARE(int) ap_array_str_contains(const apr_array_header_t *array, 
                                       const char *s);
+
+/**
+ * Perform a case-insensitive comparison of two strings @a atr1 and @a atr2,
+ * treating upper and lower case values of the 26 standard C/POSIX alphabetic
+ * characters as equivalent. Extended latin characters outside of this set
+ * are treated as unique octets, irrespective of the current locale.
+ *
+ * Returns in integer greater than, equal to, or less than 0,
+ * according to whether @a str1 is considered greater than, equal to,
+ * or less than @a str2.
+ *
+ * @note Same code as apr_cstr_casecmp, which arrives in APR 1.6
+ */
+AP_DECLARE(int) ap_cstr_casecmp(const char *s1, const char *s2);
+
+/**
+ * Perform a case-insensitive comparison of two strings @a atr1 and @a atr2,
+ * treating upper and lower case values of the 26 standard C/POSIX alphabetic
+ * characters as equivalent. Extended latin characters outside of this set
+ * are treated as unique octets, irrespective of the current locale.
+ *
+ * Returns in integer greater than, equal to, or less than 0,
+ * according to whether @a str1 is considered greater than, equal to,
+ * or less than @a str2.
+ *
+ * @note Same code as apr_cstr_casecmpn, which arrives in APR 1.6
+ */
+AP_DECLARE(int) ap_cstr_casecmpn(const char *s1, const char *s2, apr_size_t n);
 
 #ifdef __cplusplus
 }

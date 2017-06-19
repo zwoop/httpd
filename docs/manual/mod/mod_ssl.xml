@@ -268,8 +268,8 @@ directive.</p>
        either with a client certificate or by username and password.</p>
 
     <highlight language="config">
-      Require ssl-verify-client<br/>
-      Require valid-user
+Require ssl-verify-client
+Require valid-user
     </highlight>
 
   </section>
@@ -503,7 +503,7 @@ The following five storage <em>type</em>s are currently supported:</p>
 <li><code>dc:UNIX:/path/to/socket</code>
 
     <p>This makes use of the <a
-    href="http://www.distcache.org/">distcache</a> distributed session
+    href="http://distcache.sourceforge.net/">distcache</a> distributed session
     caching libraries.  The argument should specify the location of
     the server or proxy to be used using the distcache address syntax;
     for example, <code>UNIX:/path/to/socket</code> specifies a UNIX
@@ -1210,10 +1210,12 @@ SSLCARevocationFile "/usr/local/apache2/conf/ssl.crl/ca-bundle-client.crl"
 <directivesynopsis>
 <name>SSLCARevocationCheck</name>
 <description>Enable CRL-based revocation checking</description>
-<syntax>SSLCARevocationCheck chain|leaf|none</syntax>
+<syntax>SSLCARevocationCheck chain|leaf|none <em>flag</em>s</syntax>
 <default>SSLCARevocationCheck none</default>
 <contextlist><context>server config</context>
 <context>virtual host</context></contextlist>
+<compatibility>Optional <em>flag</em>s available in httpd 2.4.21 or
+later</compatibility>
 
 <usage>
 <p>
@@ -1224,23 +1226,36 @@ configured. When set to <code>chain</code> (recommended setting),
 CRL checks are applied to all certificates in the chain, while setting it to
 <code>leaf</code> limits the checks to the end-entity cert.
 </p>
-<note>
-<title>When set to <code>chain</code> or <code>leaf</code>,
-CRLs <em>must</em> be available for successful validation</title>
-<p>
-Prior to version 2.3.15, CRL checking in mod_ssl also succeeded when
-no CRL(s) were found in any of the locations configured with
-<directive module="mod_ssl">SSLCARevocationFile</directive>
-or <directive module="mod_ssl">SSLCARevocationPath</directive>.
-With the introduction of this directive, the behavior has been changed:
-when checking is enabled, CRLs <em>must</em> be present for the validation
-to succeed - otherwise it will fail with an
-<code>"unable to get certificate CRL"</code> error.
-</p>
-</note>
+<p>The available <em>flag</em>s are:</p>
+<ul>
+<li><code>no_crl_for_cert_ok</code>
+    <p>
+    Prior to version 2.3.15, CRL checking in mod_ssl also succeeded when
+    no CRL(s) for the checked certificate(s) were found in any of the locations
+    configured with <directive module="mod_ssl">SSLCARevocationFile</directive>
+    or <directive module="mod_ssl">SSLCARevocationPath</directive>.
+    </p>
+    <p>
+    With the introduction of <directive>SSLCARevocationFile</directive>,
+    the behavior has been changed: by default with <code>chain</code> or
+    <code>leaf</code>, CRLs <strong>must</strong> be present for the
+    validation to succeed - otherwise it will fail with an
+    <code>"unable to get certificate CRL"</code> error.
+    </p>
+    <p>
+    The <em>flag</em> <code>no_crl_for_cert_ok</code> allows to restore
+    previous behaviour.
+    </p>
+</li>
+</ul>
 <example><title>Example</title>
 <highlight language="config">
 SSLCARevocationCheck chain
+</highlight>
+</example>
+<example><title>Compatibility with versions 2.2</title>
+<highlight language="config">
+SSLCARevocationCheck chain no_crl_for_cert_ok
 </highlight>
 </example>
 </usage>
@@ -1277,13 +1292,9 @@ The following levels are available for <em>level</em>:</p>
      the client <em>has to</em> present a valid Certificate</li>
 <li><strong>optional_no_ca</strong>:
      the client may present a valid Certificate<br />
-     but it need not to be (successfully) verifiable.</li>
+     but it need not to be (successfully) verifiable. This option
+     cannot be relied upon for client authentication.  </li>
 </ul>
-<p>In practice only levels <strong>none</strong> and
-<strong>require</strong> are really interesting, because level
-<strong>optional</strong> doesn't work with all browsers and level
-<strong>optional_no_ca</strong> is actually against the idea of
-authentication (but can be used to establish SSL test pages, etc.)</p>
 <example><title>Example</title>
 <highlight language="config">
 SSLVerifyClient require
@@ -1917,17 +1928,32 @@ SSLProxyCheckPeerExpire on
 <p>
 This directive sets whether the remote server certificate's CN field is
 compared against the hostname of the request URL. If both are not equal
-a 502 status code (Bad Gateway) is sent.
+a 502 status code (Bad Gateway) is sent. <code>SSLProxyCheckPeerCN</code> is
+superseded by <directive module="mod_ssl">SSLProxyCheckPeerName</directive>
+in release 2.4.5 and later. 
 </p>
 <p>
-In 2.4.5 and later, SSLProxyCheckPeerCN has been superseded by
-<directive module="mod_ssl">SSLProxyCheckPeerName</directive>, and its
-setting is only taken into account when
-<code>SSLProxyCheckPeerName off</code> is specified at the same time.
+In all releases 2.4.5 through 2.4.20, setting
+<code>SSLProxyCheckPeerName off</code> was sufficient to enable this behavior
+(as the <code>SSLProxyCheckPeerCN</code> default was <code>on</code>.) In 
+these releases, both directives must be set to <code>off</code> to completely
+avoid remote server certificate name validation. Many users reported this
+to be very confusing.
+</p>
+<p>
+As of release 2.4.21, all configurations which enable either one of the
+<code>SSLProxyCheckPeerName</code> or <code>SSLProxyCheckPeerCN</code> options
+will use the new <directive module="mod_ssl">SSLProxyCheckPeerName</directive>
+behavior, and all configurations which disable either one of the 
+<code>SSLProxyCheckPeerName</code> or <code>SSLProxyCheckPeerCN</code> options
+will suppress all remote server certificate name validation. Only the following
+configuration will trigger the legacy certificate CN comparison in 2.4.21 and
+later releases;
 </p>
 <example><title>Example</title>
 <highlight language="config">
 SSLProxyCheckPeerCN on
+SSLProxyCheckPeerName off
 </highlight>
 </example>
 </usage>
@@ -1945,21 +1971,30 @@ SSLProxyCheckPeerCN on
 
 <usage>
 <p>
-This directive configures host name checking for server certificates
-when mod_ssl is acting as an SSL client. The check will
-succeed if the host name from the request URI is found in
-either the subjectAltName extension or (one of) the CN attribute(s)
-in the certificate's subject. If the check fails, the SSL request
-is aborted and a 502 status code (Bad Gateway) is returned.
-The directive supersedes <directive module="mod_ssl">SSLProxyCheckPeerCN</directive>,
-which only checks for the expected host name in the first CN attribute.
+This directive configures host name checking for server certificates when 
+mod_ssl is acting as an SSL client. The check will succeed if the host name 
+from the request URI matches one of the CN attribute(s) of the certificate's 
+subject, or matches the subjectAltName extension. If the check fails, the SSL 
+request is aborted and a 502 status code (Bad Gateway) is returned.
 </p>
 <p>
-Wildcard matching is supported in one specific flavor: subjectAltName entries
-of type dNSName or CN attributes starting with <code>*.</code> will match
-for any DNS name with the same number of labels and the same suffix
-(i.e., <code>*.example.org</code> matches for <code>foo.example.org</code>,
-but not for <code>foo.bar.example.org</code>).
+Wildcard matching is supported for specific cases: an subjectAltName entry
+of type dNSName, or CN attributes starting with <code>*.</code> will match
+with any host name of the same number of name elements and the same suffix.
+E.g. <code>*.example.org</code> will match <code>foo.example.org</code>,
+but will not match <code>foo.bar.example.org</code>, because the number of
+elements in the respective host names differs.
+</p>
+<p>
+This feature was introduced in 2.4.5 and superseded the behavior of the 
+<directive module="mod_ssl">SSLProxyCheckPeerCN</directive> directive, which 
+only tested the exact value in the first CN attribute against the host name.
+However, many users were confused by the behavior of using these directives
+individually, so the mutual behavior of <code>SSLProxyCheckPeerName</code> 
+and <code>SSLProxyCheckPeerCN</code> directives were improved in release 
+2.4.21. See the <directive module="mod_ssl">SSLProxyCheckPeerCN</directive> 
+directive description for the original behavior and details of these 
+improvements.
 </p>
 </usage>
 </directivesynopsis>
@@ -1980,11 +2015,12 @@ type="section">VirtualHost</directive> section to enable SSL/TLS for proxy
 usage in a particular virtual host. By default the SSL/TLS Protocol Engine is
 disabled for proxy both for the main server and all configured virtual hosts.</p>
 
-<p>Note that the SSLProxyEngine directive should not, in
+<p>Note that the <directive>SSLProxyEngine</directive> directive should not, in
 general, be included in a virtual host that will be acting as a
-forward proxy (using &lt;Proxy&gt; or &lt;ProxyRequest&gt; directives.
-SSLProxyEngine is not required to enable a forward proxy server to
-proxy SSL/TLS requests.</p>
+forward proxy (using <directive module="mod_proxy" type="section">Proxy</directive>
+or <directive module="mod_proxy">ProxyRequests</directive> directives).
+<directive>SSLProxyEngine</directive> is not required to enable a forward proxy
+server to proxy SSL/TLS requests.</p>
 
 <example><title>Example</title>
 <highlight language="config">
@@ -2030,7 +2066,8 @@ proxy handshake</description>
 <context>.htaccess</context></contextlist>
 <override>AuthConfig</override>
 <usage>
-<p>Equivalent to <code>SSLCipherSuite</code>, but for the proxy connection.
+<p>Equivalent to <directive module="mod_ssl">SSLCipherSuite</directive>, but
+for the proxy connection.
 Please refer to <directive module="mod_ssl">SSLCipherSuite</directive>
 for additional information.</p>
 </usage>
@@ -2374,6 +2411,37 @@ which means that OCSP responses are considered valid as long as their
 a nonce or not. By default, a query nonce is always used and checked against
 the response's one. When the responder does not use nonces (e.g. Microsoft OCSP
 Responder), this option should be turned <code>off</code>.</p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>SSLOCSPNoverify</name>
+<description>skip the OCSP responder certificates verification</description>
+<syntax>SSLOCSPNoverify <em>On/Off</em></syntax>
+<default>SSLOCSPNoverify Off</default>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Available in httpd 2.4.26 and later, if using OpenSSL 0.9.7 or later</compatibility>
+<usage>
+<p>Skip the OCSP responder certificates verification, mostly useful when
+testing an OCSP server.</p>
+</usage>
+</directivesynopsis>
+
+
+<directivesynopsis>
+<name>SSLOCSPResponderCertificateFile</name>
+<description>Set of trusted PEM encoded OCSP responder certificates</description>
+<syntax>SSLOCSPResponderCertificateFile <em>file</em></syntax>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Available in httpd 2.4.26 and later, if using OpenSSL 0.9.7 or later</compatibility>
+<usage>
+<p>This supplies a list of trusted OCSP responder certificates to be used
+during OCSP responder certificate validation. The supplied certificates are
+implicitly trusted without any further validation. This is typically used
+where the OCSP responder certificate is self signed or omitted from the OCSP
+response.</p>
 </usage>
 </directivesynopsis>
 

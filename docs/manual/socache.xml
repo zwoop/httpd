@@ -51,7 +51,7 @@
      The choice of underlying DBM used may be configurable
      if the installed APR version supports multiple DBM implementations.</dd>
     <dt>"dc" (<module>mod_socache_dc</module>)</dt>
-    <dd>This makes use of the <a href="http://www.distcache.org/">distcache</a>
+    <dd>This makes use of the <a href="http://distcache.sourceforge.net/">distcache</a>
     distributed session caching libraries.</dd>
     <dt>"memcache" (<module>mod_socache_memcache</module>)</dt>
     <dd>This makes use of the <a href="http://memcached.org/">memcached</a>
@@ -67,7 +67,7 @@
       <dt>const char *create(ap_socache_instance_t **instance, const char *arg,
                           apr_pool_t *tmp, apr_pool_t *p);</dt>
       <dd>Create a session cache based on the given configuration string.
-      The instance pointer returned in the instance paramater will be
+      The instance pointer returned in the instance parameter will be
       passed as the first argument to subsequent invocations.</dd>
 
       <dt>apr_status_t init(ap_socache_instance_t *instance, const char *cname,

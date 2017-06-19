@@ -105,7 +105,7 @@ SOURCE=./h2_alt_svc.c
 # End Source File
 # Begin Source File
 
-SOURCE=./h2_bucket_eoc.c
+SOURCE=./h2_bucket_beam.c
 # End Source File
 # Begin Source File
 
@@ -141,18 +141,6 @@ SOURCE=./h2_h2.c
 # End Source File
 # Begin Source File
 
-SOURCE=./h2_int_queue.c
-# End Source File
-# Begin Source File
-
-SOURCE=./h2_io.c
-# End Source File
-# Begin Source File
-
-SOURCE=./h2_io_set.c
-# End Source File
-# Begin Source File
-
 SOURCE=./h2_mplx.c
 # End Source File
 # Begin Source File
@@ -169,7 +157,7 @@ SOURCE=./h2_request.c
 # End Source File
 # Begin Source File
 
-SOURCE=./h2_response.c
+SOURCE=./h2_headers.c
 # End Source File
 # Begin Source File
 
@@ -189,19 +177,7 @@ SOURCE=./h2_task.c
 # End Source File
 # Begin Source File
 
-SOURCE=./h2_task_input.c
-# End Source File
-# Begin Source File
-
-SOURCE=./h2_task_output.c
-# End Source File
-# Begin Source File
-
 SOURCE=./h2_util.c
-# End Source File
-# Begin Source File
-
-SOURCE=./h2_worker.c
 # End Source File
 # Begin Source File
 

@@ -75,6 +75,22 @@ enum enctype {
     enc_path, enc_search, enc_user, enc_fpath, enc_parm
 };
 
+typedef enum {
+    NONE, TCP, OPTIONS, HEAD, GET, CPING, PROVIDER, EOT
+} hcmethod_t;
+
+typedef struct {
+    hcmethod_t method;
+    char *name;
+    int implemented;
+} proxy_hcmethods_t;
+
+typedef struct {
+    unsigned int bit;
+    char flag;
+    const char *name;
+} proxy_wstat_t;
+
 #define BALANCER_PREFIX "balancer://"
 
 #if APR_CHARSET_EBCDIC
@@ -139,7 +155,7 @@ typedef struct {
     proxy_worker       *reverse;    /* reverse "module-driven" proxy worker */
     const char *domain;     /* domain name to use in absence of a domain name in the request */
     const char *id;
-    apr_pool_t *pool;       /* Pool used for allocating this struct */
+    apr_pool_t *pool;       /* Pool used for allocating this struct's elements */
     int req;                /* true if proxy requests are enabled */
     int max_balancers;      /* maximum number of allowed balancers */
     int bgrowth;            /* number of post-config balancers can added */
@@ -255,6 +271,10 @@ typedef struct {
     unsigned int inreslist:1;  /* connection in apr_reslist? */
     const char   *uds_path;    /* Unix domain socket path */
     const char   *ssl_hostname;/* Hostname (SNI) in use by SSL connection */
+    apr_bucket_brigade *tmp_bb;/* Temporary brigade created with the connection
+                                * and its scpool/bucket_alloc (NULL before),
+                                * must be left cleaned when used (locally).
+                                */
 } proxy_conn_rec;
 
 typedef struct {
@@ -270,8 +290,11 @@ struct proxy_conn_pool {
     proxy_conn_rec *conn;   /* Single connection for prefork mpm */
 };
 
-/* Keep below in sync with proxy_util.c! */
 /* worker status bits */
+/*
+ * NOTE: Keep up-to-date w/ proxy_wstat_tbl[]
+ * in mod_proxy.c !
+ */
 #define PROXY_WORKER_INITIALIZED    0x0001
 #define PROXY_WORKER_IGNORE_ERRORS  0x0002
 #define PROXY_WORKER_DRAIN          0x0004
@@ -282,6 +305,7 @@ struct proxy_conn_pool {
 #define PROXY_WORKER_IN_ERROR       0x0080
 #define PROXY_WORKER_HOT_STANDBY    0x0100
 #define PROXY_WORKER_FREE           0x0200
+#define PROXY_WORKER_HC_FAIL        0x0400
 
 /* worker status flags */
 #define PROXY_WORKER_INITIALIZED_FLAG    'O'
@@ -294,9 +318,11 @@ struct proxy_conn_pool {
 #define PROXY_WORKER_IN_ERROR_FLAG       'E'
 #define PROXY_WORKER_HOT_STANDBY_FLAG    'H'
 #define PROXY_WORKER_FREE_FLAG           'F'
+#define PROXY_WORKER_HC_FAIL_FLAG        'C'
 
 #define PROXY_WORKER_NOT_USABLE_BITMAP ( PROXY_WORKER_IN_SHUTDOWN | \
-PROXY_WORKER_DISABLED | PROXY_WORKER_STOPPED | PROXY_WORKER_IN_ERROR )
+PROXY_WORKER_DISABLED | PROXY_WORKER_STOPPED | PROXY_WORKER_IN_ERROR | \
+PROXY_WORKER_HC_FAIL )
 
 /* NOTE: these check the shared status */
 #define PROXY_WORKER_IS_INITIALIZED(f)  ( (f)->s->status &  PROXY_WORKER_INITIALIZED )
@@ -309,6 +335,10 @@ PROXY_WORKER_DISABLED | PROXY_WORKER_STOPPED | PROXY_WORKER_IN_ERROR )
 #define PROXY_WORKER_IS_DRAINING(f)   ( (f)->s->status &  PROXY_WORKER_DRAIN )
 
 #define PROXY_WORKER_IS_GENERIC(f)   ( (f)->s->status &  PROXY_WORKER_GENERIC )
+
+#define PROXY_WORKER_IS_HCFAILED(f)   ( (f)->s->status &  PROXY_WORKER_HC_FAIL )
+
+#define PROXY_WORKER_IS(f, b)   ( (f)->s->status & (b) )
 
 /* default worker retry timeout in seconds */
 #define PROXY_WORKER_DEFAULT_RETRY    60
@@ -348,7 +378,8 @@ typedef struct {
     unsigned int fnv;
 } proxy_hashes ;
 
-/* Runtime worker status informations. Shared in scoreboard */
+/* Runtime worker status information. Shared in scoreboard */
+/* The addition of member uds_path in 2.4.7 was an incompatible API change. */
 typedef struct {
     char      name[PROXY_WORKER_MAX_NAME_SIZE];
     char      scheme[PROXY_WORKER_MAX_SCHEME_SIZE];   /* scheme to use ajp|http|https */
@@ -403,6 +434,15 @@ typedef struct {
     unsigned int     keepalive_set:1;
     unsigned int     disablereuse_set:1;
     unsigned int     was_malloced:1;
+    char      hcuri[PROXY_WORKER_MAX_ROUTE_SIZE];     /* health check uri */
+    char      hcexpr[PROXY_WORKER_MAX_SCHEME_SIZE];   /* name of condition expr for health check */
+    int             passes;     /* number of successes for check to pass */
+    int             pcount;     /* current count of passes */
+    int             fails;      /* number of failures for check to fail */
+    int             fcount;     /* current count of failures */
+    hcmethod_t      method;     /* method to use for health check */
+    apr_interval_time_t interval;
+    char      upgrade[PROXY_WORKER_MAX_SCHEME_SIZE];/* upgrade protocol used by mod_proxy_wstunnel */
 } proxy_worker_shared;
 
 #define ALIGNED_PROXY_WORKER_SHARED_SIZE (APR_ALIGN_DEFAULT(sizeof(proxy_worker_shared)))
@@ -417,6 +457,11 @@ struct proxy_worker {
     apr_thread_mutex_t  *tmutex; /* Thread lock for updating address cache */
     void            *context;   /* general purpose storage */
 };
+
+/* default to health check every 30 seconds */
+#define HCHECK_WATHCHDOG_DEFAULT_INTERVAL (30)
+/* The watchdog runs every 2 seconds, which is also the minimal check */
+#define HCHECK_WATHCHDOG_INTERVAL (2)
 
 /*
  * Time to wait (in microseconds) to find out if more data is currently
@@ -508,6 +553,26 @@ struct proxy_balancer_method {
 #define PROXY_DECLARE_DATA             __declspec(dllimport)
 #endif
 
+/* Using PROXY_DECLARE_OPTIONAL_HOOK instead of
+ * APR_DECLARE_EXTERNAL_HOOK allows build/make_nw_export.awk
+ * to distinguish between hooks that implement
+ * proxy_hook_xx and proxy_hook_get_xx in mod_proxy.c and
+ * those which don't.
+ */
+#define PROXY_DECLARE_OPTIONAL_HOOK APR_DECLARE_EXTERNAL_HOOK
+
+/* These 2 are in mod_proxy.c */
+extern PROXY_DECLARE_DATA proxy_hcmethods_t proxy_hcmethods[];
+extern PROXY_DECLARE_DATA proxy_wstat_t proxy_wstat_tbl[];
+
+/* Following 4 from health check */
+APR_DECLARE_OPTIONAL_FN(void, hc_show_exprs, (request_rec *));
+APR_DECLARE_OPTIONAL_FN(void, hc_select_exprs, (request_rec *, const char *));
+APR_DECLARE_OPTIONAL_FN(int, hc_valid_expr, (request_rec *, const char *));
+APR_DECLARE_OPTIONAL_FN(const char *, set_worker_hc_param,
+                        (apr_pool_t *, server_rec *, proxy_worker *,
+                         const char *, const char *, void *));
+
 APR_DECLARE_EXTERNAL_HOOK(proxy, PROXY, int, scheme_handler, (request_rec *r,
                           proxy_worker *worker, proxy_server_conf *conf, char *url,
                           const char *proxyhost, apr_port_t proxyport))
@@ -520,7 +585,7 @@ APR_DECLARE_EXTERNAL_HOOK(proxy, PROXY, int, fixups, (request_rec *r))
 /**
  * pre request hook.
  * It will return the most suitable worker at the moment
- * and coresponding balancer.
+ * and corresponding balancer.
  * The url is rewritten from balancer://cluster/uri to scheme://host:port/uri
  * and then the scheme_handler is called.
  *
@@ -572,6 +637,7 @@ PROXY_DECLARE(int) ap_proxy_checkproxyblock2(request_rec *r, proxy_server_conf *
 PROXY_DECLARE(int) ap_proxy_pre_http_request(conn_rec *c, request_rec *r);
 /* DEPRECATED (will be replaced with ap_proxy_connect_backend */
 PROXY_DECLARE(int) ap_proxy_connect_to_backend(apr_socket_t **, const char *, apr_sockaddr_t *, const char *, proxy_server_conf *, request_rec *);
+/* DEPRECATED (will be replaced with ap_proxy_check_connection */
 PROXY_DECLARE(apr_status_t) ap_proxy_ssl_connection_cleanup(proxy_conn_rec *conn,
                                                             request_rec *r);
 PROXY_DECLARE(int) ap_proxy_ssl_enable(conn_rec *c);
@@ -703,7 +769,7 @@ PROXY_DECLARE(char *) ap_proxy_update_balancer(apr_pool_t *p,
  * @param url    url containing balancer name
  * @param alias  alias/fake-path to this balancer
  * @param do_malloc true if shared struct should be malloced
- * @return       error message or NULL if successfull
+ * @return       error message or NULL if successful
  */
 PROXY_DECLARE(char *) ap_proxy_define_balancer(apr_pool_t *p,
                                                proxy_balancer **balancer,
@@ -856,6 +922,28 @@ PROXY_DECLARE(int) ap_proxy_acquire_connection(const char *proxy_function,
 PROXY_DECLARE(int) ap_proxy_release_connection(const char *proxy_function,
                                                proxy_conn_rec *conn,
                                                server_rec *s);
+
+#define PROXY_CHECK_CONN_EMPTY (1 << 0)
+/**
+ * Check a connection to the backend
+ * @param scheme calling proxy scheme (http, ajp, ...)
+ * @param conn   acquired connection
+ * @param server current server record
+ * @param max_blank_lines how many blank lines to consume,
+ *                        or zero for none (considered data)
+ * @param flags  PROXY_CHECK_* bitmask
+ * @return APR_SUCCESS: connection established,
+ *         APR_ENOTEMPTY: connection established with data,
+ *         APR_ENOSOCKET: not connected,
+ *         APR_EINVAL: worker in error state (unusable),
+ *         other: connection closed/aborted (remotely)
+ */
+PROXY_DECLARE(apr_status_t) ap_proxy_check_connection(const char *scheme,
+                                                      proxy_conn_rec *conn,
+                                                      server_rec *server,
+                                                      unsigned max_blank_lines,
+                                                      int flags);
+
 /**
  * Make a connection to the backend
  * @param proxy_function calling proxy scheme (http, ajp, ...)
@@ -1019,6 +1107,12 @@ PROXY_DECLARE(int) ap_proxy_pass_brigade(apr_bucket_alloc_t *bucket_alloc,
 APR_DECLARE_OPTIONAL_FN(int, ap_proxy_clear_connection,
         (request_rec *r, apr_table_t *headers));
 
+/**
+ * @param socket        socket to test
+ * @return              TRUE if socket is connected/active
+ */
+PROXY_DECLARE(int) ap_proxy_is_socket_connected(apr_socket_t *socket);
+
 #define PROXY_LBMETHOD "proxylbmethod"
 
 /* The number of dynamic workers that can be added when reconfiguring.
@@ -1038,6 +1132,13 @@ int ap_proxy_lb_workers(void);
  * @return              port number or 0 if unknown
  */
 PROXY_DECLARE(apr_port_t) ap_proxy_port_of_scheme(const char *scheme);
+
+/**
+ * Return the name of the health check method (eg: "OPTIONS").
+ * @param method        method enum
+ * @return              name of method
+ */
+PROXY_DECLARE (const char *) ap_proxy_show_hcmethod(hcmethod_t method);
 
 /**
  * Strip a unix domain socket (UDS) prefix from the input URL

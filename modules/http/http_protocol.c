@@ -146,7 +146,27 @@ static const char * const status_lines[RESPONSE_CODES] =
     "429 Too Many Requests",
     NULL, /* 430 */
     "431 Request Header Fields Too Large",
-#define LEVEL_500 71
+    NULL, /* 432 */
+    NULL, /* 433 */
+    NULL, /* 434 */
+    NULL, /* 435 */
+    NULL, /* 436 */
+    NULL, /* 437 */
+    NULL, /* 438 */
+    NULL, /* 439 */
+    NULL, /* 440 */
+    NULL, /* 441 */
+    NULL, /* 442 */
+    NULL, /* 443 */
+    NULL, /* 444 */
+    NULL, /* 445 */
+    NULL, /* 446 */
+    NULL, /* 447 */
+    NULL, /* 448 */
+    NULL, /* 449 */
+    NULL, /* 450 */
+    "451 Unavailable For Legal Reasons",
+#define LEVEL_500 91
     "500 Internal Server Error",
     "501 Not Implemented",
     "502 Bad Gateway",
@@ -668,8 +688,11 @@ AP_DECLARE(void) ap_method_registry_init(apr_pool_t *p)
                               apr_pool_cleanup_null);
 
     /* put all the standard methods into the registry hash to ease the
-       mapping operations between name and number */
+     * mapping operations between name and number
+     * HEAD is a special-instance of the GET method and shares the same ID
+     */
     register_one_method(p, "GET", M_GET);
+    register_one_method(p, "HEAD", M_GET);
     register_one_method(p, "PUT", M_PUT);
     register_one_method(p, "POST", M_POST);
     register_one_method(p, "DELETE", M_DELETE);
@@ -1298,6 +1321,12 @@ static const char *get_canned_error_string(int status,
                "request as the requested host name does not match\n"
                "the Server Name Indication (SNI) in use for this\n"
                "connection.</p>\n");
+    case HTTP_UNAVAILABLE_FOR_LEGAL_REASONS:
+        s1 = apr_pstrcat(p,
+                         "<p>Access to ", ap_escape_html(r->pool, r->uri),
+                         "\nhas been denied for legal reasons.<br />\n",
+                         NULL);
+        return(add_optional_notes(r, s1, "error-notes", "</p>\n"));
     default:                    /* HTTP_INTERNAL_SERVER_ERROR */
         /*
          * This comparison to expose error-notes could be modified to

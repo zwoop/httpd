@@ -34,7 +34,13 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.20  : Tagged on April 4, 2016.
+    2.4.26  : Tagged on June 13, 2017.
+    2.4.25  : Tagged on December 16, 2016. Released on December 21, 2016.
+    2.4.24  : Tagged on December 16, 2016, not released.
+    2.4.23  : Tagged on June 30, 2016. Released on July 05, 2016.
+    2.4.22  : Tagged on June 20, 2016, not released.
+    2.4.21  : Tagged on June 16, 2016, not released.
+    2.4.20  : Tagged on April 4, 2016. Released on April 11, 2016.
     2.4.19  : Tagged on March 21, 2016, not released.
     2.4.18  : Tagged on December 8, 2015. Released on December 14, 2015.
     2.4.17  : Tagged on October 9, 2015. Released October 13, 2015.
@@ -101,7 +107,8 @@ CURRENT RELEASE NOTES:
     then merge into branches/2.4.x, as applicable.
 
   * Current exceptions for RTC for this branch:
-    . http/2 - mod_http2
+    . http/2 - mod_http2 (until 2.4.26 is released)
+    . mod_proxy_http2
     . mod_lua
     . documentation
     . non-Unix build
@@ -113,60 +120,110 @@ RELEASE SHOWSTOPPERS:
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
-
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  *) mod_proxy_hcheck: Dynamic reverse proxy backend health check module
-     Trunk version of patch: <various>
-     Backport version for 2.4.x of patch:
-         http://home.apache.org/~jim/patches/hcheck-2.4-v2.patch
-         <Plus docs>
-     +1: jim
-     ylavic: Looks like the changes on struct proxy_worker_shared would break
-             startup with "BalancerPersist on" due to the strict checks on
-             the sizes of existing slotmems (slotmem_create/attach)?
-     jim: Yes, that is right (re: breakage)... this would be noted at
-          release.
-     ylavic: OK, this is just that persisted slotmems won't be reused on first
-             startup, not that the startup will fail (as I first thought).
-
-  *) mod_ssl: Add "no_crl_for_cert_ok" flag to SSLCARevocationCheck directive
-     to opt-in previous behaviour (2.2) with CRLs verification when checking
-     certificate(s) with no corresponding CRL.
-     trunk patch: http://svn.apache.org/r1734561
-                  http://svn.apache.org/r1734807
-                  http://svn.apache.org/r1735159
-                  http://svn.apache.org/r1735337
-                  http://svn.apache.org/r1737265
-     2.4.x patch: trunk works (modulo CHANGES) or
-                  http://home.apache.org/~ylavic/patches/httpd-2.4.x-no_crl_for_cert_ok-v2.patch
+  *) mod_proxy, mod_ssl: Handle SSLProxy* directives in <Proxy> sections,
+     allowing per backend TLS configuration.
+     trunk patch: http://svn.apache.org/r1740928
+                  http://svn.apache.org/r1740960
+                  http://svn.apache.org/r1740967
+                  http://svn.apache.org/r1740987
+                  http://svn.apache.org/r1740998
+                  http://svn.apache.org/r1742697
+                  http://svn.apache.org/r1756976
+                  http://svn.apache.org/r1781313
+     2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-r1740928_and_co-v3.patch
      +1: ylavic
 
-  *) mod_proxy_http2: add http2 proxy support in new, experimental module. 
-     Includes backport of r1729208 to set ALPN protocols for ssl backend
-     connections. 
-     Trunk version of patch: <various>
-     Backport version for 2.4.x of patch: https://www.eissing.org/proxy_http2_2.4v4.patch
-     +1: icing, ylavic
-     updated patch after review by cjaillet, merged 1735668,1735748 from trunk
-     updated patch with APLOGNOs by merging 1735931,1735935 from trunk
-     updated patch with APLOGNOs by merging 1735942 from trunk
+  *) mod_remoteip: Add PROXY protocol support
+     trunk patch: http://svn.apache.org/r1776575
+                  http://svn.apache.org/r1776578 (doc fix)
+                  http://svn.apache.org/r1776627 (shortened name + doc fix)
+                  http://svn.apache.org/r1776674 (attribution moved to CHANGES)
+                  http://svn.apache.org/r1776740 (attribution updated in mod_remotip.c)
+                  http://svn.apache.org/r1778268 (fix compiler warning)
+                  http://svn.apache.org/r1780725 (set buckets aside)
+                  http://svn.apache.org/r1781030 (fix strict GCC warning)
+                  http://svn.apache.org/r1781031 (reference the filter by handle)
+                  http://svn.apache.org/r1781701 (rework optional processing case)
+                  http://svn.apache.org/r1788674 (final edge cases/ignore slave conns)
+                  http://svn.apache.org/r1789800 (remove optional processing)
+                  http://svn.apache.org/r1790169 (rename "exception" directive)
+                  http://svn.apache.org/r1790457 (Update directive name in err message)
+     2.4 convenience patch (includes CHANGES):
+                  http://people.apache.org/~druggeri/patches/RemoteIPProxyProtocol.2.4.x.patch
+     +1: druggeri, jim
 
-  *) CGIVar for controlling building of REQUEST_URI (and future uses)
-     As mentioned on dev@:
-     * This is intended to replace existing methods of configuring how various
-       CGI vars should be built over the long term, though only REQUEST_URI is
-       handled for now.
-     * If the mechanism should be usable by third-party modules for its own
-       concerns, a check for recognized-envvar can be removed from the command
-       processor and the rest of the code will let the third-party module do
-       the right thing since the rule for a var is a character string in a table,
-       not a separate core_dir_config flag with enumerated values.
-     Trunk patch: r1734947, 1735952
-     2.4.x patch: https://emptyhammock.com/media/downloads/CGIVar-to-2.4.x.txt
-       Bad Jeff: The MMN change was missing originally, same patch updated :(
-     +1: trawick, ylavic
+   * mod_journald: Add new module mod_journald to log error logs into journald.
+     trunk patch: http://svn.apache.org/r1610339
+                  http://svn.apache.org/r1621806
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+     +1: jkaluza, jim
+     jchampion: Looks like the headers require GCC extensions to compile, so
+                mod_journald can't be configured in maintainer mode (-std=c89).
+                Can anyone else reproduce, or is it just my distro?
+
+  *) core: Disallow multiple Listen on the same IP:port when listener buckets
+     are configured (ListenCoresBucketsRatio > 0), consistently with the single
+     bucket case (default), thus avoiding the leak of the corresponding socket
+     descriptors on graceful restart.
+     trunk patch: http://svn.apache.org/r1789220
+                  http://svn.apache.org/r1792675
+     2.4.x patch: trunk works (modulo CHANGES)
+     +1: ylavic, jim
+
+  *) event: Avoid listener periodic wake ups by using the pollset wake-ability
+     when available.  PR 57399.
+     trunk patch: http://svn.apache.org/r1762580
+                  http://svn.apache.org/r1762701
+                  http://svn.apache.org/r1762702
+                  http://svn.apache.org/r1762718
+                  http://svn.apache.org/r1762723
+                  http://svn.apache.org/r1762742
+                  http://svn.apache.org/r1762743
+                  http://svn.apache.org/r1774538
+                  http://svn.apache.org/r1779354
+     2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-mpm_event-wakeup-v7.1.patch
+     +1: ylavic, icing
+
+   *) prefork: This fixes race-condition in signals handling when httpd is
+               runnning on foreground and user hits ctrl+c
+     trunk patch: http://svn.apache.org/r1618555
+     2.4.x patch: svn merge -c 1618555 ^/httpd/httpd/trunk .
+     +1: ylavic 
+     jailetc36: untested because I'm unsure on how to reproduce the race, but
+                the patch description looks straighforward.
+                If confirmed, it would worth, IMHO, a CHANGE entry and maybe a
+                2.2.x backport.
+
+   *) core: Save 160 bytes in the request pool and some cycles if no <If>
+            directive is used.
+      trunk patch: http://svn.apache.org/r1735906
+      2.4.x patch: svn merge -c 1735906 ^/httpd/httpd/trunk .
+      +1: jailletc36, jim
+
+   *) Easy proposals:
+      - mod_authnz_ldap: Log a warning when the LDAP authn provider is configured
+                         but an AuthLDAPURL isn't
+      - mod_auth_digest: Follow up to r1772919: update APLOGNO()
+      - mod_cache_socache: Save a few cycles
+      - mod_cache_socache: Improve indentation
+      - mod_cache_socache: Group bit field values in order to save some memory
+      - mod_authnz_ldap: Add an explicit NULL to initialise a field in an authn_provider
+                         structure
+      trunk patch: http://svn.apache.org/r1551611
+                   http://svn.apache.org/r1783765
+                   http://svn.apache.org/r1788996
+                   http://svn.apache.org/r1788998
+                   http://svn.apache.org/r1789000
+                   http://svn.apache.org/r1795651
+      2.4.x patch: svn merge -c 1551611,1783765,1788996,1788998,1789000,1795651 ^/httpd/httpd/trunk .
+      +1: jailletc36, jim
+
+
+PATCHES/ISSUES THAT ARE BEING WORKED
+  [ New entries should be added at the START of the list ]
 
   *) mod_ssl: Return 502 instead of 500 when SSL peer check or 
      proxy_post_handshake hook fails. 
@@ -175,13 +232,28 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
      +1: trawick
      ylavic: there may be missing bits, see thread for commit r1736510.
 
-  *) mod_include: add the <!--#comment ...> syntax in order to include comments
-     in a SSI file.
-     Trunk patch: http://svn.apache.org/r1737476
-     2.4.x patch: trunk patch works (compatibility note to be adjusted)
-     +1: jailletc36
-
-PATCHES/ISSUES THAT ARE BEING WORKED
+  *) core: Drop an invalid Last-Modified header value coming
+     from a (F)CGI script instead of replacing it with Unix epoch.
+     Warn the users about Last-Modified header value replacements
+     and violations of the RFC.
+     trunk patch: http://svn.apache.org/r1748379
+                  http://svn.apache.org/r1750747
+                  http://svn.apache.org/r1750749
+                  http://svn.apache.org/r1750953
+                  http://svn.apache.org/r1751138
+                  http://svn.apache.org/r1751139
+                  http://svn.apache.org/r1751147
+                  http://svn.apache.org/r1757818
+     2.4.x: trunk patches work, final view:
+            http://home.apache.org/~elukey/httpd-2.4.x-core-last_modified_tz_logging.patch
+     The problem has been discussed in dev@ extensively but we did not reach a common
+     agreement about how to proceed in the long term. While we wait, I would really like
+     to introduce useful logs for the users (the starting point of this change was a users@
+     email thread). If this is not the right way to go I will move the patch to other
+     sections of STATUS (stalled or being worked).
+     The code has been tested with a simple PHP script returning different Last-Modified
+     headers (GMT now, GMT now Europe/Paris, GMT tomorrow, GMT yesterday, PST now).
+     +1: elukey
 
   *) http: Don't remove the Content-Length of zero from a HEAD response if
      it comes from an origin server, module or script. Allow the previous
@@ -224,6 +296,43 @@ PATCHES/ISSUES THAT ARE BEING WORKED
              make it nonblocking (by default)?
         jim: Non-blocking seems the best way to handle...
 
+   * mod_dav: Allow other modules to become providers and add ACLs
+     to the DAV response. Requires a release of apr-util v1.6.
+     trunk patch: http://svn.apache.org/r1748322
+     2.4.x: trunk works modulo CHANGES/MMN
+     +1: minfrin
+     rpluem asks: Will this compile with apr-util < v1.6 and keep
+     mod_dav working (without the new features of the patch of course)?
+     I doubt that we will require apr-util 1.6 for the lifetime of 2.4.x
+     (see the discussion around ap_cstr_casecmp[n] an apr 1.6)
+     minfrin: Yes, as you can see in the patch everything applies only
+     if APR_XML_X2T_PARSED is defined, and the patch was tested with
+     both apr-util v1.6 and apr-util v1.5.
+     -1: jorton, breaks binary backwards compat per dev@ discuss
+         msgid <20160902120654.GA12674@redhat.com>
+         (& also, making the structure change with apr-util version
+         means it breaks binary compat across an apr-util upgrade?)
+
+   * Support PCRE2 (10.x) in place of PCRE (8.x).
+     Submitted by: wrowe, Petr Pisar [ppisar redhat.com]
+     trunk patches:
+         http://svn.apache.org/r1773454
+         http://svn.apache.org/r1773741
+         http://svn.apache.org/r1773742
+         http://svn.apache.org/r1773839
+         http://svn.apache.org/r1773870
+         http://svn.apache.org/r1773882
+     wrowe notes that the current code is too inefficient, owing to the fact
+     that the ovector is a required allocation and is no longer allocated on
+     the stack, by design. The correct fix is an apr userdata allocation on
+     the appropriate pool, which would be thread-safe, but the actual API of
+     ap_regexec[_len]() offers us no pool. We cannot associate that pool with
+     the ap_regex_t, because a single regex may be used by many threads in
+     parallel and is not thread-safe beyond initialization.
+     So the only fix allowing us to use PCRE 10 in httpd 2.4 would be to write
+     this as a thread safe storage buffer for the majority of cases (<10 $args)
+     and we don't have a portable tls mechanism to do so.
+
 
 PATCHES/ISSUES THAT ARE STALLED
 
@@ -245,7 +354,7 @@ PATCHES/ISSUES THAT ARE STALLED
      +1: jkaluza
      +1: covener w/ doc or code to fix syntax (providername:providerarg not supported like syslog or socacheproviders, 
                  needs 2 args which is not valid in ErrorLog manual)
-     trawick: nit: fix "writing" in "/* NULL if we are writting to syslog */"
+     trawick: nit: fix "writing" in "/* NULL if we are writing to syslog */"
               (sorry, haven't finished reviewing completely)
      jim: What is the status of this??
 
@@ -282,19 +391,6 @@ PATCHES/ISSUES THAT ARE STALLED
                   A better logic would be to check if there is any open
                   connection that is not in keep-alive state.
 
-   * mod_journald: Add new module mod_journald to log error logs into journald.
-                   This patch needs changes done in mod_systemd patch (already
-                   proposed for 2.4.x).
-     trunk patch: http://svn.apache.org/r1610339
-                  http://svn.apache.org/r1621806
-     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
-     +1: jkaluza, jim
-     rjung, minfrin: Not understanding "This patch needs changes done in
-                     mod_systemd patch", am I right in understanding this patch is
-                     already committed?
-     jkaluza: No, that patch is not committed yet. It is in STALLED section.
-              The link for that patch is: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
-
    * core: Add support for systemd socket activation.
      trunk patch: http://svn.apache.org/r1511033
                   http://svn.apache.org/r1608686
@@ -306,7 +402,7 @@ PATCHES/ISSUES THAT ARE STALLED
      +1: jkaluza
 
   * mod_proxy: Ensure network errors detected by the proxy are returned as
-    504 Gateway Timout as opposed to 502 Bad Gateway
+    504 Gateway Timeout as opposed to 502 Bad Gateway
     trunk patch: https://svn.apache.org/viewvc?view=revision&revision=1480058
     2.4.x patch: trunk patch works modulo CHANGES
     +1:
@@ -353,7 +449,7 @@ PATCHES/ISSUES THAT ARE STALLED
           of described indirectly in a sample?
           Why are these new samples added to the install without three
           votes?  (I didn't veto it; put your name next to the two
-          existing ones and I'll be satisified that enough people
+          existing ones and I'll be satisfied that enough people
           considered this addition as an appropriate solution for a
           real httpd usability problem.)
      wrowe: I'd agree with trawick, and suggest that these scripts can begin
@@ -363,4 +459,14 @@ PATCHES/ISSUES THAT ARE STALLED
             of the scripts to function 'out of the box', what about a new
             cgi-examples/ dir alongside cgi-bin/? Otherwise manual/cgi/examples
             might work?
+
+   * core: block Define and Undefine in vhost and directory context. Because
+     it is EXEC_ON_READ, it "breaks out" of these contexts anyway.
+     trunk patch: http://svn.apache.org/r1656063
+                  http://svn.apache.org/r1656122
+     2.4.x patch:  http://people.apache.org/~covener/patches/2.4.x-define-limits.diff
+     +1: covener (I need to review the docs manually in this area)
+     -1: wrowe (blocking will break "working" .conf files on a subversion update
+                meant to pick up security fixes.  "Alerting" I would agree to.)
+
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="EUC-KR" ?>
 <!DOCTYPE manualpage SYSTEM "../style/manualpage.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.ko.xsl"?>
-<!-- English Revision: 151408:1562488 (outdated) -->
+<!-- English Revision: 151408:1739070 (outdated) -->
 
 <!--
  Licensed to the Apache Software Foundation (ASF) under one or more
@@ -518,7 +518,8 @@
       </tr>
 
       <tr>
-        <td><code><a href="http://java.apache.org/">mod_jserv</a>
+        <td><code><a
+        href="https://tomcat.apache.org/connectors-doc-archive/jk2/">JK</a> (mod_jserv)
         </code></td>
         <td class="centered">-</td>
         <td>JAVA는 포팅중이다.</td>

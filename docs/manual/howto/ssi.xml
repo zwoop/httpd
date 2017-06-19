@@ -95,7 +95,7 @@ existing HTML documents.</p>
     directive either in your <code>httpd.conf</code> file, or in a
     <code>.htaccess</code> file:</p>
 <highlight language="config">
-        Options +Includes
+Options +Includes
 </highlight>
 
     <p>This tells Apache that you want to permit files to be parsed
@@ -111,8 +111,8 @@ existing HTML documents.</p>
     particular file extension, such as <code>.shtml</code>, with
     the following directives:</p>
 <highlight language="config">
-        AddType text/html .shtml<br />
-        AddOutputFilter INCLUDES .shtml
+AddType text/html .shtml
+AddOutputFilter INCLUDES .shtml
 </highlight>
 
     <p>One disadvantage to this approach is that if you wanted to
@@ -124,7 +124,7 @@ existing HTML documents.</p>
     <p>The other method is to use the <directive
     module="mod_include">XBitHack</directive> directive:</p>
 <highlight language="config">
-        XBitHack on
+XBitHack on
 </highlight>
 
     <p><directive module="mod_include">XBitHack</directive>
@@ -337,9 +337,7 @@ modified?</title>
 <section id="exec">
     <title>Executing commands</title>
 
-    <p>I expect that I'll have an article some time in the coming
-    months about using SSI with small CGI programs. For now, here's
-    something else that you can do with the <code>exec</code>
+    <p>Here's something else that you can do with the <code>exec</code>
     function. You can actually have SSI execute a command using the
     shell (<code>/bin/sh</code>, to be precise - or the DOS shell,
     if you're on Win32). The following, for example, will give you

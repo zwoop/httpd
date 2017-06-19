@@ -46,7 +46,7 @@ of consuming threads only for connections with active processing</td></tr>
       script's arguments when building the <code class="program"><a href="../programs/httpd.html">httpd</a></code>.</p>
 
 </div>
-<div id="quickview"><h3>Topics</h3>
+<div id="quickview"><a href="https://www.apache.org/foundation/contributing.html" class="badge"><img src="https://www.apache.org/images/SupportApache-small.png" alt="Support Apache!" /></a><h3>Topics</h3>
 <ul id="topics">
 <li><img alt="" src="../images/down.gif" /> <a href="#event-worker-relationship">Relationship with the Worker MPM</a></li>
 <li><img alt="" src="../images/down.gif" /> <a href="#how-it-works">How it Works</a></li>
@@ -74,20 +74,20 @@ of consuming threads only for connections with active processing</td></tr>
 <li><img alt="" src="../images/right.gif" /> <a href="mpm_common.html#threadstacksize">ThreadStackSize</a></li>
 <li><img alt="" src="../images/right.gif" /> <a href="mod_unixd.html#user">User</a></li>
 </ul>
-<h3>See also</h3>
+<h3>Bugfix checklist</h3><ul class="seealso"><li><a href="https://www.apache.org/dist/httpd/CHANGES_2.4">httpd changelog</a></li><li><a href="https://bz.apache.org/bugzilla/buglist.cgi?bug_status=__open__&amp;list_id=144532&amp;product=Apache%20httpd-2&amp;query_format=specific&amp;order=changeddate%20DESC%2Cpriority%2Cbug_severity&amp;component=mpm_event">Known issues</a></li><li><a href="https://bz.apache.org/bugzilla/enter_bug.cgi?product=Apache%20httpd-2&amp;component=mpm_event">Report a bug</a></li></ul><h3>See also</h3>
 <ul class="seealso">
 <li><a href="worker.html">The worker MPM</a></li>
-</ul><ul class="seealso"><li><a href="#comments_section">Comments</a></li></ul></div>
+<li><a href="#comments_section">Comments</a></li></ul></div>
 <div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
 <div class="section">
 <h2><a name="event-worker-relationship" id="event-worker-relationship">Relationship with the Worker MPM</a></h2>
-<p><code class="module"><a href="../mod/event.html">event</a></code> is based on the <code class="module"><a href="../mod/worker.html">worker</a></code> MPM, which implements a hybrid 
+<p><code class="module"><a href="../mod/event.html">event</a></code> is based on the <code class="module"><a href="../mod/worker.html">worker</a></code> MPM, which implements a hybrid
 multi-process multi-threaded server. A single control process (the parent) is responsible for launching
 child processes. Each child process creates a fixed number of server
 threads as specified in the <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">ThreadsPerChild</a></code> directive, as well
 as a listener thread which listens for connections and passes them to a worker thread for processing when they arrive.</p>
 
-<p>Run-time configuration directives are identical to those provided by <code class="module"><a href="../mod/worker.html">worker</a></code>, with the only addition 
+<p>Run-time configuration directives are identical to those provided by <code class="module"><a href="../mod/worker.html">worker</a></code>, with the only addition
 of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
 
 </div><div class="top"><a href="#page-header"><img alt="top" src="../images/up.gif" /></a></div>
@@ -95,17 +95,22 @@ of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
 <h2><a name="how-it-works" id="how-it-works">How it Works</a></h2>
     <p>This MPM tries to fix the 'keep alive problem' in HTTP. After a client
     completes the first request, it can keep the connection
-    open, sending further requests using the same socket and saving 
+    open, sending further requests using the same socket and saving
     significant overhead in creating TCP connections. However,
-    Apache HTTP Server traditionally keeps an entire child 
-    process/thread waiting for data from the client, which brings its own disadvantages. 
-    To solve this problem, this MPM uses a dedicated listener thread for each process 
-    to handle both the Listening sockets, all sockets that are in a Keep Alive state, 
+    Apache HTTP Server traditionally keeps an entire child
+    process/thread waiting for data from the client, which brings its own disadvantages.
+    To solve this problem, this MPM uses a dedicated listener thread for each process
+    to handle both the Listening sockets, all sockets that are in a Keep Alive state,
     sockets where the handler and protocol filters have done their work
     and the ones where the only remaining thing to do is send the data to the client.
     </p>
 
-    <p>The total amount of connections that a single process/threads block can handle is regulated 
+    <p>This new architecture, leveraging non-blocking sockets and modern kernel
+       features exposed by <a class="glossarylink" href="../glossary.html#apr" title="see glossary">APR</a> (like Linux's epoll),
+       no longer requires the <code>mpm-accept</code> <code class="directive"><a href="../mod/core.html#mutex">Mutex</a></code>
+       configured to avoid the thundering herd problem.</p>
+
+    <p>The total amount of connections that a single process/threads block can handle is regulated
         by the <code class="directive">AsyncRequestWorkerFactor</code> directive.</p>
 
     <h3><a name="async-connections" id="async-connections">Async connections</a></h3>
@@ -120,9 +125,9 @@ of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
             <dd>Keep Alive handling is the most basic improvement from the worker MPM.
             Once a worker thread finishes to flush the response to the client, it can offload the
             socket handling to the listener thread, that in turns will wait for any event from the
-            OS, like "the socket is readable". If any new request comes from the client, then the 
-            listener will forward it to the first worker thread available. Conversely, if the 
-            <code class="directive"><a href="../mod/core.html#keepalivetimeout">KeepAliveTimeout</a></code> occurs then the socket will be 
+            OS, like "the socket is readable". If any new request comes from the client, then the
+            listener will forward it to the first worker thread available. Conversely, if the
+            <code class="directive"><a href="../mod/core.html#keepalivetimeout">KeepAliveTimeout</a></code> occurs then the socket will be
             closed by the listener. In this way the worker threads are not responsible for idle
             sockets and they can be re-used to serve other requests.</dd>
 
@@ -130,33 +135,100 @@ of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
             <dd>Sometimes the MPM needs to perform a lingering close, namely sending back an early error to the client while it is still transmitting data to httpd. Sending the response and then closing the connection immediately is not the correct thing to do since the client (still trying to send the rest of the request) would get a connection reset and could not read the httpd's response. So in such cases, httpd tries to read the rest of the request to allow the client to consume the response. The lingering close is time bounded but it can take relatively long time, so a worker thread can offload this work to the listener.</dd>
         </dl>
 
-        <p>These improvements are valid for both HTTP/HTTPS connections.</p> 
+        <p>These improvements are valid for both HTTP/HTTPS connections.</p>
 
+    
+
+    <h3><a name="graceful-close" id="graceful-close">Graceful process termination and Scoreboard usage</a></h3>
+        <p>This mpm showed some scalability bottlenecks in the past leading to the following
+        error: "<strong>scoreboard is full, not at MaxRequestWorkers</strong>".
+        <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code>
+        limits the number of simultaneous requests that will be served at any given time
+        and also the number of allowed processes
+        (<code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code> 
+        / <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">ThreadsPerChild</a></code>), meanwhile
+        the Scoreboard is a representation of all the running processes and
+        the status of their worker threads. If the scoreboard is full (so all the
+        threads have a state that is not idle) but the number of active requests
+        served is not <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code>,
+        it means that some of them are blocking new requests that could be served
+        but that are queued instead (up to the limit imposed by
+        <code class="directive"><a href="../mod/mpm_common.html#listenbacklog">ListenBacklog</a></code>). Most of the times
+        the threads are stuck in the Graceful state, namely they are waiting to
+        finish their work with a TCP connection to safely terminate and free up a
+        scoreboard slot (for example handling long running requests, slow clients
+        or connections with keep-alive enabled). Two scenarios are very common:</p>
+        <ul>
+            <li>During a <a href="../stopping.html#graceful">graceful restart</a>.
+            The parent process signals all its children to complete
+            their work and terminate, while it reloads the config and forks new
+            processes. If the old children keep running for a while before stopping,
+            the scoreboard will be partially occupied until their slots are freed.
+            </li>
+            <li>When the server load goes down in a way that causes httpd to
+            stop some processes (for example due to
+            <code class="directive"><a href="../mod/mpm_common.html#maxsparethreads">MaxSpareThreads</a></code>).
+            This is particularly problematic because when the load increases again,
+            httpd will try to start new processes.
+            If the pattern repeats, the number of processes can rise quite a bit,
+            ending up in a mixture of old processes trying to stop and new ones
+            trying to do some work.
+            </li>
+        </ul>
+        <p>From 2.4.24 onward, mpm-event is smarter and it is able to handle
+        graceful terminations in a much better way. Some of the improvements are:</p>
+        <ul>
+            <li>Allow the use of all the scoreboard slots up to
+            <code class="directive"><a href="../mod/mpm_common.html#serverlimit">ServerLimit</a></code>.
+            <code class="directive"><a href="../mod/mpm_common.html#maxrequestworkers">MaxRequestWorkers</a></code> and
+            <code class="directive"><a href="../mod/mpm_common.html#threadsperchild">ThreadsPerChild</a></code> are used
+            to limit the amount of active processes, meanwhile
+            <code class="directive"><a href="../mod/mpm_common.html#serverlimit">ServerLimit</a></code> 
+            takes also into account the ones doing a graceful
+            close to allow extra slots when needed. The idea is to use
+            <code class="directive"><a href="../mod/mpm_common.html#serverlimit">ServerLimit</a></code> to instruct httpd
+            about how many overall processes are tolerated before impacting
+            the system resources.
+            </li>
+            <li>Force gracefully finishing processes to close their
+            connections in keep-alive state.</li>
+            <li>During graceful shutdown, if there are more running worker threads
+            than open connections for a given process, terminate these threads to
+            free resources faster (which may be needed for new processes).</li>
+            <li>If the scoreboard is full, prevent more processes to finish
+            gracefully due to reduced load until old processes have terminated
+            (otherwise the situation would get worse once the load increases again).</li>
+        </ul>
+        <p>The behavior described in the last point is completely observable via
+        <code class="module"><a href="../mod/mod_status.html">mod_status</a></code> in the connection summary table through two new
+        columns: "Slot" and "Stopping". The former indicates the PID and
+        the latter if the process is stopping or not; the extra state "Yes (old gen)"
+        indicates a process still running after a graceful restart.</p>
     
 
     <h3><a name="limitations" id="limitations">Limitations</a></h3>
         <p>The improved connection handling may not work for certain connection
         filters that have declared themselves as incompatible with event. In these
-        cases, this MPM will fall back to the behaviour of the
+        cases, this MPM will fall back to the behavior of the
         <code class="module"><a href="../mod/worker.html">worker</a></code> MPM and reserve one worker thread per connection.
         All modules shipped with the server are compatible with the event MPM.</p>
 
         <p>A similar restriction is currently present for requests involving an
-        output filter that needs to read and/or modify the whole response body. 
+        output filter that needs to read and/or modify the whole response body.
         If the connection to the client blocks while the filter is processing the
         data, and the amount of data produced by the filter is too big to be
         buffered in memory, the thread used for the request is not freed while
-        httpd waits until the pending data is sent to the client.<br /> 
-        To illustrate this point we can think about the following two situations: 
+        httpd waits until the pending data is sent to the client.<br />
+        To illustrate this point we can think about the following two situations:
         serving a static asset (like a CSS file) versus serving content retrieved from
-        FCGI/CGI or a proxied server. The former is predictable, namely the event MPM 
-        has full visibility on the end of the content and it can use events: the worker 
+        FCGI/CGI or a proxied server. The former is predictable, namely the event MPM
+        has full visibility on the end of the content and it can use events: the worker
         thread serving the response content can flush the first bytes until <code>EWOULDBLOCK</code>
         or <code>EAGAIN</code> is returned, delegating the rest to the listener. This one in turn
         waits for an event on the socket, and delegates the work to flush the rest of the content
         to the first idle worker thread. Meanwhile in the latter example (FCGI/CGI/proxied content)
         the MPM can't predict the end of the response and a worker thread has to finish its work
-        before returning the control to the listener. The only alternative is to buffer the 
+        before returning the control to the listener. The only alternative is to buffer the
         response in memory, but it wouldn't be the safest option for the sake of the
         server's stability and memory footprint.
         </p>
@@ -170,8 +242,8 @@ of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
             <li>kqueue (BSD) </li>
             <li>event ports (Solaris) </li>
         </ul>
-        <p>Before these new APIs where made available, the traditional <code>select</code> and <code>poll</code> APIs had to be used. 
-        Those APIs get slow if used to handle many connections or if the set of connections rate of change is high. 
+        <p>Before these new APIs where made available, the traditional <code>select</code> and <code>poll</code> APIs had to be used.
+        Those APIs get slow if used to handle many connections or if the set of connections rate of change is high.
         The new APIs allow to monitor much more connections and they perform way better when the set of connections to monitor changes frequently. So these APIs made it possible to write the event MPM, that scales much better with the typical HTTP pattern of many idle connections.</p>
 
         <p>The MPM assumes that the underlying <code>apr_pollset</code>
@@ -260,7 +332,7 @@ of the <code class="directive">AsyncRequestWorkerFactor</code>.</p>
     <p class="indent"><strong>
         (<code class="directive"><a href="../mod/mpm_common.html#threadsperchild">ThreadsPerChild</a></code> +
         (<code class="directive">AsyncRequestWorkerFactor</code> *
-        <var>number of idle workers</var>)) * 
+        <var>number of idle workers</var>)) *
         <code class="directive"><a href="../mod/mpm_common.html#serverlimit">ServerLimit</a></code>
     </strong></p>
 
@@ -272,12 +344,12 @@ MaxRequestWorkers = 40
 
 idle_workers = 4 (average for all the processes to keep it simple)
 
-max_connections = (ThreadsPerChild + (AsyncRequestWorkerFactor * idle_workers)) * ServerLimit 
+max_connections = (ThreadsPerChild + (AsyncRequestWorkerFactor * idle_workers)) * ServerLimit
                 = (10 + (2 * 4)) * 4 = 72</pre>
 
     </div>
 
-    <p>When all the worker threads are idle, then absolute maximum numbers of concurrent 
+    <p>When all the worker threads are idle, then absolute maximum numbers of concurrent
         connections can be calculared in a simpler way:</p>
 
     <p class="indent"><strong>
@@ -287,7 +359,7 @@ max_connections = (ThreadsPerChild + (AsyncRequestWorkerFactor * idle_workers)) 
 
 
     <div class="note"><h3>Example</h3>
-    <pre class="prettyprint lang-config">ThreadsPerChild = 10 
+    <pre class="prettyprint lang-config">ThreadsPerChild = 10
 ServerLimit = 4
 MaxRequestWorkers = 40
 AsyncRequestWorkerFactor = 2</pre>
@@ -299,11 +371,11 @@ AsyncRequestWorkerFactor = 2</pre>
 
 
     <p>We can calculate the absolute maximum numbers of concurrent connections in two ways:</p>
-    
-    <pre class="prettyprint lang-config">max_connections = (ThreadsPerChild + (AsyncRequestWorkerFactor * idle_workers)) * ServerLimit 
+
+    <pre class="prettyprint lang-config">max_connections = (ThreadsPerChild + (AsyncRequestWorkerFactor * idle_workers)) * ServerLimit
                 = (10 + (2 * 10)) * 4 = 120
-    
-max_connections = (AsyncRequestWorkerFactor + 1) * MaxRequestWorkers 
+
+max_connections = (AsyncRequestWorkerFactor + 1) * MaxRequestWorkers
                 = (2 + 1) * 40 = 120</pre>
 
     </div>
@@ -341,7 +413,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/event.html';
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2016 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2017 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

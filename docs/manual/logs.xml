@@ -210,10 +210,9 @@
     part of the job of the web server itself. For more information
     about this topic, and for applications which perform log
     analysis, check the <a
-    href="http://dmoz.org/Computers/Software/Internet/Site_Management/Log_analysis/">
-    Open Directory</a> or <a
-    href="http://dir.yahoo.com/Computers_and_Internet/Software/Internet/World_Wide_Web/Servers/Log_Analysis_Tools/">
-    Yahoo</a>.</p>
+    href="http://dmoz.org/Computers/Software/Internet/Site_Management/Log_Analysis/">
+    Open Directory</a>.
+    </p>
 
     <p>Various versions of Apache httpd have used other modules and
     directives to control access logging, including
@@ -477,9 +476,9 @@ CustomLog logs/access_log common env=!dontlog
       different log file.</p>
 
       <highlight language="config">
-        SetEnvIf Accept-Language "en" english<br />
-        CustomLog logs/english_log common env=english<br />
-        CustomLog logs/non_english_log common env=!english
+SetEnvIf Accept-Language "en" english
+CustomLog logs/english_log common env=english
+CustomLog logs/non_english_log common env=!english
       </highlight>
 
       <p>In a caching scenario one would want to know about

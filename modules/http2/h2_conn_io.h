@@ -39,16 +39,16 @@ typedef struct {
     apr_int64_t bytes_written;
     
     int buffer_output;
-    char *buffer;
-    apr_size_t buflen;
-    apr_size_t bufsize;
+    apr_size_t flush_threshold;
+    unsigned int is_flushed : 1;
+    
+    char *scratch;
+    apr_size_t ssize;
+    apr_size_t slen;
 } h2_conn_io;
 
 apr_status_t h2_conn_io_init(h2_conn_io *io, conn_rec *c, 
-                             const struct h2_config *cfg, 
-                             apr_pool_t *pool);
-
-int h2_conn_io_is_buffered(h2_conn_io *io);
+                             const struct h2_config *cfg);
 
 /**
  * Append data to the buffered output.
@@ -59,18 +59,7 @@ apr_status_t h2_conn_io_write(h2_conn_io *io,
                          const char *buf,
                          size_t length);
 
-/**
- * Append a bucket to the buffered output.
- * @param io the connection io
- * @param b the bucket to append
- */
-apr_status_t h2_conn_io_writeb(h2_conn_io *io, apr_bucket *b);
-
-/**
- * Append an End-Of-Connection bucket to the output that, once destroyed,
- * will tear down the complete http2 session.
- */
-apr_status_t h2_conn_io_write_eoc(h2_conn_io *io, struct h2_session *session);
+apr_status_t h2_conn_io_pass(h2_conn_io *io, apr_bucket_brigade *bb);
 
 /**
  * Pass any buffered data on to the connection output filters.
@@ -80,10 +69,8 @@ apr_status_t h2_conn_io_write_eoc(h2_conn_io *io, struct h2_session *session);
 apr_status_t h2_conn_io_flush(h2_conn_io *io);
 
 /**
- * Check the amount of buffered output and pass it on if enough has accumulated.
- * @param io the connection io
- * @param flush if a flush bucket should be appended to any output
+ * Check if the buffered amount of data needs flushing.
  */
-apr_status_t h2_conn_io_consider_pass(h2_conn_io *io);
+int h2_conn_io_needs_flush(h2_conn_io *io);
 
 #endif /* defined(__mod_h2__h2_conn_io__) */

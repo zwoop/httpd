@@ -38,12 +38,12 @@
           <xsl:attribute name="class">no-sidebar</xsl:attribute>
         </xsl:if>
 
-        <xsl:call-template name="top"/>          
+        <xsl:call-template name="top"/>
 
         <div id="page-content">
             <xsl:call-template name="retired" />
 
-            <div id="preamble">        
+            <div id="preamble">
                 <h1>
                     <xsl:value-of select="title"/>
                 </h1>&lf;
@@ -52,16 +52,26 @@
 
                 <xsl:apply-templates select="summary" />
             </div>&lf; <!-- /#preamble -->
-          
+
             <xsl:if test="(not($is-chm) and count(section) > 1) or seealso">
                 <div id="quickview">
+
+<!-- Support Apache logo and link -->
+                    <a class="badge" href="https://www.apache.org/foundation/contributing.html">
+                        <img alt="Support Apache!" src="https://www.apache.org/images/SupportApache-small.png" />
+                    </a>
+<!-- /Support Apache -->
+
                     <xsl:if test="not($is-chm) and count(section) > 1">
                         <ul id="toc">
                         <xsl:apply-templates select="section" mode="index" />
                         </ul>
                     </xsl:if>
 
-                    <xsl:if test="seealso">
+                    <!-- The seealso section shows links to related documents
+                         explicitly set in .xml docs or simply the comments. -->
+                    <xsl:if test="seealso or not($is-chm or $is-zip or
+                                                $metafile/basename = 'index')">
                         <h3>
                             <xsl:value-of
                                 select="$message[@id='seealso']" />
@@ -72,14 +82,13 @@
                                 <xsl:apply-templates />
                             </li>
                         </xsl:for-each>
+                        <xsl:if test="not($is-chm or $is-zip or $metafile/basename = 'index')">
+                            <li><a href="#comments_section"><xsl:value-of
+                                        select="$message[@id='comments']" /></a>
+                            </li>
+                        </xsl:if>
                         </ul>
-                    </xsl:if>
-                    <xsl:if test="not($is-chm or $is-zip or $metafile/basename = 'index')">
-                    <ul class="seealso">
-                        <li><a href="#comments_section"><xsl:value-of
-                                select="$message[@id='comments']" /></a>
-                        </li>
-                    </ul>
+
                     </xsl:if>
                 </div>&lf; <!-- /#quickview -->
             </xsl:if>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1734076 -->
+<!-- English Revision: 1792337 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -347,8 +347,8 @@ disponibles avec Require</title>
     passe :</p>
 
     <highlight language="config">
-      Require ssl-verify-client<br/>
-      Require valid-user
+Require ssl-verify-client
+Require valid-user      
     </highlight>
 
   </section>
@@ -618,7 +618,7 @@ supportés :</p>
 
     <p>Cette valeur utilise les bibliothèques de mise en cache de
     sessions distribuée sur <a
-    href="http://www.distcache.org/">cache distant "distcache"</a>.
+    href="http://distcache.sourceforge.net/">distcache</a>.
     L'argument doit spécifier le serveur ou mandataire à utiliser en
     utilisant la syntaxe d'adressage distcache ; par exemple,
     <code>UNIX:/chemin/vers/socket</code> spécifie une socket de domaine
@@ -1401,10 +1401,12 @@ SSLCARevocationFile
 <directivesynopsis>
 <name>SSLCARevocationCheck</name>
 <description>Active la vérification des révocations basée sur les CRL</description>
-<syntax>SSLCARevocationCheck chain|leaf|none</syntax>
+<syntax>SSLCARevocationCheck chain|leaf|none <em>flag</em>s</syntax>
 <default>SSLCARevocationCheck none</default>
 <contextlist><context>server config</context>
 <context>virtual host</context></contextlist>
+<compatibility>Le drapeau optionnel <em>flag</em>s est disponible à partir de la
+version 2.4.21 du serveur HTTP Apache</compatibility>
 
 <usage>
 <p>
@@ -1417,25 +1419,33 @@ recommandée), les vérifications CRL sont effectuées sur tous les
 certificats de la chaîne, alors que la valeur <code>leaf</code> limite
 la vérification au certificat hors chaîne (la feuille).
 </p>
-<note>
-<title>Lorsque la directive est définie à <code>chain</code> ou
-<code>leaf</code>, les CRLs doivent être disponibles pour que la
-validation réussisse</title>
+<p><em>flag</em>s peut prendre comme valeurs </p>
+<ul>
+<li><code>no_crl_for_cert_ok</code>
 <p>
 Avant la version 2.3.15, les vérifications CRL dans mod_ssl
 réussissaient même si aucune CRL n'était trouvée dans les chemins
 définis par les directives <directive
 module="mod_ssl">SSLCARevocationFile</directive> ou <directive
-module="mod_ssl">SSLCARevocationPath</directive>. Le comportement a
-changé avec l'introduction de cette directive : lorsque la vérification
-est activée, les CRLs <em>doivent</em> être présentes pour que la
+module="mod_ssl">SSLCARevocationPath</directive>.</p>
+<p>Le comportement a
+changé avec l'introduction de la  directive
+<directive>SSLCARevocationFile</directive> : par défaut avec
+<code>chain</code> ou <code>leaf</code>, les CRLs <em>doivent</em> être présentes pour que la
 validation réussisse ; dans le cas contraire, elle échouera avec une
-erreur <code>"CRL introuvable"</code>.
-</p>
-</note>
+erreur <code>"unable to get certificate CRL"</code>.</p>
+<p>La valeur <code>no_crl_for_cert_ok</code> du drapeau <em>flag</em> permet de
+retrouver le comportement précédent.</p>
+</li>
+</ul>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLCARevocationCheck chain
+</highlight>
+</example>
+<example><title>Compatibilité avec la branche 2.2</title>
+<highlight language="config">
+SSLCARevocationCheck chain no_crl_for_cert_ok
 </highlight>
 </example>
 </usage>
@@ -1474,14 +1484,9 @@ Les valeurs de <em>niveau</em> disponibles sont les suivantes :</p>
      le client <em>doit</em> présenter un certificat valide</li>
 <li><strong>optional_no_ca</strong>:
      le client peut présenter un certificat valide, mais il n'est pas
-     nécessaire que ce dernier soit vérifiable (avec succès).</li>
+     nécessaire que ce dernier soit vérifiable (avec succès). Cette option ne
+     peut pas être utilisée lors de l'authentification du client.</li>
 </ul>
-<p>En pratique, seuls les niveaux <strong>none</strong> et
-<strong>require</strong> sont vraiment intéressants, car le niveau
-<strong>optional</strong> ne fonctionne pas avec tous les navigateurs,
-et le niveau <strong>optional_no_ca</strong> va vraiment à l'encontre de
-l'idée que l'on peut se faire de l'authentification (mais peut tout de
-même être utilisé pour établir des pages de test SSL, etc...)</p>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLVerifyClient require
@@ -2176,20 +2181,35 @@ du serveur distant
 
 <usage>
 <p>
-Cette directive permet de définir si le champ CN du certificat
-du serveur distant doit être comparé au nom de serveur de l'URL de la
-requête. S'ils ne correspondent pas, un
-code d'état 502 (Bad Gateway) est envoyé.
+Cette directive permet de définir si le champ CN du certificat du serveur
+distant doit être comparé au nom de serveur de l'URL de la requête. S'ils ne
+correspondent pas, un code d'état 502 (Bad Gateway) est envoyé. A partir de la
+version 2.4.5, SSLProxyCheckPeerCN a été remplacé par <directive
+module="mod_ssl">SSLProxyCheckPeerName</directive>.
 </p>
 <p>
-A partir de la version 2.4.5, SSLProxyCheckPeerCN a été remplacé par <directive
-module="mod_ssl">SSLProxyCheckPeerName</directive>, et sa définition
-n'est prise en compte que si <code>SSLProxyCheckPeerName off</code> a
-été spécifié.
+De la version 2.4.5 à la version 2.4.20, spécifier <code>SSLProxyCheckPeerName
+off</code> était suffisant pour obtenir ce comportement (car la valeur par
+défaut de <code>SSLProxyCheckPeerCN</code> était <code>on</code>). Avec ces
+versions, les deux directives doivent être définies à <code>off</code> pour
+éviter toute validation du nom de certificat du serveur distant, et de
+nombreux utilisateurs ont signalé ce comportement comme très perturbant.
+</p>
+<p>
+A partir de la version 2.4.21, toutes les configurations qui activent au moins
+une des deux directives <code>SSLProxyCheckPeerName</code> ou
+<code>SSLProxyCheckPeerCN</code> adopteront le nouveau comportement de la
+directive <directive module="mod_ssl">SSLProxyCheckPeerName</directive>, et
+toutes les configurations qui désactivent une des deux directives
+<code>SSLProxyCheckPeerName</code> ou <code>SSLProxyCheckPeerCN</code>
+éviteront toute validation du nom de certificat du serveur distant. Seule la
+configuration suivante permettra de retrouver la comparaison de CN
+traditionnelle pour les versions 2.4.21 et supérieures :
 </p>
 <example><title>Exemple</title>
 <highlight language="config">
 SSLProxyCheckPeerCN on
+SSLProxyCheckPeerName off
 </highlight>
 </example>
 </usage>
@@ -2208,24 +2228,31 @@ certificats serveur distants
 Apache</compatibility>
 <usage>
 <p>
-Cette directive permet de configurer la vérification du nom d'hôte dans
-les certificats de serveur lorsque mod_ssl agit en tant que client SSL.
-La vérification est concluante si le nom d'hôte de l'URI de la requête
-correspond soit à l'extension subjectAltName, soit à l'un des attributs
-CN dans le sujet du certificat. Si la vérification échoue, la requête
-SSL est annulée et un code d'erreur 502 (Bad Gateway) est renvoyé. Cette
-directive remplace la directive <directive
-module="mod_ssl">SSLProxyCheckPeerCN</directive> qui ne prenait en
-compte que le premier attribut CN pour la vérification du nom d'hôte.
+Cette directive permet de configurer la vérification du nom d'hôte pour
+les certificats serveur lorsque mod_ssl agit en tant que client SSL. La
+vérification réussit si le nom d'hôte de l'URI de la requête correspond à un
+des attributs CN du sujet du certificat, ou à l'extension subjectAltName. Si la
+vérification échoue, la requête SSL
+avorte, et un code d'erreur 502 (Bad Gateway) est renvoyé.
 </p>
 <p>
-La vérification du nom d'hôte avec caractères générique est supportée de
-la manière suivante : les entrées subjectAltName de type dNSName ou les
-attributs CN commençant par <code>*.</code> correspondront à tout nom
-DNS comportant le même nombre d'éléments et le même suffixe (par
-exemple, <code>*.example.org</code> correspondra à
-<code>foo.example.org</code>, mais pas à
-<code>foo.bar.example.org</code>).
+Les caractères génériques sont supportés dans certains cas bien spécifiques :
+une entrée subjectAltName de type dNSName ou les attributs CN
+commençant par <code>*.</code> correspondront à tout nom d'hôte comportant
+le même nombre de champs et le même suffixe ; par exemple,
+<code>*.example.org</code> correspondra à <code>foo.example.org</code>,
+mais pas à <code>foo.bar.example.org</code> car le nombre d'éléments dans les
+nom est différent.
+</p>
+<p>
+Cette fonctionnalité a été introduite avec la version 2.4.5 et l'emporte sur la
+directive <directive module="mod_ssl">SSLProxyCheckPeerCN</directive> qui ne
+comparait que la valeur exacte du premier attribut CN avec le nom d'hôte.
+Cependant, de nombreux utilisateurs étaient déconcertés par le comportement
+induit par l'utilisation de ces deux directives individuellement, si bien que ce
+comportement a été amélioré avec la version 2.4.21. Voir la description de la
+directive <directive module="mod_ssl">SSLProxyCheckPeerCN</directive> pour le
+comportement original et des détails à propos de ces améliorations.
 </p>
 </usage>
 </directivesynopsis>
@@ -2250,11 +2277,13 @@ défaut, le moteur de protocole SSL/TLS est désactivé pour la fonction de
 mandataire du serveur principal et de tous les serveurs virtuels
 configurés.</p>
 
-<p>Notez que la directive SSLProxyEngine ne doit généralement pas être
-utilisée dans le cadre d'un serveur virtuel qui agit en tant que
-mandataire direct (via les directives &lt;Proxy&gt; ou
-&lt;ProxyRequest&gt;). SSLProxyEngine n'est pas nécessaire pour activer
-un serveur mandataire direct pour les requêtes SSL/TLS.</p>
+<p>Notez que la directive <directive>SSLProxyEngine</directive> ne doit
+généralement pas être utilisée dans le cadre d'un serveur virtuel qui agit en
+tant que mandataire direct (via les directives <directive module="mod_proxy"
+type="section">Proxy</directive> ou <directive
+module="mod_proxy">ProxyRequests</directive>).
+<directive>SSLProxyEngine</directive> n'est pas nécessaire pour activer un
+serveur mandataire direct pour les requêtes SSL/TLS.</p>
 
 
 <example><title>Exemple</title>
@@ -2303,11 +2332,10 @@ lors de l'initialisation d'une connexion SSL de mandataire</description>
 <context>.htaccess</context></contextlist>
 <override>AuthConfig</override>
 <usage>
-<p>Cette directive est équivalente à la directive
-<code>SSLCipherSuite</code>, mais s'applique à une connexion de
+<p>Cette directive est équivalente à la directive <directive
+module="mod_ssl">SSLCipherSuite</directive>, mais s'applique à une connexion de
 mandataire. Veuillez vous reporter à la directive <directive
-module="mod_ssl">SSLCipherSuite</directive> pour plus
-d'informations.</p>
+module="mod_ssl">SSLCipherSuite</directive> pour plus d'informations.</p>
 </usage>
 
 </directivesynopsis>
@@ -2666,6 +2694,42 @@ champ <code>nextUpdate</code> se situe dans le futur.</p>
 <p>Cette option permet de définir le délai d'attente pour les requêtes à
 destination des répondeurs OCSP, lorsque la directive <directive
 module="mod_ssl">SSLOCSPEnable</directive> est à on.</p>
+</usage>
+</directivesynopsis>
+
+<directivesynopsis>
+<name>SSLOCSPNoverify</name>
+<description>Evite la vérification des certificats des répondeurs OCSP</description>
+<syntax>SSLOCSPNoverify <em>On/Off</em></syntax>
+<default>SSLOCSPNoverify Off</default>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Disponible à partir de la version 2.4.26 du serveur HTTP Apache,
+sous réserve d'utiliser une version 0.9.7 ou supérieure d'OpenSSL</compatibility>
+<usage>
+<p>Cette directive permet d'éviter la vérification des certificats
+des répondeurs OCSP, ce qui peut s'avérer utile lorsqu'on teste un serveur OCSP.</p>
+</usage>
+</directivesynopsis>
+
+
+<directivesynopsis>
+<name>SSLOCSPResponderCertificateFile</name>
+<description>Fournit un jeu de certificats de confiance du répondeur OCSP avec
+encodage PEM</description>
+<syntax>SSLOCSPResponderCertificateFile <em>file</em></syntax>
+<contextlist><context>server config</context>
+<context>virtual host</context></contextlist>
+<compatibility>Disponible à partir de la version 2.4.26 du serveur HTTP Apache,
+sous réserve d'utiliser une version 0.9.7 ou supérieure d'OpenSSL</compatibility>
+<usage>
+<p>Cette directive permet de définir un fichier contenant une liste de
+certificats de confiance du répondeur OCSP à utiliser au cours de la validation
+du certificat du répondeur OCSP. Les certificats fournis peuvent
+être considérés comme de confiance sans avoir à effectuer de vérifications
+supplémentaires. Ce processus de validation du certificat du répondeur OCSP
+intervient en général lorsque ce dernier est autosigné ou tout simplement absent
+de la réponse OCSP.</p>
 </usage>
 </directivesynopsis>
 

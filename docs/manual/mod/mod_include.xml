@@ -64,7 +64,7 @@ AddOutputFilter INCLUDES .shtml
     is set):</p>
 
     <highlight language="config">
-      Options +Includes
+Options +Includes
     </highlight>
 
     <p>For backwards compatibility, the <code>server-parsed</code>
@@ -110,6 +110,8 @@ AddOutputFilter INCLUDES .shtml
 
     <table border="1">
     <tr><th>Element</th><th>Description</th></tr>
+    <tr><td><code><a href="#element.comment">comment</a></code></td>
+        <td>SSI comment</td></tr>
     <tr><td><code><a href="#element.config">config</a></code></td>
         <td>configure output formats</td></tr>
     <tr><td><code><a href="#element.echo">echo</a></code></td>
@@ -134,14 +136,24 @@ AddOutputFilter INCLUDES .shtml
     <module>mod_cgi</module>, and will only be available if this
     module is loaded.</p>
 
+    <section id="element.comment"><title>The comment Element</title>
+      <p>This command doesn't output anything. Its only use is to
+      add comments within a file. These comments are not printed.</p>
+
+      <p>This syntax is available in version 2.4.21 and later.</p>
+
+      <example>
+      &lt;!--#comment Blah Blah Blah --&gt;
+      </example>
+    </section> <!-- /comment -->
+
     <section id="element.config"><title>The config Element</title>
       <p>This command controls various aspects of the parsing. The
       valid attributes are:</p>
 
       <dl>
       <dt><code>echomsg</code> (<em>Apache 2.1 and later</em>)</dt>
-      <dd>
-      <p>The value is a message that is sent back to the
+      <dd><p>The value is a message that is sent back to the
       client if the <code><a href="#element.echo">echo</a></code> element
       attempts to echo an undefined variable. This overrides any <directive
       module="mod_include">SSIUndefinedEcho</directive> directives.</p>
@@ -156,7 +168,7 @@ AddOutputFilter INCLUDES .shtml
       client if an error occurs while parsing the
       document. This overrides any <directive
       module="mod_include">SSIErrorMsg</directive> directives.</p>
-      
+
       <example>
        &lt;!--#config errmsg="[Oops, something broke.]" --&gt;
       </example>
@@ -172,19 +184,19 @@ AddOutputFilter INCLUDES .shtml
       <example>
       &lt;!--#config sizefmt="abbrev" --&gt;
       </example>
+
       </dd>
 
       <dt><code>timefmt</code></dt>
       <dd><p>The value is a string to be used by the
       <code>strftime(3)</code> library routine when printing
       dates.</p>
-      
+
       <example>
       &lt;!--#config timefmt=""%R, %B %d, %Y"" --&gt;
       </example>
 
       </dd>
-      
       </dl>
     </section> <!-- /config -->
 
@@ -340,7 +352,7 @@ AddOutputFilter INCLUDES .shtml
     </example>
 
     The value of <code>file</code> cannot start with a slash
-    (<code>/</code>), nor can it contain <code>../</code> so as to 
+    (<code>/</code>), nor can it contain <code>../</code> so as to
     refer to a file above the current directory or outside of the
     document root. Attempting to so will result in the error message:
     <code>The given path was above the root path</code>.
@@ -823,7 +835,7 @@ AddOutputFilter INCLUDES .shtml
     looks for to mark the end of an include element.</p>
 
     <highlight language="config">
-      SSIEndTag "%&gt;"
+SSIEndTag "%&gt;"
     </highlight>
 
 </usage>
@@ -844,7 +856,7 @@ AddOutputFilter INCLUDES .shtml
     displays when a variable is not set and &quot;echoed&quot;.</p>
 
     <highlight language="config">
-      SSIUndefinedEcho "&lt;!-- undef --&gt;"
+SSIUndefinedEcho "&lt;!-- undef --&gt;"
     </highlight>
 </usage>
 </directivesynopsis>
@@ -871,7 +883,7 @@ directive]&quot;</default>
     errmsg=<var>message</var> --&gt;</code> element.</p>
 
     <highlight language="config">
-      SSIErrorMsg "&lt;!-- Error --&gt;"
+SSIErrorMsg "&lt;!-- Error --&gt;"
     </highlight>
 </usage>
 </directivesynopsis>
@@ -893,8 +905,8 @@ directive]&quot;</default>
     different times).</p>
 
     <highlight language="config">
-      SSIStartTag "&lt;%"<br />
-      SSIEndTag   "%&gt;"
+SSIStartTag "&lt;%"
+SSIEndTag   "%&gt;"
     </highlight>
 
     <p>The example given above, which also specifies a matching
@@ -930,7 +942,7 @@ displayed</description>
     timefmt=<var>formatstring</var> --&gt;</code> element.</p>
 
     <highlight language="config">
-      SSITimeFormat "%R, %B %d, %Y"
+SSITimeFormat "%R, %B %d, %Y"
     </highlight>
 
     <p>The above directive would cause times to be displayed in the
@@ -1088,4 +1100,3 @@ set</description>
 </directivesynopsis>
 
 </modulesynopsis>
-
