@@ -5,11 +5,6 @@ The current version of this file can be found at:
 
   * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.4.x/STATUS
 
-Documentation status is maintained separately and can be found at:
-
-  * docs/STATUS in this source tree, or
-  * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.4.x/docs/STATUS
-
 The current development branch of this software can be found at:
 
   * http://svn.apache.org/repos/asf/httpd/httpd/trunk
@@ -21,20 +16,23 @@ Consult the following STATUS files for information on related projects:
   * http://svn.apache.org/repos/asf/apr/apr-util/branches/1.4.x/STATUS
   * http://svn.apache.org/repos/asf/apr/apr/branches/1.5.x/STATUS
   * http://svn.apache.org/repos/asf/apr/apr-util/branches/1.5.x/STATUS
+  * http://svn.apache.org/repos/asf/apr/apr/branches/1.6.x/STATUS
+  * http://svn.apache.org/repos/asf/apr/apr-util/branches/1.6.x/STATUS
 
 Patches considered for backport are noted in their branches' STATUS:
 
-  * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.0.x/STATUS
   * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.2.x/STATUS
   * http://svn.apache.org/repos/asf/httpd/httpd/branches/2.4.x/STATUS
-
 
 
 Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.26  : Tagged on June 13, 2017.
+    2.4.29  : Tagged on October 17, 2017.
+    2.4.28  : Tagged on September 25, 2017. Released on October 5, 2017.
+    2.4.27  : Tagged on July 6, 2017. Released on July 11, 2017.
+    2.4.26  : Tagged on June 13, 2017. Released on June 19, 2017.
     2.4.25  : Tagged on December 16, 2016. Released on December 21, 2016.
     2.4.24  : Tagged on December 16, 2016, not released.
     2.4.23  : Tagged on June 30, 2016. Released on July 05, 2016.
@@ -107,7 +105,6 @@ CURRENT RELEASE NOTES:
     then merge into branches/2.4.x, as applicable.
 
   * Current exceptions for RTC for this branch:
-    . http/2 - mod_http2 (until 2.4.26 is released)
     . mod_proxy_http2
     . mod_lua
     . documentation
@@ -119,6 +116,8 @@ RELEASE SHOWSTOPPERS:
 
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
+
+
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
@@ -134,7 +133,14 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
                   http://svn.apache.org/r1756976
                   http://svn.apache.org/r1781313
      2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-r1740928_and_co-v3.patch
-     +1: ylavic
+     +1: ylavic, mrumph
+     mrumph: Since this has been sitting for awhile, there are several places
+             where this patch needs to be adjusted against recent changes to 2.4.x.
+     ylavic: With current 2.4.x (r1807662), there seems to be only a conflict with
+             MMN, which can probably be taken by the backporter. I don't see the
+             other places where it needs adjustments, Mike?
+      wrowe: Suspect that this is an MMN Major bump, not minor, without some
+             additional detection/workaround of legacy 2.4 compiled modules.
 
   *) mod_remoteip: Add PROXY protocol support
      trunk patch: http://svn.apache.org/r1776575
@@ -151,75 +157,56 @@ PATCHES PROPOSED TO BACKPORT FROM TRUNK:
                   http://svn.apache.org/r1789800 (remove optional processing)
                   http://svn.apache.org/r1790169 (rename "exception" directive)
                   http://svn.apache.org/r1790457 (Update directive name in err message)
+                  http://svn.apache.org/r1806985
      2.4 convenience patch (includes CHANGES):
-                  http://people.apache.org/~druggeri/patches/RemoteIPProxyProtocol.2.4.x.patch
+                  http://home.apache.org/~jim/patches/RemoteIPProxyProtocol.2.4.x.patch
+                  http://svn.apache.org/r1806985
      +1: druggeri, jim
+     mrumph: I had a chance to review this proposal.
+             I committed some suggested changes to trunk in r1806985.
+             Also, the copyright in mod_remoteip.c is of some concern.
+             Perhaps the terms of the copyright should be included in that note.
+             And on a personal note, today is my last day with Oracle.
+             So it may well be my last day with Apache as well.
+             It has been great working with all of you.
+        jim: Not sure what the copyright concern is, but added r1806985
+             to the proposal.
+     ylavic: RemoteIPProxyProtocol* are documented as scoped to server config
+             and virtual host, though using ap_server_conf makes them global
+             only (thus less useful too...).
 
-   * mod_journald: Add new module mod_journald to log error logs into journald.
+  *) core/mod_ssl: Add new flag int to module struct. Define first bit for keeping
+     server config records non-shared instances, set for mod_ssl to make manipulations
+     in post_config safe.
+     trunk patch: svn merge -c 1809302,1809303,1809305,1809311,1809314,1809713 ^/httpd/httpd/trunk .
+     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/backport-module-flags.diff
+                  (merge with alterations for mmn etc.)
+     +1: icing, ylavic
+
+  *) core: A signal received while stopping could have crashed the main
+     process.  PR 61558.
+     trunk patch: http://svn.apache.org/r1809881
+                  http://svn.apache.org/r1809973
+                  http://svn.apache.org/r1809976
+                  http://svn.apache.org/r1812075
+     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/stop_signals-PR61558.patch
+                  (merge without changes to motorz)
+     +1: ylavic, jim
+
+  *) mod_journald: Add new module mod_journald to log error logs into journald.
      trunk patch: http://svn.apache.org/r1610339
                   http://svn.apache.org/r1621806
+                  http://svn.apache.org/r1812339
      2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+                  http://svn.apache.org/r1812339
      +1: jkaluza, jim
      jchampion: Looks like the headers require GCC extensions to compile, so
                 mod_journald can't be configured in maintainer mode (-std=c89).
                 Can anyone else reproduce, or is it just my distro?
-
-  *) core: Disallow multiple Listen on the same IP:port when listener buckets
-     are configured (ListenCoresBucketsRatio > 0), consistently with the single
-     bucket case (default), thus avoiding the leak of the corresponding socket
-     descriptors on graceful restart.
-     trunk patch: http://svn.apache.org/r1789220
-                  http://svn.apache.org/r1792675
-     2.4.x patch: trunk works (modulo CHANGES)
-     +1: ylavic, jim
-
-  *) event: Avoid listener periodic wake ups by using the pollset wake-ability
-     when available.  PR 57399.
-     trunk patch: http://svn.apache.org/r1762580
-                  http://svn.apache.org/r1762701
-                  http://svn.apache.org/r1762702
-                  http://svn.apache.org/r1762718
-                  http://svn.apache.org/r1762723
-                  http://svn.apache.org/r1762742
-                  http://svn.apache.org/r1762743
-                  http://svn.apache.org/r1774538
-                  http://svn.apache.org/r1779354
-     2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-mpm_event-wakeup-v7.1.patch
-     +1: ylavic, icing
-
-   *) prefork: This fixes race-condition in signals handling when httpd is
-               runnning on foreground and user hits ctrl+c
-     trunk patch: http://svn.apache.org/r1618555
-     2.4.x patch: svn merge -c 1618555 ^/httpd/httpd/trunk .
-     +1: ylavic 
-     jailetc36: untested because I'm unsure on how to reproduce the race, but
-                the patch description looks straighforward.
-                If confirmed, it would worth, IMHO, a CHANGE entry and maybe a
-                2.2.x backport.
-
-   *) core: Save 160 bytes in the request pool and some cycles if no <If>
-            directive is used.
-      trunk patch: http://svn.apache.org/r1735906
-      2.4.x patch: svn merge -c 1735906 ^/httpd/httpd/trunk .
-      +1: jailletc36, jim
-
-   *) Easy proposals:
-      - mod_authnz_ldap: Log a warning when the LDAP authn provider is configured
-                         but an AuthLDAPURL isn't
-      - mod_auth_digest: Follow up to r1772919: update APLOGNO()
-      - mod_cache_socache: Save a few cycles
-      - mod_cache_socache: Improve indentation
-      - mod_cache_socache: Group bit field values in order to save some memory
-      - mod_authnz_ldap: Add an explicit NULL to initialise a field in an authn_provider
-                         structure
-      trunk patch: http://svn.apache.org/r1551611
-                   http://svn.apache.org/r1783765
-                   http://svn.apache.org/r1788996
-                   http://svn.apache.org/r1788998
-                   http://svn.apache.org/r1789000
-                   http://svn.apache.org/r1795651
-      2.4.x patch: svn merge -c 1551611,1783765,1788996,1788998,1789000,1795651 ^/httpd/httpd/trunk .
-      +1: jailletc36, jim
+     ylavic: missing r1812339 for maintainer-mode/c89/-Werror compliance,
+             needed if the above configure.in proposal gets backported.
+             Note that r1812339 could be backported in any case, even if
+             the above configure.in proposal does not get accepted.
 
 
 PATCHES/ISSUES THAT ARE BEING WORKED

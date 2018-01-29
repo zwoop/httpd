@@ -112,6 +112,8 @@ void h2_util_camel_case_header(char *s, size_t len)
     }
 }
 
+/* base64 url encoding ****************************************************************************/
+
 static const int BASE64URL_UINT6[] = {
 /*   0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f        */
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*  0 */
@@ -174,6 +176,7 @@ apr_size_t h2_util_base64url_decode(const char **decoded, const char *encoded,
             n = ((BASE64URL_UINT6[ e[mlen+0] ] << 18) +
                  (BASE64URL_UINT6[ e[mlen+1] ] << 12));
             *d++ = n >> 16;
+            remain = 1;
             break;
         case 3:
             n = ((BASE64URL_UINT6[ e[mlen+0] ] << 18) +
@@ -181,6 +184,7 @@ apr_size_t h2_util_base64url_decode(const char **decoded, const char *encoded,
                  (BASE64URL_UINT6[ e[mlen+2] ] << 6));
             *d++ = n >> 16;
             *d++ = n >> 8 & 0xffu;
+            remain = 2;
             break;
         default: /* do nothing */
             break;
@@ -189,77 +193,34 @@ apr_size_t h2_util_base64url_decode(const char **decoded, const char *encoded,
 }
 
 const char *h2_util_base64url_encode(const char *data, 
-                                     apr_size_t len, apr_pool_t *pool)
+                                     apr_size_t dlen, apr_pool_t *pool)
 {
-    apr_size_t mlen = ((len+2)/3)*3;
-    apr_size_t slen = (mlen/3)*4;
-    apr_size_t i;
+    long i, len = (int)dlen;
+    apr_size_t slen = ((dlen+2)/3)*4 + 1; /* 0 terminated */
     const unsigned char *udata = (const unsigned char*)data;
-    char *enc, *p = apr_pcalloc(pool, slen+1); /* 0 terminated */
+    char *enc, *p = apr_pcalloc(pool, slen);
     
     enc = p;
-    for (i = 0; i < mlen; i+= 3) {
+    for (i = 0; i < len-2; i+= 3) {
         *p++ = BASE64URL_CHARS[ (udata[i] >> 2) & 0x3fu ];
-        *p++ = BASE64URL_CHARS[ ((udata[i] << 4) + 
-                                 ((i+1 < len)? (udata[i+1] >> 4) : 0)) & 0x3fu ];
-        *p++ = BASE64URL_CHARS[ ((udata[i+1] << 2) + 
-                                 ((i+2 < len)? (udata[i+2] >> 6) : 0)) & 0x3fu ];
-        if (i+2 < len) {
-            *p++ = BASE64URL_CHARS[ udata[i+2] & 0x3fu ];
-        }
+        *p++ = BASE64URL_CHARS[ ((udata[i] << 4) + (udata[i+1] >> 4)) & 0x3fu ];
+        *p++ = BASE64URL_CHARS[ ((udata[i+1] << 2) + (udata[i+2] >> 6)) & 0x3fu ];
+        *p++ = BASE64URL_CHARS[ udata[i+2] & 0x3fu ];
     }
     
+    if (i < len) {
+        *p++ = BASE64URL_CHARS[ (udata[i] >> 2) & 0x3fu ];
+        if (i == (len - 1)) {
+            *p++ = BASE64URL_CHARS[ (udata[i] << 4) & 0x3fu ];
+        }
+        else {
+            *p++ = BASE64URL_CHARS[ ((udata[i] << 4) + (udata[i+1] >> 4)) & 0x3fu ];
+            *p++ = BASE64URL_CHARS[ (udata[i+1] << 2) & 0x3fu ];
+        }
+    }
+    *p++ = '\0';
     return enc;
 }
-
-int h2_util_contains_token(apr_pool_t *pool, const char *s, const char *token)
-{
-    char *c;
-    if (s) {
-        if (!apr_strnatcasecmp(s, token)) {   /* the simple life */
-            return 1;
-        }
-        
-        for (c = ap_get_token(pool, &s, 0); c && *c;
-             c = *s? ap_get_token(pool, &s, 0) : NULL) {
-            if (!apr_strnatcasecmp(c, token)) { /* seeing the token? */
-                return 1;
-            }
-            while (*s++ == ';') {            /* skip parameters */
-                ap_get_token(pool, &s, 0);
-            }
-            if (*s++ != ',') {               /* need comma separation */
-                return 0;
-            }
-        }
-    }
-    return 0;
-}
-
-const char *h2_util_first_token_match(apr_pool_t *pool, const char *s, 
-                                      const char *tokens[], apr_size_t len)
-{
-    char *c;
-    apr_size_t i;
-    if (s && *s) {
-        for (c = ap_get_token(pool, &s, 0); c && *c;
-             c = *s? ap_get_token(pool, &s, 0) : NULL) {
-            for (i = 0; i < len; ++i) {
-                if (!apr_strnatcasecmp(c, tokens[i])) {
-                    return tokens[i];
-                }
-            }
-            while (*s++ == ';') {            /* skip parameters */
-                ap_get_token(pool, &s, 0);
-            }
-            if (*s++ != ',') {               /* need comma separation */
-                return 0;
-            }
-        }
-    }
-    return NULL;
-}
-
 
 /*******************************************************************************
  * ihash - hash for structs with int identifier
@@ -695,16 +656,47 @@ int h2_fifo_count(h2_fifo *fifo)
 
 static apr_status_t check_not_empty(h2_fifo *fifo, int block)
 {
-    if (fifo->count == 0) {
+    while (fifo->count == 0) {
         if (!block) {
             return APR_EAGAIN;
         }
-        while (fifo->count == 0) {
-            if (fifo->aborted) {
-                return APR_EOF;
-            }
-            apr_thread_cond_wait(fifo->not_empty, fifo->lock);
+        if (fifo->aborted) {
+            return APR_EOF;
         }
+        apr_thread_cond_wait(fifo->not_empty, fifo->lock);
+    }
+    return APR_SUCCESS;
+}
+
+static apr_status_t fifo_push_int(h2_fifo *fifo, void *elem, int block)
+{
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+
+    if (fifo->set && index_of(fifo, elem) >= 0) {
+        /* set mode, elem already member */
+        return APR_EEXIST;
+    }
+    else if (fifo->count == fifo->nelems) {
+        if (block) {
+            while (fifo->count == fifo->nelems) {
+                if (fifo->aborted) {
+                    return APR_EOF;
+                }
+                apr_thread_cond_wait(fifo->not_full, fifo->lock);
+            }
+        }
+        else {
+            return APR_EAGAIN;
+        }
+    }
+    
+    ap_assert(fifo->count < fifo->nelems);
+    fifo->elems[nth_index(fifo, fifo->count)] = elem;
+    ++fifo->count;
+    if (fifo->count == 1) {
+        apr_thread_cond_broadcast(fifo->not_empty);
     }
     return APR_SUCCESS;
 }
@@ -718,33 +710,7 @@ static apr_status_t fifo_push(h2_fifo *fifo, void *elem, int block)
     }
 
     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
-        if (fifo->set && index_of(fifo, elem) >= 0) {
-            /* set mode, elem already member */
-            apr_thread_mutex_unlock(fifo->lock);
-            return APR_EEXIST;
-        }
-        else if (fifo->count == fifo->nelems) {
-            if (block) {
-                while (fifo->count == fifo->nelems) {
-                    if (fifo->aborted) {
-                        apr_thread_mutex_unlock(fifo->lock);
-                        return APR_EOF;
-                    }
-                    apr_thread_cond_wait(fifo->not_full, fifo->lock);
-                }
-            }
-            else {
-                apr_thread_mutex_unlock(fifo->lock);
-                return APR_EAGAIN;
-            }
-        }
-        
-        ap_assert(fifo->count < fifo->nelems);
-        fifo->elems[nth_index(fifo, fifo->count)] = elem;
-        ++fifo->count;
-        if (fifo->count == 1) {
-            apr_thread_cond_broadcast(fifo->not_empty);
-        }
+        rv = fifo_push_int(fifo, elem, block);
         apr_thread_mutex_unlock(fifo->lock);
     }
     return rv;
@@ -760,12 +726,15 @@ apr_status_t h2_fifo_try_push(h2_fifo *fifo, void *elem)
     return fifo_push(fifo, elem, 0);
 }
 
-static void *pull_head(h2_fifo *fifo)
+static apr_status_t pull_head(h2_fifo *fifo, void **pelem, int block)
 {
-    void *elem;
+    apr_status_t rv;
     
-    ap_assert(fifo->count > 0);
-    elem = fifo->elems[fifo->head];
+    if ((rv = check_not_empty(fifo, block)) != APR_SUCCESS) {
+        *pelem = NULL;
+        return rv;
+    }
+    *pelem = fifo->elems[fifo->head];
     --fifo->count;
     if (fifo->count > 0) {
         fifo->head = nth_index(fifo, 1);
@@ -773,7 +742,7 @@ static void *pull_head(h2_fifo *fifo)
             apr_thread_cond_broadcast(fifo->not_full);
         }
     }
-    return elem;
+    return APR_SUCCESS;
 }
 
 static apr_status_t fifo_pull(h2_fifo *fifo, void **pelem, int block)
@@ -785,15 +754,7 @@ static apr_status_t fifo_pull(h2_fifo *fifo, void **pelem, int block)
     }
     
     if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
-        if ((rv = check_not_empty(fifo, block)) != APR_SUCCESS) {
-            apr_thread_mutex_unlock(fifo->lock);
-            *pelem = NULL;
-            return rv;
-        }
-
-        ap_assert(fifo->count > 0);
-        *pelem = pull_head(fifo);
-
+        rv = pull_head(fifo, pelem, block);
         apr_thread_mutex_unlock(fifo->lock);
     }
     return rv;
@@ -818,25 +779,17 @@ static apr_status_t fifo_peek(h2_fifo *fifo, h2_fifo_peek_fn *fn, void *ctx, int
         return APR_EOF;
     }
     
-    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
-        if ((rv = check_not_empty(fifo, block)) != APR_SUCCESS) {
-            apr_thread_mutex_unlock(fifo->lock);
-            return rv;
+    if (APR_SUCCESS == (rv = apr_thread_mutex_lock(fifo->lock))) {
+        if (APR_SUCCESS == (rv = pull_head(fifo, &elem, block))) {
+            switch (fn(elem, ctx)) {
+                case H2_FIFO_OP_PULL:
+                    break;
+                case H2_FIFO_OP_REPUSH:
+                    rv = fifo_push_int(fifo, elem, block);
+                    break;
+            }
         }
-
-        ap_assert(fifo->count > 0);
-        elem = pull_head(fifo);
-        
         apr_thread_mutex_unlock(fifo->lock);
-
-        switch (fn(elem, ctx)) {
-            case H2_FIFO_OP_PULL:
-                break;
-            case H2_FIFO_OP_REPUSH:
-                return h2_fifo_push(fifo, elem);
-                break;
-        }
-        
     }
     return rv;
 }
@@ -889,6 +842,313 @@ apr_status_t h2_fifo_remove(h2_fifo *fifo, void *elem)
     return rv;
 }
 
+/*******************************************************************************
+ * FIFO int queue
+ ******************************************************************************/
+
+struct h2_ififo {
+    int *elems;
+    int nelems;
+    int set;
+    int head;
+    int count;
+    int aborted;
+    apr_thread_mutex_t *lock;
+    apr_thread_cond_t  *not_empty;
+    apr_thread_cond_t  *not_full;
+};
+
+static int inth_index(h2_ififo *fifo, int n) 
+{
+    return (fifo->head + n) % fifo->nelems;
+}
+
+static apr_status_t ififo_destroy(void *data) 
+{
+    h2_ififo *fifo = data;
+
+    apr_thread_cond_destroy(fifo->not_empty);
+    apr_thread_cond_destroy(fifo->not_full);
+    apr_thread_mutex_destroy(fifo->lock);
+
+    return APR_SUCCESS;
+}
+
+static int iindex_of(h2_ififo *fifo, int id)
+{
+    int i;
+    
+    for (i = 0; i < fifo->count; ++i) {
+        if (id == fifo->elems[inth_index(fifo, i)]) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static apr_status_t icreate_int(h2_ififo **pfifo, apr_pool_t *pool, 
+                                int capacity, int as_set)
+{
+    apr_status_t rv;
+    h2_ififo *fifo;
+    
+    fifo = apr_pcalloc(pool, sizeof(*fifo));
+    if (fifo == NULL) {
+        return APR_ENOMEM;
+    }
+
+    rv = apr_thread_mutex_create(&fifo->lock,
+                                 APR_THREAD_MUTEX_UNNESTED, pool);
+    if (rv != APR_SUCCESS) {
+        return rv;
+    }
+
+    rv = apr_thread_cond_create(&fifo->not_empty, pool);
+    if (rv != APR_SUCCESS) {
+        return rv;
+    }
+
+    rv = apr_thread_cond_create(&fifo->not_full, pool);
+    if (rv != APR_SUCCESS) {
+        return rv;
+    }
+
+    fifo->elems = apr_pcalloc(pool, capacity * sizeof(int));
+    if (fifo->elems == NULL) {
+        return APR_ENOMEM;
+    }
+    fifo->nelems = capacity;
+    fifo->set = as_set;
+    
+    *pfifo = fifo;
+    apr_pool_cleanup_register(pool, fifo, ififo_destroy, apr_pool_cleanup_null);
+
+    return APR_SUCCESS;
+}
+
+apr_status_t h2_ififo_create(h2_ififo **pfifo, apr_pool_t *pool, int capacity)
+{
+    return icreate_int(pfifo, pool, capacity, 0);
+}
+
+apr_status_t h2_ififo_set_create(h2_ififo **pfifo, apr_pool_t *pool, int capacity)
+{
+    return icreate_int(pfifo, pool, capacity, 1);
+}
+
+apr_status_t h2_ififo_term(h2_ififo *fifo)
+{
+    apr_status_t rv;
+    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+        fifo->aborted = 1;
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
+
+apr_status_t h2_ififo_interrupt(h2_ififo *fifo)
+{
+    apr_status_t rv;
+    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+        apr_thread_cond_broadcast(fifo->not_empty);
+        apr_thread_cond_broadcast(fifo->not_full);
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
+
+int h2_ififo_count(h2_ififo *fifo)
+{
+    return fifo->count;
+}
+
+static apr_status_t icheck_not_empty(h2_ififo *fifo, int block)
+{
+    while (fifo->count == 0) {
+        if (!block) {
+            return APR_EAGAIN;
+        }
+        if (fifo->aborted) {
+            return APR_EOF;
+        }
+        apr_thread_cond_wait(fifo->not_empty, fifo->lock);
+    }
+    return APR_SUCCESS;
+}
+
+static apr_status_t ififo_push_int(h2_ififo *fifo, int id, int block)
+{
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+
+    if (fifo->set && iindex_of(fifo, id) >= 0) {
+        /* set mode, elem already member */
+        return APR_EEXIST;
+    }
+    else if (fifo->count == fifo->nelems) {
+        if (block) {
+            while (fifo->count == fifo->nelems) {
+                if (fifo->aborted) {
+                    return APR_EOF;
+                }
+                apr_thread_cond_wait(fifo->not_full, fifo->lock);
+            }
+        }
+        else {
+            return APR_EAGAIN;
+        }
+    }
+    
+    ap_assert(fifo->count < fifo->nelems);
+    fifo->elems[inth_index(fifo, fifo->count)] = id;
+    ++fifo->count;
+    if (fifo->count == 1) {
+        apr_thread_cond_broadcast(fifo->not_empty);
+    }
+    return APR_SUCCESS;
+}
+
+static apr_status_t ififo_push(h2_ififo *fifo, int id, int block)
+{
+    apr_status_t rv;
+    
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+
+    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+        rv = ififo_push_int(fifo, id, block);
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
+
+apr_status_t h2_ififo_push(h2_ififo *fifo, int id)
+{
+    return ififo_push(fifo, id, 1);
+}
+
+apr_status_t h2_ififo_try_push(h2_ififo *fifo, int id)
+{
+    return ififo_push(fifo, id, 0);
+}
+
+static apr_status_t ipull_head(h2_ififo *fifo, int *pi, int block)
+{
+    apr_status_t rv;
+    
+    if ((rv = icheck_not_empty(fifo, block)) != APR_SUCCESS) {
+        *pi = 0;
+        return rv;
+    }
+    *pi = fifo->elems[fifo->head];
+    --fifo->count;
+    if (fifo->count > 0) {
+        fifo->head = inth_index(fifo, 1);
+        if (fifo->count+1 == fifo->nelems) {
+            apr_thread_cond_broadcast(fifo->not_full);
+        }
+    }
+    return APR_SUCCESS;
+}
+
+static apr_status_t ififo_pull(h2_ififo *fifo, int *pi, int block)
+{
+    apr_status_t rv;
+    
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+    
+    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+        rv = ipull_head(fifo, pi, block);
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
+
+apr_status_t h2_ififo_pull(h2_ififo *fifo, int *pi)
+{
+    return ififo_pull(fifo, pi, 1);
+}
+
+apr_status_t h2_ififo_try_pull(h2_ififo *fifo, int *pi)
+{
+    return ififo_pull(fifo, pi, 0);
+}
+
+static apr_status_t ififo_peek(h2_ififo *fifo, h2_ififo_peek_fn *fn, void *ctx, int block)
+{
+    apr_status_t rv;
+    int id;
+    
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+    
+    if (APR_SUCCESS == (rv = apr_thread_mutex_lock(fifo->lock))) {
+        if (APR_SUCCESS == (rv = ipull_head(fifo, &id, block))) {
+            switch (fn(id, ctx)) {
+                case H2_FIFO_OP_PULL:
+                    break;
+                case H2_FIFO_OP_REPUSH:
+                    rv = ififo_push_int(fifo, id, block);
+                    break;
+            }
+        }
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
+
+apr_status_t h2_ififo_peek(h2_ififo *fifo, h2_ififo_peek_fn *fn, void *ctx)
+{
+    return ififo_peek(fifo, fn, ctx, 1);
+}
+
+apr_status_t h2_ififo_try_peek(h2_ififo *fifo, h2_ififo_peek_fn *fn, void *ctx)
+{
+    return ififo_peek(fifo, fn, ctx, 0);
+}
+
+apr_status_t h2_ififo_remove(h2_ififo *fifo, int id)
+{
+    apr_status_t rv;
+    
+    if (fifo->aborted) {
+        return APR_EOF;
+    }
+
+    if ((rv = apr_thread_mutex_lock(fifo->lock)) == APR_SUCCESS) {
+        int i, rc;
+        int e;
+        
+        rc = 0;
+        for (i = 0; i < fifo->count; ++i) {
+            e = fifo->elems[inth_index(fifo, i)];
+            if (e == id) {
+                ++rc;
+            }
+            else if (rc) {
+                fifo->elems[inth_index(fifo, i-rc)] = e;
+            }
+        }
+        if (rc) {
+            fifo->count -= rc;
+            if (fifo->count + rc == fifo->nelems) {
+                apr_thread_cond_broadcast(fifo->not_full);
+            }
+            rv = APR_SUCCESS;
+        }
+        else {
+            rv = APR_EAGAIN;
+        }
+        
+        apr_thread_mutex_unlock(fifo->lock);
+    }
+    return rv;
+}
 
 /*******************************************************************************
  * h2_util for apt_table_t

@@ -1733,7 +1733,7 @@ static void modssl_proxy_info_log(conn_rec *c,
  * so we need to increment here to prevent them from
  * being freed.
  */
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if MODSSL_USE_OPENSSL_PRE_1_1_API
 #define modssl_set_cert_info(info, cert, pkey) \
     *cert = info->x509; \
     CRYPTO_add(&(*cert)->references, +1, CRYPTO_LOCK_X509); \
@@ -2301,7 +2301,7 @@ int ssl_callback_SessionTicket(SSL *ssl,
                       "TLS session ticket key for %s successfully set, "
                       "creating new session ticket", sc->vhost_id);
 
-        return 0;
+        return 1;
     }
     else if (mode == 0) {
         /* 
