@@ -477,7 +477,7 @@ Require ldap-dn cn=Barbara Jenson, o=Example
     the attribute employeeType = active</p>
 
     <highlight language="config">
-Require ldap-attribute "employeeType=active"
+Require ldap-attribute employeeType="active"
 </highlight>
 
     <p>Multiple attribute/value pairs can be specified on the same line
@@ -492,7 +492,7 @@ Require ldap-attribute "employeeType=active"
     the city attribute equal to "San Jose" or status equal to "Active"</p>
 
     <highlight language="config">
-Require ldap-attribute city="San Jose" "status=active"
+Require ldap-attribute city="San Jose" status="active"
 </highlight>
 
 </section>

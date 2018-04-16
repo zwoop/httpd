@@ -29,7 +29,11 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.29  : Tagged on October 17, 2017.
+    2.4.33  : In development
+    2.4.32  : Tagged on March 09, 2018. Released on March 15, 2017 (not announced)
+    2.4.31  : Tagged on March 03, 2018, not released
+    2.4.30  : Tagged on February 19, 2018, not released.
+    2.4.29  : Tagged on October 17, 2017. Released on October 23, 2017.
     2.4.28  : Tagged on September 25, 2017. Released on October 5, 2017.
     2.4.27  : Tagged on July 6, 2017. Released on July 11, 2017.
     2.4.26  : Tagged on June 13, 2017. Released on June 19, 2017.
@@ -117,100 +121,92 @@ RELEASE SHOWSTOPPERS:
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
+  *) rotatelogs: Small changes to rotatelogs:
+     - add "-n num" to help text
+     - clarify in help text, that "program is invoked"
+       is the "-p" case
+     - prevent crash with "-v" (verbose) if no
+       "-p prog" is used
+     - add one space for formatting
+     plus: fix -n help text
+     this closes #24
+     trunk patches: http://svn.apache.org/r1666415
+                    http://svn.apache.org/r1780308
+     2.4.x patch: svn merge -c 1666415,1780308 ^/httpd/httpd/trunk .
+     +1: rjung, covener, ylavic
+     jung: I'll wait a bit whether the other rotatelogs patches make it to apply in order.
 
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  *) mod_proxy, mod_ssl: Handle SSLProxy* directives in <Proxy> sections,
-     allowing per backend TLS configuration.
-     trunk patch: http://svn.apache.org/r1740928
-                  http://svn.apache.org/r1740960
-                  http://svn.apache.org/r1740967
-                  http://svn.apache.org/r1740987
-                  http://svn.apache.org/r1740998
-                  http://svn.apache.org/r1742697
-                  http://svn.apache.org/r1756976
-                  http://svn.apache.org/r1781313
-     2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-r1740928_and_co-v3.patch
-     +1: ylavic, mrumph
-     mrumph: Since this has been sitting for awhile, there are several places
-             where this patch needs to be adjusted against recent changes to 2.4.x.
-     ylavic: With current 2.4.x (r1807662), there seems to be only a conflict with
-             MMN, which can probably be taken by the backporter. I don't see the
-             other places where it needs adjustments, Mike?
-      wrowe: Suspect that this is an MMN Major bump, not minor, without some
-             additional detection/workaround of legacy 2.4 compiled modules.
+  *) rotatelogs: Add an option to autocreate directories to rotatelogs.
+     PR: 46669
+     trunk patch: http://svn.apache.org/r1533810
+     2.4.x patch: https://home.apache.org/~rjung/patches/httpd-2.4.x-rotatelogs-create-directories.patch
+                  plus CHANGES for new "-d" flag (see svn log for credits).
+                  Merge only fails due to small docs conflicts.
+     +1: rjung, ylavic,
+     -1: niq: this patch is broken: it edits a generated HTML file instead
+              of the source XML.  Fix and I'm +1.
 
-  *) mod_remoteip: Add PROXY protocol support
-     trunk patch: http://svn.apache.org/r1776575
-                  http://svn.apache.org/r1776578 (doc fix)
-                  http://svn.apache.org/r1776627 (shortened name + doc fix)
-                  http://svn.apache.org/r1776674 (attribution moved to CHANGES)
-                  http://svn.apache.org/r1776740 (attribution updated in mod_remotip.c)
-                  http://svn.apache.org/r1778268 (fix compiler warning)
-                  http://svn.apache.org/r1780725 (set buckets aside)
-                  http://svn.apache.org/r1781030 (fix strict GCC warning)
-                  http://svn.apache.org/r1781031 (reference the filter by handle)
-                  http://svn.apache.org/r1781701 (rework optional processing case)
-                  http://svn.apache.org/r1788674 (final edge cases/ignore slave conns)
-                  http://svn.apache.org/r1789800 (remove optional processing)
-                  http://svn.apache.org/r1790169 (rename "exception" directive)
-                  http://svn.apache.org/r1790457 (Update directive name in err message)
-                  http://svn.apache.org/r1806985
-     2.4 convenience patch (includes CHANGES):
-                  http://home.apache.org/~jim/patches/RemoteIPProxyProtocol.2.4.x.patch
-                  http://svn.apache.org/r1806985
-     +1: druggeri, jim
-     mrumph: I had a chance to review this proposal.
-             I committed some suggested changes to trunk in r1806985.
-             Also, the copyright in mod_remoteip.c is of some concern.
-             Perhaps the terms of the copyright should be included in that note.
-             And on a personal note, today is my last day with Oracle.
-             So it may well be my last day with Apache as well.
-             It has been great working with all of you.
-        jim: Not sure what the copyright concern is, but added r1806985
-             to the proposal.
-     ylavic: RemoteIPProxyProtocol* are documented as scoped to server config
-             and virtual host, though using ap_server_conf makes them global
-             only (thus less useful too...).
+  *) rotatelogs: Remove multiple uses of constant length error buffers.
+     trunk patches: http://svn.apache.org/r1534895
+                    http://svn.apache.org/r1534896
+                    http://svn.apache.org/r1534914
+     2.4.x patch: svn merge -c 1534895,1534896,1534914 ^/httpd/httpd/trunk .
+                  plus CHANGES
+     +1: rjung, ylavic,
 
-  *) core/mod_ssl: Add new flag int to module struct. Define first bit for keeping
-     server config records non-shared instances, set for mod_ssl to make manipulations
-     in post_config safe.
-     trunk patch: svn merge -c 1809302,1809303,1809305,1809311,1809314,1809713 ^/httpd/httpd/trunk .
-     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/backport-module-flags.diff
-                  (merge with alterations for mmn etc.)
-     +1: icing, ylavic
+  *) rotatelogs: Choose "-D" instead of "-d" for the rotatelogs
+     option that creates the path to the log file.
+     I want to use "-d" for another directory related
+     option next where (I think) the "directory" "d"
+     makes more sense.
+     "-d" has not yet been backported, so changing
+     to "-D" is not a real compatibility issue.
+     This brings 2.4.x rotatelogs in sync with trunk.
+     trunk patch: http://svn.apache.org/r1666417
+     2.4.x patch: https://home.apache.org/~rjung/patches/httpd-2.4.x-rotatelogs-create-directories-rename-flag.patch
+                  plus CHANGES change from "-d" to "-D"
+                  Merge only fails due to small docs conflicts.
+     +1: rjung, ylavic,
+     niq: +1 when the other bug is fixed and backported
 
-  *) core: A signal received while stopping could have crashed the main
-     process.  PR 61558.
-     trunk patch: http://svn.apache.org/r1809881
-                  http://svn.apache.org/r1809973
-                  http://svn.apache.org/r1809976
-                  http://svn.apache.org/r1812075
-     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/stop_signals-PR61558.patch
-                  (merge without changes to motorz)
-     +1: ylavic, jim
+  *) mod_md: Fix compilation with OpenSSL before version 1.0.2.
+     Symbol ASN1_TIME_diff is only available for 1.0.2+,
+     but luckily alternative code we can use is already
+     available, originally written for the LibreSSL case.
+     trunk patch: http://svn.apache.org/r1826973
+     2.4.x patch: svn merge -c 1826973 ^/httpd/httpd/trunk .
+     +1: rjung
 
-  *) mod_journald: Add new module mod_journald to log error logs into journald.
-     trunk patch: http://svn.apache.org/r1610339
-                  http://svn.apache.org/r1621806
-                  http://svn.apache.org/r1812339
-     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
-                  http://svn.apache.org/r1812339
-     +1: jkaluza, jim
-     jchampion: Looks like the headers require GCC extensions to compile, so
-                mod_journald can't be configured in maintainer mode (-std=c89).
-                Can anyone else reproduce, or is it just my distro?
-     ylavic: missing r1812339 for maintainer-mode/c89/-Werror compliance,
-             needed if the above configure.in proposal gets backported.
-             Note that r1812339 could be backported in any case, even if
-             the above configure.in proposal does not get accepted.
-
+  *) mod_ssl: Add option "leaf" to OCSPEnable that will only check the leaf in the
+     certificate chain. PR62112.
+     trunk patch: http://svn.apache.org/r1826995
+                  http://svn.apache.org/r1827001
+     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/ssl-ocsp-enable-leaf.patch
+     +1: icing
 
 PATCHES/ISSUES THAT ARE BEING WORKED
   [ New entries should be added at the START of the list ]
+
+  *) mod_dav: Allow other modules to become providers and add ACLs
+     to the DAV response.
+     trunk patch: http://svn.apache.org/r1748322
+                  http://svn.apache.org/r1824590
+                  http://svn.apache.org/r1824596
+     2.4.x: trunk works modulo CHANGES/MMN/log-message
+     +1: minfrin, jim
+     -1: rpluem: While we allow extensions of structures at the end in general
+                 this is a specific case where the the design of the mod_dav
+                 API clashes with this approach, as the API requires consumers
+                 to create the public structs on their own, something we do
+                 not "allow/encourage" otherwise in order to be able to do the
+                 structure extension. I don't want to see consumers of this API
+                 suffer from the clash we created.
+                 See also:
+                 https://lists.apache.org/thread.html/b924afe0fcc58a8636b753e630421bf6dc2080653a79575fd5fd641a@%3Cdev.httpd.apache.org%3E
 
   *) mod_ssl: Return 502 instead of 500 when SSL peer check or 
      proxy_post_handshake hook fails. 
@@ -283,23 +279,6 @@ PATCHES/ISSUES THAT ARE BEING WORKED
              make it nonblocking (by default)?
         jim: Non-blocking seems the best way to handle...
 
-   * mod_dav: Allow other modules to become providers and add ACLs
-     to the DAV response. Requires a release of apr-util v1.6.
-     trunk patch: http://svn.apache.org/r1748322
-     2.4.x: trunk works modulo CHANGES/MMN
-     +1: minfrin
-     rpluem asks: Will this compile with apr-util < v1.6 and keep
-     mod_dav working (without the new features of the patch of course)?
-     I doubt that we will require apr-util 1.6 for the lifetime of 2.4.x
-     (see the discussion around ap_cstr_casecmp[n] an apr 1.6)
-     minfrin: Yes, as you can see in the patch everything applies only
-     if APR_XML_X2T_PARSED is defined, and the patch was tested with
-     both apr-util v1.6 and apr-util v1.5.
-     -1: jorton, breaks binary backwards compat per dev@ discuss
-         msgid <20160902120654.GA12674@redhat.com>
-         (& also, making the structure change with apr-util version
-         means it breaks binary compat across an apr-util upgrade?)
-
    * Support PCRE2 (10.x) in place of PCRE (8.x).
      Submitted by: wrowe, Petr Pisar [ppisar redhat.com]
      trunk patches:
@@ -319,9 +298,29 @@ PATCHES/ISSUES THAT ARE BEING WORKED
      So the only fix allowing us to use PCRE 10 in httpd 2.4 would be to write
      this as a thread safe storage buffer for the majority of cases (<10 $args)
      and we don't have a portable tls mechanism to do so.
+     jorton: Adding ap_pregexec/_len which pass a pool would also work
+             for internal users of this api; not sure if performance
+             impact is significant from using malloc here.
 
 
 PATCHES/ISSUES THAT ARE STALLED
+
+  *) mod_proxy: Add ap_proxy_define_match_worker() and use it for ProxyPassMatch
+     and ProxyMatch section to distinguish between normal workers and workers
+     with regex substitutions in the name. Implement handling of such workers
+     in ap_proxy_get_worker(). Fixes the bug when regex workers were not
+     matched and used for request. PR 43513.
+     trunk patch: http://svn.apache.org/r1609680
+                  http://svn.apache.org/r1609688
+                  http://svn.apache.org/r1641381
+                  http://svn.apache.org/r1826289
+                  http://svn.apache.org/r1826313
+     ylavic: Merge patch provided (reusing new->real to avoid double de_socketfy() call).
+             Also added missing r1609688 to the patchset.
+     2.4.x patch: http://home.apache.org/~ylavic/patches/httpd-2.4.x-ap_proxy_define_match_worker-v2.patch
+     +1:
+     -0: covener: lots of folks getting dns and connection reuse implicitly after we backport this.
+     ylavic: agreed, withdrawing
 
    * core: Add ap_errorlog_provider to make ErrorLog logging modular. This
            backport keeps syslog logging as part of httpd core and only adds
@@ -344,39 +343,6 @@ PATCHES/ISSUES THAT ARE STALLED
      trawick: nit: fix "writing" in "/* NULL if we are writing to syslog */"
               (sorry, haven't finished reviewing completely)
      jim: What is the status of this??
-
-   * mod_proxy: Add ap_proxy_define_match_worker() and use it for ProxyPassMatch
-     and ProxyMatch section to distinguish between normal workers and workers
-     with regex substitutions in the name. Implement handling of such workers
-     in ap_proxy_get_worker(). Fixes the bug when regex workers were not
-     matched and used for request. PR 43513.
-     trunk patch: http://svn.apache.org/r1609680
-                  http://svn.apache.org/r1609688
-                  http://svn.apache.org/r1641381
-     ylavic: Merge patch provided (reusing new->real to avoid double de_socketfy() call).
-             Also added missing r1609688 to the patchset.
-     2.4.x patch: http://people.apache.org/~ylavic/httpd-2.4.x-ap_proxy_define_match_worker.patch
-     +1: ylavic
-     -0: covener tried to review this one in Austin with Jeff.  Does the added match function 
-         really cover a very narrow set of parameters with the way it skips over backreferences?
-         Also, why a new API vs. just setting the field inline?
-
-   * mod_systemd: New module, for integration with systemd on Linux.
-     trunk patch: http://svn.apache.org/r1393976
-                  http://svn.apache.org/r1393997
-                  http://svn.apache.org/r1484554
-                  http://svn.apache.org/r1528032
-                  http://svn.apache.org/r1528034
-                  http://svn.apache.org/r1614821
-                  http://svn.apache.org/r1618579
-                  http://svn.apache.org/r1618588
-     2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
-     +1: jkaluza
-     sf comments: The IdleShutdown logic seems broken. Consider a single
-                  active connection that is stalled for 10 seconds. That
-                  connection will be broken after GracefulShutdownTimeout.
-                  A better logic would be to check if there is any open
-                  connection that is not in keep-alive state.
 
    * core: Add support for systemd socket activation.
      trunk patch: http://svn.apache.org/r1511033
@@ -447,13 +413,34 @@ PATCHES/ISSUES THAT ARE STALLED
             cgi-examples/ dir alongside cgi-bin/? Otherwise manual/cgi/examples
             might work?
 
-   * core: block Define and Undefine in vhost and directory context. Because
-     it is EXEC_ON_READ, it "breaks out" of these contexts anyway.
-     trunk patch: http://svn.apache.org/r1656063
-                  http://svn.apache.org/r1656122
-     2.4.x patch:  http://people.apache.org/~covener/patches/2.4.x-define-limits.diff
-     +1: covener (I need to review the docs manually in this area)
-     -1: wrowe (blocking will break "working" .conf files on a subversion update
-                meant to pick up security fixes.  "Alerting" I would agree to.)
+  *) mod_journald: Add new module mod_journald to log error logs into journald.
+     trunk patch: http://svn.apache.org/r1610339
+                  http://svn.apache.org/r1621806
+                  http://svn.apache.org/r1812339
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-mod_journald.patch
+                  http://svn.apache.org/r1812339
+     +1: jkaluza, jim
+     jchampion: Looks like the headers require GCC extensions to compile, so
+                mod_journald can't be configured in maintainer mode (-std=c89).
+                Can anyone else reproduce, or is it just my distro?
+     ylavic: missing r1812339 for maintainer-mode/c89/-Werror compliance,
+             needed if the above configure.in proposal gets backported.
+             Note that r1812339 could be backported in any case, even if
+             the above configure.in proposal does not get accepted.
 
-
+   * mod_systemd: New module, for integration with systemd on Linux.
+     trunk patch: http://svn.apache.org/r1393976
+                  http://svn.apache.org/r1393997
+                  http://svn.apache.org/r1484554
+                  http://svn.apache.org/r1528032
+                  http://svn.apache.org/r1528034
+                  http://svn.apache.org/r1614821
+                  http://svn.apache.org/r1618579
+                  http://svn.apache.org/r1618588
+     2.4.x patch: http://people.apache.org/~jkaluza/patches/mod_systemd/httpd-2.4.x-mod_systemd.patch
+     +1: jkaluza
+     sf comments: The IdleShutdown logic seems broken. Consider a single
+                  active connection that is stalled for 10 seconds. That
+                  connection will be broken after GracefulShutdownTimeout.
+                  A better logic would be to check if there is any open
+                  connection that is not in keep-alive state.

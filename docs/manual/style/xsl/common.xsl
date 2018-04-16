@@ -418,7 +418,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/]]></xsl:text>&httpd.doc
 </xsl:choose>
 <div id="footer">&lf;
     <p class="apache">
-        <xsl:text>Copyright 2017 The Apache Software Foundation.</xsl:text><br />
+        <xsl:text>Copyright 2018 The Apache Software Foundation.</xsl:text><br />
         <xsl:if test="normalize-space($message[@id='before-license'])">
             <xsl:value-of select="$message[@id='before-license']"/>
             <xsl:text> </xsl:text>
@@ -887,12 +887,12 @@ if (typeof(prettyPrint) !== 'undefined') {
         <xsl:variable name="lowerdirective">
             <xsl:choose>
             <xsl:when test="@name">
-                <xsl:value-of select="normalize-space(translate(@name,
-                                        $uppercase, $lowercase))" />
+                <xsl:value-of select="normalize-space(concat(translate(@name,
+                                        $uppercase, $lowercase),@idtype))" />
             </xsl:when>
             <xsl:otherwise>
-                <xsl:value-of select="normalize-space(translate(.,
-                                        $uppercase, $lowercase))" />
+                <xsl:value-of select="normalize-space(concat(translate(.,
+                                        $uppercase, $lowercase),@idtype))" />
             </xsl:otherwise>
             </xsl:choose>
         </xsl:variable>
