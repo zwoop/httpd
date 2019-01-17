@@ -41,23 +41,17 @@
 
 char *ssl_util_vhostid(apr_pool_t *p, server_rec *s)
 {
-    char *id;
     SSLSrvConfigRec *sc;
-    char *host;
     apr_port_t port;
 
-    host = s->server_hostname;
     if (s->port != 0)
         port = s->port;
     else {
         sc = mySrvConfig(s);
-        if (sc->enabled == TRUE)
-            port = DEFAULT_HTTPS_PORT;
-        else
-            port = DEFAULT_HTTP_PORT;
+        port = sc->enabled == TRUE ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT;
     }
-    id = apr_psprintf(p, "%s:%lu", host, (unsigned long)port);
-    return id;
+
+    return apr_psprintf(p, "%s:%lu", s->server_hostname, (unsigned long)port);
 }
 
 /*
@@ -104,6 +98,23 @@ BOOL ssl_util_vhost_matches(const char *servername, server_rec *s)
     }
     
     return FALSE;
+}
+
+int modssl_request_is_tls(const request_rec *r, SSLConnRec **scout)
+{
+    SSLConnRec *sslconn = myConnConfig(r->connection);
+    SSLSrvConfigRec *sc = mySrvConfig(r->server);
+
+    if (!(sslconn && sslconn->ssl) && r->connection->master) {
+        sslconn = myConnConfig(r->connection->master);
+    }
+
+    if (sc->enabled == SSL_ENABLED_FALSE || !sslconn || !sslconn->ssl)
+        return 0;
+    
+    if (scout) *scout = sslconn;
+
+    return 1;
 }
 
 apr_file_t *ssl_util_ppopen(server_rec *s, apr_pool_t *p, const char *cmd,

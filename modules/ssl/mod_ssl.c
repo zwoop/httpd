@@ -93,9 +93,9 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_SRV(FIPS, FLAG,
                 "Enable FIPS-140 mode "
                 "(`on', `off')")
-    SSL_CMD_ALL(CipherSuite, TAKE1,
-                "Colon-delimited list of permitted SSL Ciphers "
-                "('XXX:...:XXX' - see manual)")
+    SSL_CMD_ALL(CipherSuite, TAKE12,
+                "Colon-delimited list of permitted SSL Ciphers, optional preceeded "
+                "by protocol identifier ('XXX:...:XXX' - see manual)")
     SSL_CMD_SRV(CertificateFile, TAKE1,
                 "SSL Server Certificate file "
                 "('/path/to/file' - PEM or DER encoded)")
@@ -185,9 +185,9 @@ static const command_rec ssl_config_cmds[] = {
     SSL_CMD_PXY(ProxyProtocol, RAW_ARGS,
                "SSL Proxy: enable or disable SSL protocol flavors "
                 "('[+-][" SSL_PROTOCOLS "] ...' - see manual)")
-    SSL_CMD_PXY(ProxyCipherSuite, TAKE1,
+    SSL_CMD_PXY(ProxyCipherSuite, TAKE12,
                "SSL Proxy: colon-delimited list of permitted SSL ciphers "
-               "('XXX:...:XXX' - see manual)")
+               ", optionally preceeded by protocol specifier ('XXX:...:XXX' - see manual)")
     SSL_CMD_PXY(ProxyVerify, TAKE1,
                "SSL Proxy: whether to verify the remote certificate "
                "('on' or 'off')")
@@ -243,8 +243,8 @@ static const command_rec ssl_config_cmds[] = {
                 "request body if a per-location SSL renegotiation is required due to "
                 "changed access control requirements")
 
-    SSL_CMD_SRV(OCSPEnable, FLAG,
-               "Enable use of OCSP to verify certificate revocation ('on', 'off')")
+    SSL_CMD_SRV(OCSPEnable, RAW_ARGS,
+               "Enable use of OCSP to verify certificate revocation mode ('on', 'leaf', 'off')")
     SSL_CMD_SRV(OCSPDefaultResponder, TAKE1,
                "URL of the default OCSP Responder")
     SSL_CMD_SRV(OCSPOverrideResponder, FLAG,
@@ -398,7 +398,7 @@ static int ssl_hook_pre_config(apr_pool_t *pconf,
     /* We must register the library in full, to ensure our configuration
      * code can successfully test the SSL environment.
      */
-#if MODSSL_USE_OPENSSL_PRE_1_1_API
+#if MODSSL_USE_OPENSSL_PRE_1_1_API || defined(LIBRESSL_VERSION_NUMBER)
     (void)CRYPTO_malloc_init();
 #else
     OPENSSL_malloc_init();
@@ -618,24 +618,12 @@ int ssl_init_ssl_connection(conn_rec *c, request_rec *r)
 
 static const char *ssl_hook_http_scheme(const request_rec *r)
 {
-    SSLSrvConfigRec *sc = mySrvConfig(r->server);
-
-    if (sc->enabled == SSL_ENABLED_FALSE || sc->enabled == SSL_ENABLED_OPTIONAL) {
-        return NULL;
-    }
-
-    return "https";
+    return modssl_request_is_tls(r, NULL) ? "https" : NULL;
 }
 
 static apr_port_t ssl_hook_default_port(const request_rec *r)
 {
-    SSLSrvConfigRec *sc = mySrvConfig(r->server);
-
-    if (sc->enabled == SSL_ENABLED_FALSE || sc->enabled == SSL_ENABLED_OPTIONAL) {
-        return 0;
-    }
-
-    return 443;
+    return modssl_request_is_tls(r, NULL) ? 443 : 0;
 }
 
 static int ssl_hook_pre_connection(conn_rec *c, void *csd)

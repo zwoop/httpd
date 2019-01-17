@@ -29,57 +29,63 @@ Release history:
     [NOTE that x.{odd}.z versions are strictly Alpha/Beta releases,
           while x.{even}.z versions are Stable/GA releases.]
 
-    2.4.33  : In development
-    2.4.32  : Tagged on March 09, 2018. Released on March 15, 2017 (not announced)
-    2.4.31  : Tagged on March 03, 2018, not released
-    2.4.30  : Tagged on February 19, 2018, not released.
+    2.4.38  : In development
+    2.4.37  : Tagged on October 18, 2018. Released on October 23, 2018.
+    2.4.36  : Tagged on October 10, 2018. Not released.
+    2.4.35  : Tagged on September 17, 2018. Released on September 22, 2018. 
+    2.4.34  : Tagged on July 10, 2018. Released on July 16, 2018.
+    2.4.33  : Tagged on March 17, 2018. Released on March 21, 2018.
+    2.4.32  : Tagged on March 09, 2018. Distributed on March 15, 2018,
+              not announced.
+    2.4.31  : Tagged on March 03, 2018. Not released.
+    2.4.30  : Tagged on February 19, 2018. Not released.
     2.4.29  : Tagged on October 17, 2017. Released on October 23, 2017.
     2.4.28  : Tagged on September 25, 2017. Released on October 5, 2017.
     2.4.27  : Tagged on July 6, 2017. Released on July 11, 2017.
     2.4.26  : Tagged on June 13, 2017. Released on June 19, 2017.
     2.4.25  : Tagged on December 16, 2016. Released on December 21, 2016.
-    2.4.24  : Tagged on December 16, 2016, not released.
+    2.4.24  : Tagged on December 16, 2016. Not released.
     2.4.23  : Tagged on June 30, 2016. Released on July 05, 2016.
-    2.4.22  : Tagged on June 20, 2016, not released.
-    2.4.21  : Tagged on June 16, 2016, not released.
+    2.4.22  : Tagged on June 20, 2016. Not released.
+    2.4.21  : Tagged on June 16, 2016. Not released.
     2.4.20  : Tagged on April 4, 2016. Released on April 11, 2016.
-    2.4.19  : Tagged on March 21, 2016, not released.
+    2.4.19  : Tagged on March 21, 2016. Not released.
     2.4.18  : Tagged on December 8, 2015. Released on December 14, 2015.
     2.4.17  : Tagged on October 9, 2015. Released October 13, 2015.
-    2.4.16  : Tagged on July 9, 2015. Released July 15, 2015
+    2.4.16  : Tagged on July 9, 2015. Released July 15, 2015.
     2.4.15  : Tagged on June 19, 2015. Not released.
     2.4.14  : Tagged on June 11, 2015. Not released.
     2.4.13  : Tagged on June 4, 2015. Not released.
-    2.4.12  : Tagged on January 22, 2015. Released Jan 29, 2015
+    2.4.12  : Tagged on January 22, 2015. Released January 29, 2015.
     2.4.11  : Tagged on January 15, 2015. Not released.
-    2.4.10  : Tagged on July 15, 2014. Released July 21, 2014
-    2.4.9   : Tagged on March 13, 2014. Released on March 17, 2014
+    2.4.10  : Tagged on July 15, 2014. Released July 21, 2014.
+    2.4.9   : Tagged on March 13, 2014. Released on March 17, 2014.
     2.4.8   : Tagged on March 11, 2014. Not released.
-    2.4.7   : Tagged on November 19, 2013. Released on Nov 25, 2013
-    2.4.6   : Tagged on July 15, 2013. Released July, 22, 2013
-    2.4.5   : Tagged on July 11, 2013, not released.
-    2.4.4   : Tagged on February 18, 2013. Released Feb 25, 2013
-    2.4.3   : Tagged on August 17, 2012. Released Aug 18, 2012
-    2.4.2   : Tagged on April 5, 2012. Released Apr 17, 2012.
-    2.4.1   : Tagged on February 13, 2012. Released Feb 21, 2012.
-    2.4.0   : Tagged on January 16, 2012, not released.
-    2.3.16  : Tagged on December 15, 2011.
-    2.3.15  : Tagged on November 8, 2011. Released Nov. 15, 2011.
-    2.3.14  : Tagged on August 1, 2011. Released Aug. 9, 2011.
-    2.3.13  : Tagged on June 28, 2011, not released.
+    2.4.7   : Tagged on November 19, 2013. Released on November 25, 2013.
+    2.4.6   : Tagged on July 15, 2013. Released July 22, 2013.
+    2.4.5   : Tagged on July 11, 2013. Not released.
+    2.4.4   : Tagged on February 18, 2013. Released February 25, 2013.
+    2.4.3   : Tagged on August 17, 2012. Released August 18, 2012.
+    2.4.2   : Tagged on April 5, 2012. Released April 17, 2012.
+    2.4.1   : Tagged on February 13, 2012. Released February 21, 2012.
+    2.4.0   : Tagged on January 16, 2012. Not released.
+    2.3.16  : Tagged on December 15, 2011. Released December 19, 2011
+    2.3.15  : Tagged on November 8, 2011. Released November 15, 2011.
+    2.3.14  : Tagged on August 1, 2011. Released August 9, 2011.
+    2.3.13  : Tagged on June 28, 2011. Not released.
     2.3.12  : Tagged on May 11, 2011. Released May 23, 2011.
-    2.3.11  : Released as Beta on March 7, 2011.
-    2.3.10  : Tagged on December 13, 2010. Released Dec 21, 2010.
-    2.3.9   : Tagged on November 23, 2010, not released.
-    2.3.8   : Tagged on August 24, 2010.
-    2.3.7   : Tagged on August 19, 2010, not released.
-    2.3.6   : Released on June 21, 2010.
-    2.3.5   : Released on January 26, 2010.
-    2.3.4   : Released on December 8, 2009.
-    2.3.3   : Tagged on November 11, 2009, not released.
-    2.3.2   : Tagged on March 23, 2009, not released.
-    2.3.1   : Tagged on January 2, 2009, not released.
-    2.3.0   : Tagged on December 6, 2008, not released.
+    2.3.11  : Tagged on March 1, 2011. Released March 7, 2011.
+    2.3.10  : Tagged on December 13, 2010. Released December 21, 2010.
+    2.3.9   : Tagged on November 23, 2010. Not released.
+    2.3.8   : Tagged on August 24, 2010. Released August 31, 2010.
+    2.3.7   : Tagged on August 19, 2010. Not released.
+    2.3.6   : Tagged on June 11, 2010. Released on June 21, 2010.
+    2.3.5   : Tagged on January 21, 2010. Released on January 26, 2010.
+    2.3.4   : Tagged on November 25, 2009. Released on December 8, 2009.
+    2.3.3   : Tagged on November 11, 2009. Not released.
+    2.3.2   : Tagged on March 23, 2009. Not released.
+    2.3.1   : Tagged on January 2, 2009. Not released.
+    2.3.0   : Tagged on December 6, 2008. Not released.
 
 Contributors looking for a mission:
 
@@ -110,83 +116,104 @@ CURRENT RELEASE NOTES:
 
   * Current exceptions for RTC for this branch:
     . mod_proxy_http2
-    . mod_lua
     . documentation
     . non-Unix build
     . non-Unix, single-platform code
 
 RELEASE SHOWSTOPPERS:
 
-
 PATCHES ACCEPTED TO BACKPORT FROM TRUNK:
   [ start all new proposals below, under PATCHES PROPOSED. ]
 
-  *) rotatelogs: Small changes to rotatelogs:
-     - add "-n num" to help text
-     - clarify in help text, that "program is invoked"
-       is the "-p" case
-     - prevent crash with "-v" (verbose) if no
-       "-p prog" is used
-     - add one space for formatting
-     plus: fix -n help text
-     this closes #24
-     trunk patches: http://svn.apache.org/r1666415
-                    http://svn.apache.org/r1780308
-     2.4.x patch: svn merge -c 1666415,1780308 ^/httpd/httpd/trunk .
-     +1: rjung, covener, ylavic
-     jung: I'll wait a bit whether the other rotatelogs patches make it to apply in order.
+  *) mod_proxy_wstunnel: Fix websocket proxy over UDS. PR 62932
+     trunk patch: http://svn.apache.org/r1851093
+     2.4.x patch: svn merge -c 1851093 ^/httpd/httpd/trunk .
+     +1: jailletc36 (by inspection), jim, ylavic
 
 
 PATCHES PROPOSED TO BACKPORT FROM TRUNK:
   [ New proposals should be added at the end of the list ]
 
-  *) rotatelogs: Add an option to autocreate directories to rotatelogs.
-     PR: 46669
-     trunk patch: http://svn.apache.org/r1533810
-     2.4.x patch: https://home.apache.org/~rjung/patches/httpd-2.4.x-rotatelogs-create-directories.patch
-                  plus CHANGES for new "-d" flag (see svn log for credits).
-                  Merge only fails due to small docs conflicts.
-     +1: rjung, ylavic,
-     -1: niq: this patch is broken: it edits a generated HTML file instead
-              of the source XML.  Fix and I'm +1.
+  *) core: Allow mod_env to override all system path envvars not just PATH
+     trunk patch: http://svn.apache.org/r1811831
+     2.4.x patch: svn merge -c 1811831 ^/httpd/httpd/trunk .
+     +1: jorton, rpluem
+     ylavic: same as dev@; since SetEnv* are usable from htaccess, wouldn't
+             we open a door here (unconditionally)? 
+             covener: seems like we need some kind of pattern for opting in
+             to restricted arguments.
 
-  *) rotatelogs: Remove multiple uses of constant length error buffers.
-     trunk patches: http://svn.apache.org/r1534895
-                    http://svn.apache.org/r1534896
-                    http://svn.apache.org/r1534914
-     2.4.x patch: svn merge -c 1534895,1534896,1534914 ^/httpd/httpd/trunk .
-                  plus CHANGES
-     +1: rjung, ylavic,
+  *) core: avoid duplicate headers when using ap_send_error_response.
+           From trunk's testing the code seems running fine without any side
+           effects, so adding this change in here to have more reviews.
+     trunk patch: http://svn.apache.org/r1832092
+     2.4.x patch: svn merge -c 1832092 ^/httpd/httpd/trunk .
+     +1: elukey
+     +0.5: icing: as I read this, the change preserves the special status of headers in
+         ->err_headers_out, since swapping the tables makes former error headers normal ones.
+         But it is hard to see of this was ever intentional or not. Lack of regressions
+         in testing may meaning someone out there relies on the former, unverified
+         behaviour. OTOH, it fixes and error you saw and added test for. So, I am cautiously
+         for the change.
+     elukey: PR 62025 seems another use case that gets fixed using this patch
+             (still need to get feedback from the reporter but on my local env it solves the problem).
 
-  *) rotatelogs: Choose "-D" instead of "-d" for the rotatelogs
-     option that creates the path to the log file.
-     I want to use "-d" for another directory related
-     option next where (I think) the "directory" "d"
-     makes more sense.
-     "-d" has not yet been backported, so changing
-     to "-D" is not a real compatibility issue.
-     This brings 2.4.x rotatelogs in sync with trunk.
-     trunk patch: http://svn.apache.org/r1666417
-     2.4.x patch: https://home.apache.org/~rjung/patches/httpd-2.4.x-rotatelogs-create-directories-rename-flag.patch
-                  plus CHANGES change from "-d" to "-D"
-                  Merge only fails due to small docs conflicts.
-     +1: rjung, ylavic,
-     niq: +1 when the other bug is fixed and backported
+   *) Add in mod_socache_redis from trunk
+      trunk: http://svn.apache.org/r1768070
+             http://svn.apache.org/r1768120
+             http://svn.apache.org/r1768225
+             http://svn.apache.org/r1769712
+             http://svn.apache.org/r1769737
+             http://svn.apache.org/r1774610
+             http://svn.apache.org/r1828624
+             http://svn.apache.org/r1828626
+      2.4.x patch: http://home.apache.org/~jim/patches/socache_redisv2.patch
+      +1: jim, minfrin
 
-  *) mod_md: Fix compilation with OpenSSL before version 1.0.2.
-     Symbol ASN1_TIME_diff is only available for 1.0.2+,
-     but luckily alternative code we can use is already
-     available, originally written for the LibreSSL case.
-     trunk patch: http://svn.apache.org/r1826973
-     2.4.x patch: svn merge -c 1826973 ^/httpd/httpd/trunk .
-     +1: rjung
+  *) mod_dav: Fix a potential incorrect PROPFIND response
+     trunk patch: http://svn.apache.org/r1842010
+                  http://svn.apache.org/r1846339      (CHANGES)
+     2.4.x patch: svn merge -c 1842010,1846339 ^/httpd/httpd/trunk .
+     +1: jailletc36
+     rpluem: Not sure if this makes sense until we include r1841225
+     and a to be committed follow up patch by jorton (https://lists.apache.org/thread.html/76d6c39f59d0f9433c6800f5ee4069c7221424be45ef3008d2f41723@%3Cdev.httpd.apache.org%3E)
+     unfortunately the discussion about it died.
 
-  *) mod_ssl: Add option "leaf" to OCSPEnable that will only check the leaf in the
-     certificate chain. PR62112.
-     trunk patch: http://svn.apache.org/r1826995
-                  http://svn.apache.org/r1827001
-     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/ssl-ocsp-enable-leaf.patch
-     +1: icing
+  *) core: Split out the ability to parse wildcard files and directories
+     from the Include/IncludeOptional directives into a generic set of
+     functions ap_dir_nofnmatch() and ap_dir_fnmatch().
+     trunk patch: http://svn.apache.org/r1847430
+     2.4.x patch: https://svn.apache.org/repos/asf/httpd/httpd/patches/2.4.x/httpd-ap_dir_fnmatch.patch
+     +1: minfrin, jim
+
+  *) mod_log_config: Support %{c}h for conn-hostname, %h for useragent_host
+     PR 55348
+     trunk patch: https://svn.apache.org/r1730129
+     2.4.x patch: svn merge -c 1730129 ^/httpd/httpd/trunk .
+     +1: wrowe, jim, ylavic
+
+  *) modules/filters/config.m4: Make libxml2's inclusion of unicode/*.h files
+     a non-fatal warning/error under maintainer-mode.
+     trunk patch: http://svn.apache.org/r1850745
+     2.4.x patch: svn merge -c 1850745 ^/httpd/httpd/trunk .
+     +1: jim
+     -0: wrowe [Raised on dev@, whether -std=c99 is correct now for maintainer
+                mode, or alternately -std=c89 -Wno-error=comment, independent
+                of mod_proxy_html config? Otherwise modify mod_proxy_html's 
+                CPPFLAGS alone, without modifying global compilation flags.]
+
+  *) mod_authn_dbm: Return APR_SUCCESS which is equivalent but more readable
+     than 'rv' here
+     trunk patch: http://svn.apache.org/r1850835
+                  http://svn.apache.org/r1851552
+     2.4.x patch: svn merge -c 1850835,1851552 ^/httpd/httpd/trunk .
+     +1: jailletc36, jim, ylavic, wrowe
+     ylavic: I agree w/ joe's response on dev@ for r1850835 (no functional
+             change btw), while the warning addressed by r1850834 is annoying
+             for 2.4.38.
+     wrowe: Clarified obtuse code with comment, waiting for jorton to
+            confirm, or earlier +1's to object, before promoting to apply.
+
 
 PATCHES/ISSUES THAT ARE BEING WORKED
   [ New entries should be added at the START of the list ]
@@ -207,13 +234,6 @@ PATCHES/ISSUES THAT ARE BEING WORKED
                  suffer from the clash we created.
                  See also:
                  https://lists.apache.org/thread.html/b924afe0fcc58a8636b753e630421bf6dc2080653a79575fd5fd641a@%3Cdev.httpd.apache.org%3E
-
-  *) mod_ssl: Return 502 instead of 500 when SSL peer check or 
-     proxy_post_handshake hook fails. 
-     Trunk patch: r1645529 (works)
-     2.4.x patch which adds CHANGES: https://emptyhammock.com/media/downloads/r1645529-to-2.4.x.txt
-     +1: trawick
-     ylavic: there may be missing bits, see thread for commit r1736510.
 
   *) core: Drop an invalid Last-Modified header value coming
      from a (F)CGI script instead of replacing it with Unix epoch.
@@ -338,8 +358,11 @@ PATCHES/ISSUES THAT ARE STALLED
                   http://svn.apache.org/r1626978
      2.4.x patch: http://people.apache.org/~jkaluza/patches/httpd-2.4.x-errorlog_provider.patch
      +1: jkaluza
-     +1: covener w/ doc or code to fix syntax (providername:providerarg not supported like syslog or socacheproviders, 
+     +1: covener w/ doc or code to fix syntax (providername:providerarg not supported like syslog or socacheproviders,
                  needs 2 args which is not valid in ErrorLog manual)
+                 Note: This also fixes syslog logging dropping messages with NULL server_rec by reaching up into ap_server_conf
+                 explicitly.
+        
      trawick: nit: fix "writing" in "/* NULL if we are writing to syslog */"
               (sorry, haven't finished reviewing completely)
      jim: What is the status of this??

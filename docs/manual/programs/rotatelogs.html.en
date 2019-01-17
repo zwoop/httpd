@@ -47,6 +47,7 @@
      [ -<strong>L</strong> <var>linkname</var> ]
      [ -<strong>p</strong> <var>program</var> ]
      [ -<strong>f</strong> ]
+     [ -<strong>D</strong> ]
      [ -<strong>t</strong> ]
      [ -<strong>v</strong> ]
      [ -<strong>e</strong> ]
@@ -92,6 +93,11 @@ a substantial delay between when the server is started
 and when the first request is handled, meaning that the
 associated logfile does not "exist" until then, which
 causes problems from some automated logging tools)</dd>
+
+<dt><code>-D</code></dt>
+<dd>Creates the parent directories of the path that the log file will be
+placed in if they do not already exist.  This allows <code>strftime(3)</code>
+formatting to be used in the path and not just the filename.</dd>
 
 <dt><code>-t</code></dt>
 <dd>Causes the logfile to be truncated instead of rotated. This is
@@ -277,7 +283,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/programs/rotatelogs.
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2018 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

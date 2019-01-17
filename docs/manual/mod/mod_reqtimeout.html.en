@@ -125,7 +125,7 @@ version 2.3.14 and earlier.</td></tr>
     (usually the case on Linux and FreeBSD), the socket is not sent to the
     server process before at least one byte (or the whole request for
     <code>httpready</code>) is received. The header timeout configured with
-    <code>RequestReadTimeout</code> is only effective after the server process has
+    <code class="directive">RequestReadTimeout</code> is only effective after the server process has
     received the socket.</p>
 
     <p>For each of the two timeout types (header or body), there are three ways
@@ -142,7 +142,7 @@ version 2.3.14 and earlier.</td></tr>
     body, respectively. A value of 0 means no limit.</p>
     </li>
 
-    <li><strong>Disable module for a vhost:</strong>:<br />
+    <li><strong>Disable module for a vhost</strong>:<br />
 
     <div class="example"><p><code>header=0 body=0</code></p></div>
 
@@ -196,7 +196,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_reqtimeout.h
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2018 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

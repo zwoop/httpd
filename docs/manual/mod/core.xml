@@ -763,12 +763,12 @@ DefaultType None
 <context>directory</context></contextlist>
 
 <usage>
-    <p>In its one parameter form, <directive>Define</directive> is equivalent
-    to passing the <code>-D</code> argument to <program>httpd</program>. It
-    can be used to toggle the use of
-    <directive module="core" type="section">IfDefine</directive> sections
-    without needing to alter <code>-D</code> arguments in any startup
-    scripts.</p>
+    <p>In its one parameter form, <directive>Define</directive> is
+    equivalent to passing the <code>-D</code> argument to
+    <program>httpd</program>. It can be used to toggle the use of
+    <directive module="core" type="section">IfDefine</directive>
+    sections without needing to alter <code>-D</code> arguments in any
+    startup scripts.</p>
 
     <p>In addition to that, if the second parameter is given, a config variable
     is set to this value. The variable can be used in the configuration using
@@ -2005,7 +2005,7 @@ filenames</description>
 
     <highlight language="config">
 &lt;FilesMatch "^(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/FilesMatch&gt;
     </highlight>
 </usage>
@@ -2270,6 +2270,45 @@ if a test is true at startup</description>
 </directivesynopsis>
 
 <directivesynopsis type="section">
+<name>IfFile</name>
+<description>Encloses directives that will be processed only
+if file exists at startup</description>
+<syntax>&lt;IfFile [!]<var>filename</var>&gt; ...
+    &lt;/IfFile&gt;</syntax>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>All</override>
+<compatibility>Available in 2.4.34 and later.</compatibility>
+
+<usage>
+    <p>The <code>&lt;IfFile <var>filename</var>&gt;...&lt;/IfFile&gt;
+    </code> section is used to mark directives that are conditional on
+    the existence of a file on disk. The directives within an
+    <directive type="section">IfFile</directive> section are only
+    processed if <var>filename</var> exists. If <var>filename</var>
+    doesn't exist, everything between the start and end markers is
+    ignored. <var>filename</var> can be an absolute path or a path
+    relative to the server root.</p>
+
+    <p>The <var>filename</var> in the <directive type="section"
+    >IfFile</directive> section directive can take the same forms as the
+    <var>test</var> variable in the <directive type="section" module="core"
+    >IfDefine</directive> section, i.e. the test can be negated if the <code>
+    !</code> character is placed directly before <var>filename</var>.
+    </p>
+   
+    <p>If a relative <var>filename</var> is supplied, the check is
+    <directive module="core">ServerRoot</directive> relative. In the case where
+    this directive occurs before the <directive module="core">ServerRoot</directive>,
+    the path will be checked relative to the compiled-in server root or
+    the server root passed in on the command line via the <code>-d</code>
+    parameter.</p>
+    
+</usage>
+</directivesynopsis>
+
+<directivesynopsis type="section">
 <name>IfModule</name>
 <description>Encloses directives that are processed conditional on the
 presence or absence of a specific module</description>
@@ -2324,6 +2363,111 @@ later.</compatibility>
     placed in <directive type="section">IfModule</directive>
     sections.</note>
 </usage>
+</directivesynopsis>
+
+<directivesynopsis type="section">
+<name>IfDirective</name>
+<description>Encloses directives that are processed conditional on the
+presence or absence of a specific directive</description>
+<syntax>&lt;IfDirective [!]<var>directive-name</var>&gt; ...
+    &lt;/IfDirective&gt;</syntax>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>All</override>
+<compatibility>Available in 2.4.34 and later.</compatibility>
+
+<usage>
+    <p>The <code>&lt;IfDirective <var>test</var>&gt;...&lt;/IfDirective&gt;</code>
+    section is used to mark directives that are conditional on the presence of
+    a specific directive. The directives within an <directive type="section"
+    >IfDirective</directive> section are only processed if the <var>test</var>
+    is true. If <var>test</var> is false, everything between the start and
+    end markers is ignored.</p>
+
+    <p>The <var>test</var> in the <directive type="section"
+    >IfDirective</directive> section can be one of two forms:</p>
+
+    <ul>
+      <li><var>directive-name</var></li>
+
+      <li>!<var>directive-name</var></li>
+    </ul>
+
+    <p>In the former case, the directives between the start and end
+    markers are only processed if a directive of the given name is
+    available at the time of processing.  The second format reverses the test,
+    and only processes the directives if <var>directive-name</var> is
+    <strong>not</strong> available.</p>
+
+    <note>This section should only be used if you need to have one
+    configuration file that works across multiple versions of
+    <program>httpd</program>, regardless of whether a particular
+    directive is available. In normal operation, directives need not
+    be placed in <directive type="section">IfDirective</directive>
+    sections.</note>
+</usage>
+<seealso><directive module="core" type="section">IfSection</directive></seealso>
+</directivesynopsis>
+
+<directivesynopsis type="section">
+<name>IfSection</name>
+<description>Encloses directives that are processed conditional on the
+presence or absence of a specific section directive</description>
+<syntax>&lt;IfSection [!]<var>section-name</var>&gt; ...
+    &lt;/IfSection&gt;</syntax>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context><context>.htaccess</context>
+</contextlist>
+<override>All</override>
+<compatibility>Available in 2.4.34 and later.</compatibility>
+
+<usage>
+    <p>The <code>&lt;IfSection
+    <var>test</var>&gt;...&lt;/IfSection&gt;</code> section is used
+    to mark directives that are conditional on the presence of a
+    specific section directive.  A section directive is any directive
+    such as <directive type="section">VirtualHost</directive> which
+    encloses other directives, and has a directive name with a leading
+    "&lt;".</p>
+
+    <p>The directives within an <directive type="section"
+    >IfSection</directive> section are only processed if the <var>test</var>
+    is true. If <var>test</var> is false, everything between the start and
+    end markers is ignored.</p>
+
+    <p>The <var>section-name</var> must be specified without either
+    the leading "&lt;" or closing "&gt;".  The <var>test</var> in the
+    <directive type="section">IfSection</directive> section can be one
+    of two forms:</p>
+
+    <ul>
+      <li><var>section-name</var></li>
+      <li>!<var>section-name</var></li>
+    </ul>
+
+    <p>In the former case, the directives between the start and end
+    markers are only processed if a section directive of the given
+    name is available at the time of processing.  The second format
+    reverses the test, and only processes the directives if
+    <var>section-name</var> is <strong>not</strong> an available
+    section directive.</p>
+
+    <p>For example:</p>
+
+    <highlight language="config">
+&lt;IfSection VirtualHost&gt;
+   ...
+&lt;/IfSection&gt;
+    </highlight>
+    
+    <note>This section should only be used if you need to have one
+    configuration file that works across multiple versions of <program>httpd</program>,
+    regardless of whether a particular section directive is
+    available. In normal operation, directives need not be placed in
+    <directive type="section">IfSection</directive> sections.</note>
+</usage>
+<seealso><directive module="core" type="section">IfDirective</directive></seealso>
 </directivesynopsis>
 
 <directivesynopsis>
@@ -3026,7 +3170,7 @@ matching URLs</description>
 
     <highlight language="config">
 &lt;LocationMatch "^/combined/(?&lt;sitename&gt;[^/]+)"&gt;
-    require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
+    Require ldap-group cn=%{env:MATCH_SITENAME},ou=combined,o=Example
 &lt;/LocationMatch&gt;
     </highlight>
 </usage>
@@ -3888,6 +4032,54 @@ Protocols h2 http/1.1
         
     </usage>
     <seealso><directive module="core">Protocols</directive></seealso>
+</directivesynopsis>
+
+
+<directivesynopsis>
+    <name>RegexDefaultOptions</name>
+    <description>Allow to configure global/default options for regexes</description>
+    <syntax>RegexDefaultOptions [none] [+|-]<var>option</var> [[+|-]<var>option</var>] ...</syntax>
+    <default>RegexDefaultOptions DOLLAR_ENDONLY</default>
+    <contextlist><context>server config</context></contextlist>
+    <compatibility>Only available from Apache 2.4.30 and later.</compatibility>
+    
+    <usage>
+        <p>This directive adds some default behavior to ANY regular expression
+        used afterwards.</p>
+
+        <p>Any option preceded by a '+' is added to the already set options.<br />
+        Any option preceded by a '-' is removed from the already set options.<br />
+        Any option without a '+' or a '-' will be set, removing any other
+        already set option.<br />
+        The <code>none</code> keyword resets any already set options.</p>
+
+        <p><var>option</var> can be:</p>
+        <dl>
+            <dt><code>ICASE</code></dt>
+            <dd>Use a case-insensitive match.</dd>
+
+            <dt><code>DOTALL</code></dt>
+            <dd>Perl's /s flag.</dd>
+
+            <dt><code>DOLLAR_ENDONLY</code></dt>
+            <dd>'$' matches at end of subject string only.</dd>
+            <dd>.</dd>
+        </dl>
+        <highlight language="config">
+# 
+RegexDefaultOptions +ICASE +DOLLAR_ENDONLY
+...
+# Remove the ICASE option, but keep all the other already set options
+RegexDefaultOptions -ICASE
+...
+# Set the default option to DOTALL, resetting any other option
+RegexDefaultOptions DOTALL
+...
+# Reset all defined option
+RegexDefaultOptions none
+...
+        </highlight>
+    </usage>
 </directivesynopsis>
 
 
@@ -4911,6 +5103,7 @@ as if 'QualifyRedirectURL ON' was configured.</compatibility>
 <description>Register non-standard HTTP methods</description>
 <syntax>RegisterHttpMethod <var>method</var> [<var>method</var> [...]]</syntax>
 <contextlist><context>server config</context></contextlist>
+<compatibility>Available in Apache HTTP Server 2.4.24 and later</compatibility>
 
 <usage>
 <p>This directive may be used to register additional HTTP methods.  This is

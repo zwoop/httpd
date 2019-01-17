@@ -307,6 +307,7 @@ struct proxy_conn_pool {
 #define PROXY_WORKER_HOT_STANDBY    0x0100
 #define PROXY_WORKER_FREE           0x0200
 #define PROXY_WORKER_HC_FAIL        0x0400
+#define PROXY_WORKER_HOT_SPARE      0x0800
 
 /* worker status flags */
 #define PROXY_WORKER_INITIALIZED_FLAG    'O'
@@ -320,6 +321,7 @@ struct proxy_conn_pool {
 #define PROXY_WORKER_HOT_STANDBY_FLAG    'H'
 #define PROXY_WORKER_FREE_FLAG           'F'
 #define PROXY_WORKER_HC_FAIL_FLAG        'C'
+#define PROXY_WORKER_HOT_SPARE_FLAG      'R'
 
 #define PROXY_WORKER_NOT_USABLE_BITMAP ( PROXY_WORKER_IN_SHUTDOWN | \
 PROXY_WORKER_DISABLED | PROXY_WORKER_STOPPED | PROXY_WORKER_IN_ERROR | \
@@ -329,6 +331,8 @@ PROXY_WORKER_HC_FAIL )
 #define PROXY_WORKER_IS_INITIALIZED(f)  ( (f)->s->status &  PROXY_WORKER_INITIALIZED )
 
 #define PROXY_WORKER_IS_STANDBY(f)   ( (f)->s->status &  PROXY_WORKER_HOT_STANDBY )
+
+#define PROXY_WORKER_IS_SPARE(f)   ( (f)->s->status &  PROXY_WORKER_HOT_SPARE )
 
 #define PROXY_WORKER_IS_USABLE(f)   ( ( !( (f)->s->status & PROXY_WORKER_NOT_USABLE_BITMAP) ) && \
   PROXY_WORKER_IS_INITIALIZED(f) )
@@ -407,7 +411,7 @@ typedef struct {
         flush_on,
         flush_auto
     } flush_packets;           /* control AJP flushing */
-    apr_time_t      updated;    /* timestamp of last update */
+    apr_time_t      updated;    /* timestamp of last update for dynamic workers, or queue-time of HC workers */
     apr_time_t      error_time; /* time of the last error */
     apr_interval_time_t ttl;    /* maximum amount of time in seconds a connection
                                  * may be available while exceeding the soft limit */
@@ -447,6 +451,8 @@ typedef struct {
     apr_interval_time_t interval;
     char      upgrade[PROXY_WORKER_MAX_SCHEME_SIZE];/* upgrade protocol used by mod_proxy_wstunnel */
     char      hostname_ex[PROXY_RFC1035_HOSTNAME_SIZE];  /* RFC1035 compliant version of the remote backend address */
+    apr_size_t   response_field_size; /* Size of proxy response buffer in bytes. */
+    unsigned int response_field_size_set:1;
 } proxy_worker_shared;
 
 #define ALIGNED_PROXY_WORKER_SHARED_SIZE (APR_ALIGN_DEFAULT(sizeof(proxy_worker_shared)))
@@ -823,6 +829,31 @@ PROXY_DECLARE(apr_status_t) ap_proxy_share_balancer(proxy_balancer *balancer,
 PROXY_DECLARE(apr_status_t) ap_proxy_initialize_balancer(proxy_balancer *balancer,
                                                          server_rec *s,
                                                          apr_pool_t *p);
+
+typedef int (proxy_is_best_callback_fn_t)(proxy_worker *current, proxy_worker *prev_best, void *baton);
+
+/**
+ * Retrieve the best worker in a balancer for the current request
+ * @param balancer balancer for which to find the best worker
+ * @param r        current request record
+ * @param is_best  a callback function provide by the lbmethod
+ *                 that determines if the current worker is best
+ * @param baton    an lbmethod-specific context pointer (baton)
+ *                 passed to the is_best callback
+ * @return         the best worker to be used for the request
+ */
+PROXY_DECLARE(proxy_worker *) ap_proxy_balancer_get_best_worker(proxy_balancer *balancer,
+                                                                request_rec *r,
+                                                                proxy_is_best_callback_fn_t *is_best,
+                                                                void *baton);
+/*
+ * Needed by the lb modules.
+ */
+APR_DECLARE_OPTIONAL_FN(proxy_worker *, proxy_balancer_get_best_worker,
+                                        (proxy_balancer *balancer,
+                                         request_rec *r,
+                                         proxy_is_best_callback_fn_t *is_best,
+                                         void *baton));
 
 /**
  * Find the shm of the worker as needed

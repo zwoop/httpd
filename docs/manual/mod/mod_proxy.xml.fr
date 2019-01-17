@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE modulesynopsis SYSTEM "../style/modulesynopsis.dtd">
 <?xml-stylesheet type="text/xsl" href="../style/manual.fr.xsl"?>
-<!-- English Revision: 1825765 -->
+<!-- English Revision: 1851101 -->
 <!-- French translation : Lucien GENTIS -->
 <!-- Reviewed by : Vincent Deffontaines -->
 
@@ -90,13 +90,14 @@
 </summary>
 <seealso><module>mod_cache</module></seealso>
 <seealso><module>mod_proxy_ajp</module></seealso>
+<seealso><module>mod_proxy_balancer</module></seealso>
 <seealso><module>mod_proxy_connect</module></seealso>
 <seealso><module>mod_proxy_fcgi</module></seealso>
 <seealso><module>mod_proxy_ftp</module></seealso>
+<seealso><module>mod_proxy_hcheck</module></seealso>
 <seealso><module>mod_proxy_http</module></seealso>
 <seealso><module>mod_proxy_scgi</module></seealso>
 <seealso><module>mod_proxy_wstunnel</module></seealso>
-<seealso><module>mod_proxy_balancer</module></seealso>
 <seealso><module>mod_ssl</module></seealso>
 
     <section id="forwardreverse"><title>Mandataires directs et
@@ -756,8 +757,7 @@ requêtes</description>
 
     <example><title>Exemple</title>
       <highlight language="config">
-ProxyRemote "http://goodguys.example.com/"
-"http://mirrorguys.example.com:8000"
+ProxyRemote "http://goodguys.example.com/" "http://mirrorguys.example.com:8000"
 ProxyRemote "*" "http://cleverproxy.localdomain"
 ProxyRemote "ftp" "http://ftpproxy.mydomain:8080"
     </highlight>
@@ -912,7 +912,8 @@ charge</description>
 charge des mandataires et aux membres des groupes de répartition de
 charge</description>
 <syntax>ProxySet <var>url</var> <var>clé=valeur [clé=valeur ...]</var></syntax>
-<contextlist><context>directory</context>
+<contextlist><context>server config</context><context>virtual host</context>
+<context>directory</context>
 </contextlist>
 <compatibility>ProxySet n'est disponible que depuis la version 2.2
 du serveur HTTP Apache.</compatibility>
@@ -989,9 +990,10 @@ sont supportés à partir de la version 2.4.7 du serveur HTTP Apache</compatibil
     <note>Il est fortement recommandé de revoir le concept de <a
     href="#workers">Worker</a> avant d'aller plus loin.</note>
 
-    <note>Cette directive n'est pas supportée au sein
-    des sections <directive type="section" module="core">Directory</directive>
-    et <directive type="section" module="core">Files</directive>.</note>
+    <note>Cette directive n'est pas supportée au sein des sections <directive
+    type="section" module="core">Directory</directive>, <directive
+    type="section" module="core">If</directive> et <directive type="section"
+    module="core">Files</directive>.</note>
 
     <note type="warning">En général, la directive <directive
     module="mod_proxy">ProxyRequests</directive> doit être définie à
@@ -1002,7 +1004,7 @@ sont supportés à partir de la version 2.4.7 du serveur HTTP Apache</compatibil
     2.4.7 du serveur HTTP Apache ; pour utiliser cette fonctionnalité,
     il suffit d'utiliser une URL cible préfixée par
     <code>unix:/path/lis.sock|</code>. Par exemple, pour mandater HTTP
-    et cibler l'UDS /home/www/socket, vous devez utiliser
+    et cibler l'UDS /home/www.socket, vous devez utiliser
     <code>unix:/home/www.socket|http://localhost/whatever/</code>.</p>
 
     <note><strong>Note :</strong>Le chemin associé à l'URL
@@ -1032,7 +1034,7 @@ sont supportés à partir de la version 2.4.7 du serveur HTTP Apache</compatibil
     </highlight>
 
     <p>va convertir en interne toute requête pour
-    <code>http://example.com/miroir/foo/bar</code> en une requête
+    <code>http://example.com/mirror/foo/bar</code> en une requête
     mandatée pour <code>http://backend.example.com/bar</code>.</p>
 
     <p>Si vous avez besoin d'un configuration de mandataire inverse plus
@@ -1047,7 +1049,7 @@ sont supportés à partir de la version 2.4.7 du serveur HTTP Apache</compatibil
     href="mod_proxy_balancer.html#balancer_manager">Balancer Manager</a> :</p>
 
     <highlight language="config">
-        ProxyPass "/miroir/foo/" "http://backend.example.com/"
+        ProxyPass "/mirror/foo/" "http://backend.example.com/"
     </highlight>
 
     <note type="warning">
@@ -1076,9 +1078,25 @@ ProxyPass "/mirror/foo/i" "!"
 ProxyPass "/mirror/foo" "http://backend.example.com"
     </highlight>
 
-    <p>va mandater toutes les requêtes pour <code>/miroir/foo</code>
+    <p>va mandater toutes les requêtes pour <code>/mirror/foo</code>
     vers <code>backend.example.com</code>, <em>sauf</em> les requêtes
-    pour <code>/miroir/foo/i</code>.</p>
+    pour <code>/mirror/foo/i</code>.</p>
+
+    <p>Mélanger plusieurs configurations ProxyPass dans différents contextes ne
+    fonctionne pas :</p>
+    <highlight language="config">
+ProxyPass "/mirror/foo/i" "!"
+&lt;Location "/mirror/foo/"&gt;
+    ProxyPass "http://backend.example.com/"
+&lt;/Location&gt;
+    </highlight>
+    <p>Dans ce cas, une requête pour <code>/mirror/foo/i</code> sera tout de
+    même mandatée car c'est la directive <directive>ProxyPass</directive> de la
+    section Location qui sera évaluée en premier. Le fait que la directive
+    <directive>ProxyPass</directive> supporte les deux contextes serveur
+    principal et répertoire ne signifie pas que sa portée et sa position dans le
+    fichier de configuration va garantir une quelconque priorité et/ou
+    chronologie de prise en compte.</p>
 
     <note type="warning"><title>Ordre de classement des directives ProxyPass</title>
       <p>Les directives <directive
@@ -1091,13 +1109,19 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
       l'URL la plus longue à la plus courte. Dans le cas contraire, les
       règles situées après une règle dont l'URL correspond au début de
       leur propre URL seront ignorées. Notez que tout ceci est en
-      relation avec le partage de workers. Par contre, on ne peut placer
+      relation avec le partage de workers.</p>
+      
+      </note>
+    <note type="warning"><title>Chronologie de prise en compte des directives
+    ProxyPass au sein des sections Locations</title>
+      <p>On ne peut placer
       qu'une seule directive <directive
       module="mod_proxy">ProxyPass</directive> dans une section
       <directive module="core">Location</directive>, et c'est la section
       la plus spécifique qui l'emportera.</p>
-
-    <p>Pour les mêmes raisons, les exclusions doivent se situer <em>avant</em>
+     </note>
+     <note type="warning"><title>Exclusions et variable d'environnement no-proxy</title>
+      <p>Les exclusions doivent se situer <em>avant</em>
       les directives <directive>ProxyPass</directive> générales. A partir de la
       version 2.4.26 du serveur HTTP Apache, la variable
       d'environnement "no-proxy" est une alternative aux exclusions et constitue
@@ -1106,7 +1130,7 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
       module="core">Location</directive>. Cette variable doit être définie via
       la directive <directive module="mod_setenvif">SetEnvIf</directive> car la
       directive <directive module="mod_env">SetEnv</directive> n'est pas évaluée
-      assez tôt.</p>  
+      assez tôt.</p>
 
     </note> <!-- /ordering_proxypass -->
 
@@ -1243,6 +1267,14 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
 	serveur cible spécifique. La valeur doit être au minimum 512 ou définie
 	à 0 pour la valeur par défaut du système de 8192.
     </td></tr>
+    <tr><td>responsefieldsize</td>
+        <td>8192</td>
+	<td>Contrôle la taille du tampon pour le champ de la réponse mandatée.
+	Cette taille doit être au moins égale à la taille attendue du plus grand
+	en-tête d'une réponse mandatée. Une valeur de 0 implique l'utilisation
+	de la valeur par défaut du système, à savoir 8192 octets.<br />
+	Disponible à partir de la version 2.4.34 du serveur HTTP Apache.
+    </td></tr>
     <tr><td>keepalive</td>
         <td>Off</td>
         <td><p>Cette clé doit être utilisée lorsque vous avez un pare-feu
@@ -1323,7 +1355,7 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
 	répartiteur de charge. La route est une valeur ajoutée à
 	l'identifiant de session.
     </td></tr>
-    <tr><td>status</td>
+    <tr><td><a name="status_table">status</a></td>
         <td>-</td>
         <td>Valeur constituée d'une simple lettre et définissant l'état
 	initial de ce serveur cible.
@@ -1332,8 +1364,15 @@ ProxyPass "/mirror/foo" "http://backend.example.com"
          <tr><td>S: le serveur cible est arrêté.</td></tr>
          <tr><td>I: le serveur cible est en mode "erreurs ignorées",
 	 et sera toujours considéré comme disponible.</td></tr>
+	 <tr><td>R: Le serveur cible sert de remplaçant à
+	 chaud. Lorsqu'un serveur cible avec un lbset donné est inutilisable
+	 (maintenance, arrêt, en erreur, etc...), un serveur de remplacement à
+	 chaud libre de même lbset sera utilisé à sa place. Les remplaçants à
+	 chaud permettent de s'assurer qu'un nombre déterminé de serveurs cibles
+	 sera toujours disponible pour un répartiteur de charge.</td></tr>
          <tr><td>H: le serveur cible est en mode d'attente et ne sera
-	 utilisé que si aucun autre serveur n'est disponible.</td></tr>
+	 utilisé que si aucun autre serveur ou remplaçant à chaud n'est
+	 disponible dans le jeu de serveurs cibles.</td></tr>
          <tr><td>E: le serveur cible est en erreur.</td></tr>
          <tr><td>N: le serveur cible est en mode vidage, n'acceptera que
 	 les sessions persistantes qui lui appartiennent, et refusera
@@ -1516,8 +1555,28 @@ ProxyPass "/" "balancer://mycluster/" stickysession=JSESSIONID|jsessionid nofail
 &lt;/Proxy&gt;
     </highlight>
 
+    <p>La définition de remplaçants à chaud permet de s'assurer qu'un nombre
+    déterminé de serveurs sera toujours disponible dans le jeu de serveurs
+    cibles :</p>
+    <highlight language="config">
+ProxyPass "/" "balancer://sparecluster/"
+&lt;Proxy balancer://sparecluster&gt;
+    BalancerMember ajp://1.2.3.4:8009
+    BalancerMember ajp://1.2.3.5:8009
+    # Les serveurs ci-dessous sont des remplaçants à chaud. Pour chaque serveur
+    # ci-dessus qui viendrait à être inutilisable (maintenance, arrêt, non
+    # contactable, en erreur, etc...), un de ces remplaçants à chaud prendra sa
+    # place. Deux serveurs seront toujours disponibles pour traiter une requête
+    # (à moins qu'un ou plusieurs remplaçant à chaud soit lui aussi
+    # indisponible).
+    BalancerMember ajp://1.2.3.6:8009 status=+R
+    BalancerMember ajp://1.2.3.7:8009 status=+R
+&lt;/Proxy&gt;
+    </highlight>
+
     <p>Configuration d'un serveur cible de réserve qui ne sera utilisé que si
-    aucun autre serveur cible n'est disponible</p>
+    aucun autre serveur cible ou remplaçant à chaud n'est disponible dans le jeu
+    de serveurs cibles :</p>
     <highlight language="config">
 ProxyPass "/" "balancer://hotcluster/"
 &lt;Proxy "balancer://hotcluster"&gt;
@@ -1568,16 +1627,20 @@ ProxyPass "/" "balancer://hotcluster/"
     <code>[P]</code>.</p>
 
     <p>Le mot-clé optionnel <var>interpolate</var>, en combinaison avec la directive
-    <directive>ProxyPassInterpolateEnv</directive>, permet à ProxyPass
+    <directive module="mod_proxy">ProxyPassInterpolateEnv</directive>, permet à ProxyPass
     d'interpoler les variables d'environnement à l'aide de la syntaxe
     <var>${VARNAME}</var>. Notez que de nombreuses variables
     d'environnement standard dérivées de CGI n'existeront pas lorsque
     l'interpolation se produit ; vous devrez alors encore avoir avoir
     recours à <module>mod_rewrite</module> pour des règles
-    complexes. Notez aussi que l'interpolation n'est pas supportée dans
-    la partie protocole d'une URL. La détermination dynamique du
-    protocole peut être effectuée à l'aide de
-    <module>mod_rewrite</module> comme dans l'exemple suivant :</p>
+    complexes. Notez aussi que l'interpolation n'est supportée dans
+    la partie protocole/hostname/port d'une URL que pour les variables qui sont
+    disponibles au moment où la directive est interprétée (comme pour la
+    directive <directive module="core">Define</directive>). La détermination
+    dynamique de ces champs peut être effectuée à l'aide de
+    <module>mod_rewrite</module>, et l'exemple suivant décrit comment utiliser
+    <module>mod_rewrite</module> pour définir dynamiquement le protocole à http
+    ou https :</p>
 
     <highlight language="config">
 RewriteEngine On
@@ -1726,14 +1789,14 @@ ProxyPassReverseCookiePath  "/"  "/mirror/foo/"
     </highlight>
 
     <p>ne va pas seulement provoquer la conversion interne d'une requête
-    locale pour <code>http://example.com/miroir/foo/bar</code> en une
+    locale pour <code>http://example.com/mirror/foo/bar</code> en une
     requête mandatée pour <code>http://backend.example.com/bar</code>
     (la fonctionnalité fournie par <code>ProxyPass</code>). Il va
     aussi s'occuper des redirections que le serveur
     <code>backend.example.com</code> envoie lorsqu'il redirige
     <code>http://backend.example.com/bar</code> vers
     <code>http://backend.example.com/quux</code>. Apache
-    httpd corrige ceci en <code>http://example.com/miroir/foo/quux</code>
+    httpd corrige ceci en <code>http://example.com/mirror/foo/quux</code>
     avant de faire suivre la redirection HTTP au client. Notez que le
     nom d'hôte utilisé pour construire l'URL est choisi en respectant la
     définition de la directive <directive
@@ -2252,8 +2315,18 @@ les configurations de mandataires inverses</description>
     de configuration par la valeur de la variable d'environnement
     <code>nom_var</code> (si l'option <var>interpolate</var> est
     spécifiée).</p>
-    <p>Conservez cette directive à off (pour les performances du
-    serveur), sauf si vous en avez réellement besoin.</p>
+    <p>La partie protocole/hostname/port de <directive>ProxyPass</directive>
+    peut contenir des variables, mais seulement celles qui sont accessibles au
+    moment où la directive est interprétée (similairement à la directive
+    <directive module="core">Define</directive>). Pour tous les autres cas,
+    utilisez plutôt <module>mod_rewrite</module>.</p> 
+    <note type="warning"><title>Avertissement concernant les performances</title>
+    <p>Laissez cette directive à off, à moins que vous n'en ayez réellemnt
+    besoin ! Par exemple, ajouter des variables à
+    <directive>ProxyPass</directive> peut entraîner l'utilisation des serveurs
+    d'arrière-plan de mod_proxy configurés par défaut, et ceux-ci ne permettent
+    pas un réglage fin comme la réutilisation des connexions, entre
+    autres...).</p> </note>
 </usage>
 </directivesynopsis>
 

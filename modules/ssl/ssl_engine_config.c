@@ -136,9 +136,10 @@ static void modssl_ctx_init(modssl_ctx_t *mctx, apr_pool_t *p)
     mctx->auth.cipher_suite   = NULL;
     mctx->auth.verify_depth   = UNSET;
     mctx->auth.verify_mode    = SSL_CVERIFY_UNSET;
+    mctx->auth.tls13_ciphers = NULL;
 
-    mctx->ocsp_enabled        = FALSE;
-    mctx->ocsp_force_default  = FALSE;
+    mctx->ocsp_mask           = UNSET;
+    mctx->ocsp_force_default  = UNSET;
     mctx->ocsp_responder      = NULL;
     mctx->ocsp_resptime_skew  = UNSET;
     mctx->ocsp_resp_maxage    = UNSET;
@@ -280,8 +281,9 @@ static void modssl_ctx_cfg_merge(apr_pool_t *p,
     cfgMergeString(auth.cipher_suite);
     cfgMergeInt(auth.verify_depth);
     cfgMerge(auth.verify_mode, SSL_CVERIFY_UNSET);
+    cfgMergeString(auth.tls13_ciphers);
 
-    cfgMergeBool(ocsp_enabled);
+    cfgMergeInt(ocsp_mask);
     cfgMergeBool(ocsp_force_default);
     cfgMerge(ocsp_responder, NULL);
     cfgMergeInt(ocsp_resptime_skew);
@@ -465,6 +467,8 @@ static void modssl_ctx_cfg_merge_proxy(apr_pool_t *p,
     cfgMergeString(pkp->cert_file);
     cfgMergeString(pkp->cert_path);
     cfgMergeString(pkp->ca_cert_file);
+    cfgMergeString(pkp->certs);
+    cfgMergeString(pkp->ca_certs);
 }
 
 void *ssl_config_perdir_merge(apr_pool_t *p, void *basev, void *addv)
@@ -499,13 +503,21 @@ void *ssl_config_perdir_merge(apr_pool_t *p, void *basev, void *addv)
     cfgMergeInt(nRenegBufferSize);
 
     mrg->proxy_post_config = add->proxy_post_config;
-    if (!add->proxy_post_config) {
+    if (!mrg->proxy_post_config) {
         cfgMergeBool(proxy_enabled);
         modssl_ctx_init_proxy(mrg, p);
         modssl_ctx_cfg_merge_proxy(p, base->proxy, add->proxy, mrg->proxy);
+
+        /* Since ssl_proxy_section_post_config() hook won't be called if there
+         * is no SSLProxy* in this dir config, the ssl_ctx may still be NULL
+         * here at runtime. Merging it is either a no-op (NULL => NULL) because
+         * we are still before post config, or we really want to reuse the one
+         * from the upper/server context (outside of <Proxy> sections).
+         */
+        cfgMerge(proxy->ssl_ctx, NULL);
     }
     else {
-        /* post_config hook has already merged and initialized the
+        /* The post_config hook has already merged and initialized the
          * proxy context, use it.
          */
         mrg->proxy_enabled = add->proxy_enabled;
@@ -753,22 +765,37 @@ const char *ssl_cmd_SSLFIPS(cmd_parms *cmd, void *dcfg, int flag)
 
 const char *ssl_cmd_SSLCipherSuite(cmd_parms *cmd,
                                    void *dcfg,
-                                   const char *arg)
+                                   const char *arg1, const char *arg2)
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
     SSLDirConfigRec *dc = (SSLDirConfigRec *)dcfg;
 
-    /* always disable null and export ciphers */
-    arg = apr_pstrcat(cmd->pool, arg, ":!aNULL:!eNULL:!EXP", NULL);
-
-    if (cmd->path) {
-        dc->szCipherSuite = arg;
+    if (arg2 == NULL) {
+        arg2 = arg1;
+        arg1 = "SSL";
     }
-    else {
-        sc->server->auth.cipher_suite = arg;
+    
+    if (!strcmp("SSL", arg1)) {
+        /* always disable null and export ciphers */
+        arg2 = apr_pstrcat(cmd->pool, arg2, ":!aNULL:!eNULL:!EXP", NULL);
+        if (cmd->path) {
+            dc->szCipherSuite = arg2;
+        }
+        else {
+            sc->server->auth.cipher_suite = arg2;
+        }
+        return NULL;
     }
-
-    return NULL;
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    else if (!strcmp("TLSv1.3", arg1)) {
+        if (cmd->path) {
+            return "TLSv1.3 ciphers cannot be set inside a directory context";
+        }
+        sc->server->auth.tls13_ciphers = arg2;
+        return NULL;
+    }
+#endif
+    return apr_pstrcat(cmd->pool, "procotol '", arg1, "' not supported", NULL);
 }
 
 #define SSL_FLAGS_CHECK_FILE \
@@ -1437,6 +1464,9 @@ static const char *ssl_cmd_protocol_parse(cmd_parms *parms,
         else if (strcEQ(w, "TLSv1.2")) {
             thisopt = SSL_PROTOCOL_TLSV1_2;
         }
+        else if (SSL_HAVE_PROTOCOL_TLSV1_3 && strcEQ(w, "TLSv1.3")) {
+            thisopt = SSL_PROTOCOL_TLSV1_3;
+        }
 #endif
         else if (strcEQ(w, "all")) {
             thisopt = SSL_PROTOCOL_ALL;
@@ -1498,16 +1528,28 @@ const char *ssl_cmd_SSLProxyProtocol(cmd_parms *cmd,
 
 const char *ssl_cmd_SSLProxyCipherSuite(cmd_parms *cmd,
                                         void *dcfg,
-                                        const char *arg)
+                                        const char *arg1, const char *arg2)
 {
     SSLDirConfigRec *dc = (SSLDirConfigRec *)dcfg;
-
-    /* always disable null and export ciphers */
-    arg = apr_pstrcat(cmd->pool, arg, ":!aNULL:!eNULL:!EXP", NULL);
-
-    dc->proxy->auth.cipher_suite = arg;
-
-    return NULL;
+    
+    if (arg2 == NULL) {
+        arg2 = arg1;
+        arg1 = "SSL";
+    }
+    
+    if (!strcmp("SSL", arg1)) {
+        /* always disable null and export ciphers */
+        arg2 = apr_pstrcat(cmd->pool, arg2, ":!aNULL:!eNULL:!EXP", NULL);
+        dc->proxy->auth.cipher_suite = arg2;
+        return NULL;
+    }
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    else if (!strcmp("TLSv1.3", arg1)) {
+        dc->proxy->auth.tls13_ciphers = arg2;
+        return NULL;
+    }
+#endif
+    return apr_pstrcat(cmd->pool, "procotol '", arg1, "' not supported", NULL);
 }
 
 const char *ssl_cmd_SSLProxyVerify(cmd_parms *cmd,
@@ -1673,11 +1715,46 @@ const char *ssl_cmd_SSLUserName(cmd_parms *cmd, void *dcfg,
     return NULL;
 }
 
-const char *ssl_cmd_SSLOCSPEnable(cmd_parms *cmd, void *dcfg, int flag)
+static const char *ssl_cmd_ocspcheck_parse(cmd_parms *parms,
+                                           const char *arg,
+                                           int *mask)
+{
+    const char *w;
+
+    w = ap_getword_conf(parms->temp_pool, &arg);
+    if (strcEQ(w, "off")) {
+        *mask = SSL_OCSPCHECK_NONE;
+    }
+    else if (strcEQ(w, "leaf")) {
+        *mask = SSL_OCSPCHECK_LEAF;
+    }
+    else if (strcEQ(w, "on")) {
+        *mask = SSL_OCSPCHECK_CHAIN;
+    }
+    else {
+        return apr_pstrcat(parms->temp_pool, parms->cmd->name,
+                           ": Invalid argument '", w, "'",
+                           NULL);
+    }
+
+    while (*arg) {
+        w = ap_getword_conf(parms->temp_pool, &arg);
+        if (strcEQ(w, "no_ocsp_for_cert_ok")) {
+            *mask |= SSL_OCSPCHECK_NO_OCSP_FOR_CERT_OK;
+        }
+        else {
+            return apr_pstrcat(parms->temp_pool, parms->cmd->name,
+                               ": Invalid argument '", w, "'",
+                               NULL);
+        }
+    }
+
+    return NULL;
+}
+
+const char *ssl_cmd_SSLOCSPEnable(cmd_parms *cmd, void *dcfg, const char *arg)
 {
     SSLSrvConfigRec *sc = mySrvConfig(cmd->server);
-
-    sc->server->ocsp_enabled = flag ? TRUE : FALSE;
 
 #ifdef OPENSSL_NO_OCSP
     if (flag) {
@@ -1686,7 +1763,7 @@ const char *ssl_cmd_SSLOCSPEnable(cmd_parms *cmd, void *dcfg, int flag)
     }
 #endif
 
-    return NULL;
+    return ssl_cmd_ocspcheck_parse(cmd, arg, &sc->server->ocsp_mask);
 }
 
 const char *ssl_cmd_SSLOCSPOverrideResponder(cmd_parms *cmd, void *dcfg, int flag)
@@ -2065,3 +2142,4 @@ void ssl_hook_ConfigTest(apr_pool_t *pconf, server_rec *s)
     }
 
 }
+

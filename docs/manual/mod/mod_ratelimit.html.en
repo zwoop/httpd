@@ -33,7 +33,10 @@
 <tr><th><a href="module-dict.html#Status">Status:</a></th><td>Extension</td></tr>
 <tr><th><a href="module-dict.html#ModuleIdentifier">Module Identifier:</a></th><td>ratelimit_module</td></tr>
 <tr><th><a href="module-dict.html#SourceFile">Source File:</a></th><td>mod_ratelimit.c</td></tr>
-<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td><code>rate-initial-burst</code> available in httpd 2.4.24 and later.</td></tr></table>
+<tr><th><a href="module-dict.html#Compatibility">Compatibility:</a></th><td>
+    <code>rate-initial-burst</code> available in httpd 2.4.24 and later.
+    Rate limiting proxied content does not work correctly up to httpd 2.4.33.
+</td></tr></table>
 <h3>Summary</h3>
 
 
@@ -88,7 +91,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/mod/mod_ratelimit.ht
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2018 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br />Licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.</p>
 <p class="menu"><a href="../mod/">Modules</a> | <a href="../mod/directives.html">Directives</a> | <a href="http://wiki.apache.org/httpd/FAQ">FAQ</a> | <a href="../glossary.html">Glossary</a> | <a href="../sitemap.html">Sitemap</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();

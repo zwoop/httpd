@@ -261,7 +261,8 @@ apr_status_t ssl_init_Module(apr_pool_t *p, apr_pool_t *plog,
          * the protocol is https. */
         if (ap_get_server_protocol(s) 
             && strcmp("https", ap_get_server_protocol(s)) == 0
-            && sc->enabled == SSL_ENABLED_UNSET) {
+            && sc->enabled == SSL_ENABLED_UNSET
+            && (!apr_is_empty_array(sc->server->pks->cert_files))) {
             sc->enabled = SSL_ENABLED_TRUE;
         }
 
@@ -567,6 +568,9 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
 #ifdef HAVE_TLSV1_X
                      (protocol & SSL_PROTOCOL_TLSV1_1 ? "TLSv1.1, " : ""),
                      (protocol & SSL_PROTOCOL_TLSV1_2 ? "TLSv1.2, " : ""),
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+                     (protocol & SSL_PROTOCOL_TLSV1_3 ? "TLSv1.3, " : ""),
+#endif
 #endif
                      NULL);
     cp[strlen(cp)-2] = NUL;
@@ -599,6 +603,13 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
             TLSv1_2_client_method() : /* proxy */
             TLSv1_2_server_method();  /* server */
     }
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    else if (protocol == SSL_PROTOCOL_TLSV1_3) {
+        method = mctx->pkp ?
+            TLSv1_3_client_method() : /* proxy */
+            TLSv1_3_server_method();  /* server */
+    }
+#endif
 #endif
     else { /* For multiple protocols, we need a flexible method */
         method = mctx->pkp ?
@@ -616,7 +627,8 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
 
     SSL_CTX_set_options(ctx, SSL_OP_ALL);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L  || \
+	(defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20800000L)
     /* always disable SSLv2, as per RFC 6176 */
     SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2);
 
@@ -638,10 +650,19 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
     if (!(protocol & SSL_PROTOCOL_TLSV1_2)) {
         SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_2);
     }
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    ssl_set_ctx_protocol_option(s, ctx, SSL_OP_NO_TLSv1_3,
+                                protocol & SSL_PROTOCOL_TLSV1_3, "TLSv1.3");
+#endif
 #endif
 
 #else /* #if OPENSSL_VERSION_NUMBER < 0x10100000L */
     /* We first determine the maximum protocol version we should provide */
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    if (SSL_HAVE_PROTOCOL_TLSV1_3 && (protocol & SSL_PROTOCOL_TLSV1_3)) {
+        prot = TLS1_3_VERSION;
+    } else  
+#endif
     if (protocol & SSL_PROTOCOL_TLSV1_2) {
         prot = TLS1_2_VERSION;
     } else if (protocol & SSL_PROTOCOL_TLSV1_1) {
@@ -663,6 +684,11 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
 
     /* Next we scan for the minimal protocol version we should provide,
      * but we do not allow holes between max and min */
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    if (prot == TLS1_3_VERSION && protocol & SSL_PROTOCOL_TLSV1_2) {
+        prot = TLS1_2_VERSION;
+    }
+#endif
     if (prot == TLS1_2_VERSION && protocol & SSL_PROTOCOL_TLSV1_1) {
         prot = TLS1_1_VERSION;
     }
@@ -735,6 +761,13 @@ static apr_status_t ssl_init_ctx_protocol(server_rec *s,
         SSL_CTX_set_mode(ctx, SSL_MODE_RELEASE_BUFFERS);
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x1010100fL
+    /* For OpenSSL >=1.1.1, disable auto-retry mode so it's possible
+     * to consume handshake records without blocking for app-data.
+     * https://github.com/openssl/openssl/issues/7178 */
+    SSL_CTX_clear_mode(ctx, SSL_MODE_AUTO_RETRY);
+#endif
+    
     return APR_SUCCESS;
 }
 
@@ -887,7 +920,15 @@ static apr_status_t ssl_init_ctx_cipher_suite(server_rec *s,
         ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
         return ssl_die(s);
     }
-
+#if SSL_HAVE_PROTOCOL_TLSV1_3
+    if (mctx->auth.tls13_ciphers 
+        && !SSL_CTX_set_ciphersuites(ctx, mctx->auth.tls13_ciphers)) {
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(10127)
+                "Unable to configure permitted TLSv1.3 ciphers");
+        ssl_log_ssl_error(SSLLOG_MARK, APLOG_EMERG, s);
+        return ssl_die(s);
+    }
+#endif
     return APR_SUCCESS;
 }
 
@@ -900,6 +941,10 @@ static apr_status_t ssl_init_ctx_crl(server_rec *s,
     unsigned long crlflags = 0;
     char *cfgp = mctx->pkp ? "SSLProxy" : "SSL";
     int crl_check_mode;
+
+    if (mctx->ocsp_mask == UNSET) {
+        mctx->ocsp_mask = SSL_OCSPCHECK_NONE;
+    }
 
     if (mctx->crl_check_mask == UNSET) {
         mctx->crl_check_mask = SSL_CRLCHECK_NONE;
@@ -993,8 +1038,10 @@ static int use_certificate_chain(
         ctx->extra_certs = NULL;
     }
 #endif
+
     /* create new extra chain by loading the certs */
     n = 0;
+    ERR_clear_error();
     while ((x509 = PEM_read_bio_X509(bio, NULL, cb, NULL)) != NULL) {
         if (!SSL_CTX_add_extra_chain_cert(ctx, x509)) {
             X509_free(x509);
@@ -1339,8 +1386,8 @@ static apr_status_t ssl_init_server_certs(server_rec *s,
 #if defined(SSL_CTX_set_ecdh_auto)
         SSL_CTX_set_ecdh_auto(mctx->ssl_ctx, 1);
 #else
-        SSL_CTX_set_tmp_ecdh(mctx->ssl_ctx,
-                             EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+        eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+        SSL_CTX_set_tmp_ecdh(mctx->ssl_ctx, eckey);
 #endif
     }
 #endif
@@ -1447,6 +1494,13 @@ static apr_status_t ssl_init_proxy_certs(server_rec *s,
     X509_STORE_CTX *sctx;
     X509_STORE *store = SSL_CTX_get_cert_store(mctx->ssl_ctx);
 
+#if OPENSSL_VERSION_NUMBER >= 0x1010100fL
+    /* For OpenSSL >=1.1.1, turn on client cert support which is
+     * otherwise turned off by default (by design).
+     * https://github.com/openssl/openssl/issues/6933 */
+    SSL_CTX_set_post_handshake_auth(mctx->ssl_ctx, 1);
+#endif
+    
     SSL_CTX_set_client_cert_cb(mctx->ssl_ctx,
                                ssl_callback_proxy_cert);
 

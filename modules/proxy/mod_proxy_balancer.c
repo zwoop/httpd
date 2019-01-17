@@ -22,7 +22,7 @@
 #include "apr_version.h"
 #include "ap_hooks.h"
 #include "apr_date.h"
-#include "apr_escape.h"
+#include "util_md5.h"
 #include "mod_watchdog.h"
 
 static const char *balancer_mutex_type = "proxy-balancer-shm";
@@ -740,6 +740,7 @@ static apr_status_t lock_remove(void *data)
 {
     apr_md5_ctx_t md5_ctx;
     unsigned char md5[APR_MD5_DIGESTSIZE];
+    char id[2 * APR_MD5_DIGESTSIZE + 1];
     char host_ip[64]; /* for any IPv[46] string */
     server_addr_rec *sar;
     int i;
@@ -775,8 +776,9 @@ static apr_status_t lock_remove(void *data)
         }
     }
     apr_md5_final(md5, &md5_ctx);
+    ap_bin2hex(md5, APR_MD5_DIGESTSIZE, id);
 
-    return apr_pescape_hex(p, md5, sizeof md5, 0);
+    return apr_pstrmemdup(p, id, sizeof(id) - 1);
 }
 
 /*
@@ -857,14 +859,12 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
         return OK;
     }
 
+    ap_proxy_retry_worker_fn =
+            APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
     if (!ap_proxy_retry_worker_fn) {
-        ap_proxy_retry_worker_fn =
-                APR_RETRIEVE_OPTIONAL_FN(ap_proxy_retry_worker);
-        if (!ap_proxy_retry_worker_fn) {
-            ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02230)
-                         "mod_proxy must be loaded for mod_proxy_balancer");
-            return !OK;
-        }
+        ap_log_error(APLOG_MARK, APLOG_EMERG, 0, s, APLOGNO(02230)
+                     "mod_proxy must be loaded for mod_proxy_balancer");
+        return !OK;
     }
 
     /*
@@ -908,7 +908,7 @@ static int balancer_post_config(apr_pool_t *pconf, apr_pool_t *plog,
             continue;
         }
         if (conf->bal_persist) {
-            type = AP_SLOTMEM_TYPE_PERSIST;
+            type = AP_SLOTMEM_TYPE_PERSIST | AP_SLOTMEM_TYPE_CLEARINUSE;
         } else {
             type = 0;
         }
@@ -1236,6 +1236,9 @@ static int balancer_handler(request_rec *r)
         }
         if ((val = apr_table_get(params, "w_status_H"))) {
             ap_proxy_set_wstatus(PROXY_WORKER_HOT_STANDBY_FLAG, atoi(val), wsel);
+        }
+        if ((val = apr_table_get(params, "w_status_R"))) {
+            ap_proxy_set_wstatus(PROXY_WORKER_HOT_SPARE_FLAG, atoi(val), wsel);
         }
         if ((val = apr_table_get(params, "w_status_S"))) {
             ap_proxy_set_wstatus(PROXY_WORKER_STOPPED_FLAG, atoi(val), wsel);
@@ -1763,7 +1766,8 @@ static int balancer_handler(request_rec *r)
                      "<th>Ignore Errors</th>"
                      "<th>Draining Mode</th>"
                      "<th>Disabled</th>"
-                     "<th>Hot Standby</th>", r);
+                     "<th>Hot Standby</th>"
+                     "<th>Hot Spare</th>", r);
             if (hc_show_exprs_f) {
                 ap_rputs("<th>HC Fail</th>", r);
             }
@@ -1772,6 +1776,7 @@ static int balancer_handler(request_rec *r)
             create_radio("w_status_N", (PROXY_WORKER_IS(wsel, PROXY_WORKER_DRAIN)), r);
             create_radio("w_status_D", (PROXY_WORKER_IS(wsel, PROXY_WORKER_DISABLED)), r);
             create_radio("w_status_H", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HOT_STANDBY)), r);
+            create_radio("w_status_R", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HOT_SPARE)), r);
             if (hc_show_exprs_f) {
                 create_radio("w_status_C", (PROXY_WORKER_IS(wsel, PROXY_WORKER_HC_FAIL)), r);
             }

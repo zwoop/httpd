@@ -164,7 +164,7 @@ static int copy_header(void *ctx, const char *name, const char *value)
 {
     apr_table_t *headers = ctx;
     
-    apr_table_addn(headers, name, value);
+    apr_table_add(headers, name, value);
     return 1;
 }
 
@@ -209,10 +209,18 @@ static h2_headers *create_response(h2_task *task, request_rec *r)
     /* determine the protocol and whether we should use keepalives. */
     ap_set_keepalive(r);
     
-    if (r->chunked) {
+    if (AP_STATUS_IS_HEADER_ONLY(r->status)) {
+        apr_table_unset(r->headers_out, "Transfer-Encoding");
+        apr_table_unset(r->headers_out, "Content-Length");
+        r->content_type = r->content_encoding = NULL;
+        r->content_languages = NULL;
+        r->clength = r->chunked = 0;
+    }
+    else if (r->chunked) {
+        apr_table_mergen(r->headers_out, "Transfer-Encoding", "chunked");
         apr_table_unset(r->headers_out, "Content-Length");
     }
-    
+
     ctype = ap_make_content_type(r, r->content_type);
     if (ctype) {
         apr_table_setn(r->headers_out, "Content-Type", ctype);
@@ -250,7 +258,7 @@ static h2_headers *create_response(h2_task *task, request_rec *r)
     if (r->no_cache && !apr_table_get(r->headers_out, "Expires")) {
         char *date = apr_palloc(r->pool, APR_RFC822_DATE_LEN);
         ap_recent_rfc822_date(date, r->request_time);
-        apr_table_addn(r->headers_out, "Expires", date);
+        apr_table_add(r->headers_out, "Expires", date);
     }
     
     /* This is a hack, but I can't find anyway around it.  The idea is that
@@ -413,7 +421,7 @@ static apr_status_t pass_response(h2_task *task, ap_filter_t *f,
     
     h2_headers *response = h2_headers_create(parser->http_status, 
                                              make_table(parser),
-                                             NULL, task->pool);
+                                             NULL, 0, task->pool);
     apr_brigade_cleanup(parser->tmp);
     b = h2_bucket_headers_create(task->c->bucket_alloc, response);
     APR_BRIGADE_INSERT_TAIL(parser->tmp, b);
@@ -772,6 +780,10 @@ apr_status_t h2_filter_request_in(ap_filter_t* f,
                 APR_BUCKET_REMOVE(b);
                 apr_bucket_destroy(b);
                 ap_remove_input_filter(f);
+                
+                if (headers->raw_bytes && h2_task_logio_add_bytes_in) {
+                    h2_task_logio_add_bytes_in(task->c, headers->raw_bytes);
+                }
                 break;
             }
         }

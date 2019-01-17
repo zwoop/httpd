@@ -635,10 +635,10 @@ int h2_h2_process_conn(conn_rec* c)
                 }
                 h2_ctx_protocol_set(ctx, h2_h2_is_tls(c)? "h2" : "h2c");
             }
-            else {
+            else if (APLOGctrace2(c)) {
                 ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, c,
-                              "h2_h2, not detected in %d bytes: %s", 
-                              (int)slen, s);
+                              "h2_h2, not detected in %d bytes(base64): %s", 
+                              (int)slen, h2_util_base64url_encode(s, slen, c->pool));
             }
             
             apr_brigade_destroy(temp);
@@ -694,7 +694,7 @@ static void check_push(request_rec *r, const char *tag)
                       tag, conf->push_list->nelts);
         for (i = 0; i < conf->push_list->nelts; ++i) {
             h2_push_res *push = &APR_ARRAY_IDX(conf->push_list, i, h2_push_res);
-            apr_table_addn(r->headers_out, "Link", 
+            apr_table_add(r->headers_out, "Link", 
                            apr_psprintf(r->pool, "<%s>; rel=preload%s", 
                                         push->uri_ref, push->critical? "; critical" : ""));
         }

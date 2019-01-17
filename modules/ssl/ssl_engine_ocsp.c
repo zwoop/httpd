@@ -61,7 +61,7 @@ static apr_uri_t *determine_responder_uri(SSLSrvConfigRec *sc, X509 *cert,
     /* Use default responder URL if forced by configuration, else use
      * certificate-specified responder, falling back to default if
      * necessary and possible. */
-    if (sc->server->ocsp_force_default) {
+    if (sc->server->ocsp_force_default == TRUE) {
         s = sc->server->ocsp_responder;
     }
     else {
@@ -139,7 +139,14 @@ static int verify_ocsp_status(X509 *cert, X509_STORE_CTX *ctx, conn_rec *c,
 
     ruri = determine_responder_uri(sc, cert, c, pool);
     if (!ruri) {
-        return V_OCSP_CERTSTATUS_UNKNOWN;
+        if (sc->server->ocsp_mask & SSL_OCSPCHECK_NO_OCSP_FOR_CERT_OK) {
+            ap_log_cerror(APLOG_MARK, APLOG_TRACE2, 0, c, 
+                          "Skipping OCSP check for certificate cos no OCSP URL"
+                          " found and no_ocsp_for_cert_ok is set");
+            return V_OCSP_CERTSTATUS_GOOD;
+        } else {
+            return V_OCSP_CERTSTATUS_UNKNOWN;
+        }
     }
 
     request = create_request(ctx, cert, &certID, s, pool, sc);
@@ -159,7 +166,7 @@ static int verify_ocsp_status(X509 *cert, X509_STORE_CTX *ctx, conn_rec *c,
 
         if (r != OCSP_RESPONSE_STATUS_SUCCESSFUL) {
             ap_log_error(APLOG_MARK, APLOG_ERR, 0, s, APLOGNO(01922)
-                         "OCSP response not successful: %d", rc);
+                         "OCSP response not successful: %d", r);
             rc = V_OCSP_CERTSTATUS_UNKNOWN;
         }
     }

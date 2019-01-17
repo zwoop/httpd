@@ -50,6 +50,7 @@
      [ -<strong>L</strong> <var>isim</var> ]
      [ -<strong>p</strong> <var>program</var> ]
      [ -<strong>f</strong> ]
+     [ -<strong>D</strong> ]
      [ -<strong>t</strong> ]
      [ -<strong>v</strong> ]
      [ -<strong>e</strong> ]
@@ -90,6 +91,11 @@
     istek sunuluncaya kadar geçen zamanda günlük dosyasının yokluğu
     özdevinimli işlemler yapan bazı günlükleme araçlarında sorunlara yol
     açabilir. Bu seçenek bu gibi durumlarda yararlıdır.</dd>
+
+    <dt><code><strong>-D</strong></code></dt>
+    <dd>Günlük dosyasının yerleştirileceği dizini (eğer yoksa) üst dizinleri ile 
+    birlikte yapılandırır. Bu, <code>strftime(3)</code> işlevinin sırf dosya için 
+    değil yol için de kullanılmasını sağlar.</dd>
 
     <dt><code><strong>-t</strong></code></dt>
     <dd>Günlük dosyasının döndürülmek yerine tepeden kırpılmasına sebep olur.
@@ -268,7 +274,7 @@ var comments_identifier = 'http://httpd.apache.org/docs/2.4/programs/rotatelogs.
     }
 })(window, document);
 //--><!]]></script></div><div id="footer">
-<p class="apache">Copyright 2018 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
+<p class="apache">Copyright 2019 The Apache Software Foundation.<br /><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a> altında lisanslıdır.</p>
 <p class="menu"><a href="../mod/">Modüller</a> | <a href="../mod/directives.html">Yönergeler</a> | <a href="http://wiki.apache.org/httpd/FAQ">SSS</a> | <a href="../glossary.html">Terimler</a> | <a href="../sitemap.html">Site Haritası</a></p></div><script type="text/javascript"><!--//--><![CDATA[//><!--
 if (typeof(prettyPrint) !== 'undefined') {
     prettyPrint();
